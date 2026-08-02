@@ -86,15 +86,22 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
           </div>
         </div>
 
-        {/* Sector Derecho: Marco de la Imagen Institucional (Sector delimitado) */}
+        {/* Sector Derecho: Marco con alternancia de Imagen Modo Día y Modo Noche en sus colores originales */}
         <div className="lg:col-span-5 w-full">
           <div className="relative w-full h-72 sm:h-96 rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-800 shadow-xl bg-gray-900 group">
+            {/* Imagen Modo Día (Light Mode) en color original */}
             <img
-              src="/sistema_asistencias.jpeg"
-              alt="Sector Imagen Sistema Asistencias"
-              className="w-full h-full object-cover object-center grayscale contrast-125 group-hover:scale-105 transition-all duration-500"
+              src="/imagen-mododia.jpg"
+              alt="Sistema de Asistencias - Modo Día"
+              className="w-full h-full object-cover object-center dark:hidden group-hover:scale-105 transition-all duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none"></div>
+            {/* Imagen Modo Noche (Dark Mode) en color original */}
+            <img
+              src="/imagen-modo-noche.jpeg"
+              alt="Sistema de Asistencias - Modo Noche"
+              className="w-full h-full object-cover object-center hidden dark:block group-hover:scale-105 transition-all duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
           </div>
         </div>
       </div>
