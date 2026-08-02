@@ -141,19 +141,19 @@ export default function Informes() {
       {generating && <Loader />}
 
       {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-zinc-800 pb-5">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             Informes de Asistencia para Practicantes
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
             Genere documentos oficiales en PDF para constancia de prácticas y firma digital externa ONPE.
           </p>
         </div>
 
         <button
           onClick={fetchInformes}
-          className="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors cursor-pointer"
+          className="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-zinc-300 bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-900 text-sm font-medium transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           <span>Actualizar</span>
@@ -162,7 +162,7 @@ export default function Informes() {
 
       <AlertMessage message={error} onClose={() => setError(null)} />
       {successMsg && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm flex items-center justify-between">
+        <div className="p-4 bg-emerald-50 dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{successMsg}</span>
@@ -173,24 +173,24 @@ export default function Informes() {
         </div>
       )}
 
-      {/* Formulario de Generación (Se eliminó ícono decorativo FileText) */}
+      {/* Formulario de Generación */}
       <RequierePermiso codigo="informes.generar">
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-2xs">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50 mb-4">
+        <div className="bg-white dark:bg-black border border-gray-100 dark:border-zinc-800 rounded-xl p-6 shadow-2xs">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
             Generar Nuevo Informe de Asistencias
           </h3>
 
           <form onSubmit={handleGenerarPDF} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Practicante / Empleado *
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-2.5" />
+                <User className="w-4 h-4 text-gray-400 dark:text-zinc-500 absolute left-3 top-2.5" />
                 <select
                   value={selectedEmpleadoId}
                   onChange={(e) => setSelectedEmpleadoId(e.target.value)}
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary"
+                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
                 >
                   {empleados.map((emp) => (
                     <option key={emp.id} value={emp.id}>
@@ -202,34 +202,34 @@ export default function Informes() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Fecha Inicio *
               </label>
               <div className="relative">
-                <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-2.5" />
+                <Calendar className="w-4 h-4 text-gray-400 dark:text-zinc-500 absolute left-3 top-2.5" />
                 <input
                   type="date"
                   required
                   value={fechaInicio}
                   onChange={(e) => setFechaInicio(e.target.value)}
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary font-mono"
+                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                 Fecha Fin *
               </label>
               <div className="relative">
-                <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-2.5" />
+                <Calendar className="w-4 h-4 text-gray-400 dark:text-zinc-500 absolute left-3 top-2.5" />
                 <input
                   type="date"
                   required
                   max={getTodayString()}
                   value={fechaFin}
                   onChange={(e) => setFechaFin(e.target.value)}
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary font-mono"
+                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono"
                 />
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function Informes() {
               <button
                 type="submit"
                 disabled={generating}
-                className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-semibold rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
                 <span>{generating ? 'Generando PDF...' : 'Generar PDF'}</span>
@@ -249,22 +249,22 @@ export default function Informes() {
       </RequierePermiso>
 
       {/* Historial de Informes */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Historial de Informes Emitidos</h3>
-          <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">{informes.length} informe(s) registrado(s)</span>
+      <div className="bg-white dark:bg-black border border-gray-100 dark:border-zinc-800 rounded-xl shadow-2xs overflow-hidden">
+        <div className="p-4 border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-950 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Historial de Informes Emitidos</h3>
+          <span className="text-xs text-gray-400 dark:text-zinc-500 font-medium">{informes.length} informe(s) registrado(s)</span>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-sm text-gray-400 dark:text-gray-500">Cargando historial de informes...</div>
+          <div className="p-12 text-center text-sm text-gray-400 dark:text-zinc-500">Cargando historial de informes...</div>
         ) : informes.length === 0 ? (
-          <div className="p-12 text-center text-sm text-gray-400 dark:text-gray-500">
+          <div className="p-12 text-center text-sm text-gray-400 dark:text-zinc-500">
             No hay informes de asistencias registrados en el sistema.
           </div>
         ) : (
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="bg-gray-50/60 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <tr className="bg-gray-50/60 dark:bg-zinc-950 border-b border-gray-100 dark:border-zinc-800 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                 <th className="px-6 py-4">Practicante</th>
                 <th className="px-6 py-4">Período Evaluado</th>
                 <th className="px-6 py-4">Generado Por</th>
@@ -273,37 +273,37 @@ export default function Informes() {
                 <th className="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
               {informes.map((item) => {
                 const isAprobado = item.estado === 'aprobado';
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-50">
+                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                       <div>{item.empleado_nombre}</div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500 font-normal">{item.empleado_departamento || 'OTI'}</div>
+                      <div className="text-xs text-gray-400 dark:text-zinc-500 font-normal">{item.empleado_departamento || 'OTI'}</div>
                     </td>
-                    <td className="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-300">
+                    <td className="px-6 py-4 font-mono text-xs text-gray-600 dark:text-zinc-300">
                       {item.fecha_inicio} al {item.fecha_fin}
                     </td>
-                    <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+                    <td className="px-6 py-4 text-xs text-gray-600 dark:text-zinc-300">
                       {item.generado_por_email}
                     </td>
-                    <td className="px-6 py-4 text-xs text-gray-500 dark:text-gray-400 font-mono">
+                    <td className="px-6 py-4 text-xs text-gray-500 dark:text-zinc-400 font-mono">
                       {new Date(item.fecha_generacion).toLocaleString('es-PE')}
                     </td>
                     <td className="px-6 py-4">
                       {isAprobado ? (
                         <div className="space-y-0.5">
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-transparent dark:border-emerald-900/60">
                             <CheckCircle className="w-3 h-3" />
                             <span>Aprobado</span>
                           </span>
                           {item.aprobado_por_email && (
-                            <div className="text-[10px] text-gray-400 dark:text-gray-500">Por: {item.aprobado_por_email}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-zinc-500">Por: {item.aprobado_por_email}</div>
                           )}
                         </div>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-transparent dark:border-amber-900/60">
                           Generado (Pendiente Firma)
                         </span>
                       )}

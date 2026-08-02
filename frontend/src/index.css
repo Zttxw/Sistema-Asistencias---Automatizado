@@ -3,13 +3,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary: #0F172A;
+  --color-primary: #000000;
   --color-secondary: #2CA792;
   --color-accent: #F0C84F;
 }
 
 .dark {
-  --color-primary: #38BDF8;
+  --color-primary: #FFFFFF;
   --color-secondary: #3FC4AE;
   --color-accent: #F5D76E;
 }
@@ -23,8 +23,8 @@ body {
 
 .dark body,
 body:where(.dark *) {
-  background-color: #09090B;
-  color: #F9FAFB;
+  background-color: #000000;
+  color: #FFFFFF;
 }
 
 /* ==========================================
@@ -40,8 +40,8 @@ body:where(.dark *) {
   position: relative;
   width: 60px;
   height: 30px;
-  --light: #d8dbe0;
-  --dark: #28292c;
+  --light: #FFFFFF;
+  --dark: #000000;
   --link: rgb(27, 129, 112);
   --link-hover: rgb(24, 94, 82);
 }
@@ -58,7 +58,8 @@ body:where(.dark *) {
 }
 
 .dark .switch-label {
-  border-color: #3f3f46;
+  background-color: #000000;
+  border-color: #27272A;
 }
 
 .checkbox {
@@ -76,7 +77,7 @@ body:where(.dark *) {
 }
 
 .checkbox:checked ~ .slider {
-  background-color: var(--light);
+  background-color: #27272A;
 }
 
 .slider::before {
@@ -98,7 +99,7 @@ body:where(.dark *) {
   -webkit-transform: translateX(30px);
   -ms-transform: translateX(30px);
   transform: translateX(30px);
-  background-color: var(--dark);
+  background-color: #FFFFFF;
   -webkit-box-shadow: none;
   box-shadow: none;
 }
@@ -184,7 +185,7 @@ body:where(.dark *) {
 }
 
 .dark .loader-inline {
-  border-bottom: 1px solid rgba(39, 39, 42, 1);
+  border-bottom: 1px solid #27272A;
 }
 
 .speeder {
@@ -287,27 +288,27 @@ body:where(.dark *) {
 
 /* -- Light Mode Colors (black ship, black trails) -- */
 .loader-light { background-color: #F9FAFB; }
-.loader-light .speeder > span { background: #000; }
-.loader-light .speeder > span > span { background: #000; }
-.loader-light .base span { border-right: 100px solid #000; }
-.loader-light .base span:before { background: #000; }
-.loader-light .base span:after { border-right: 55px solid #000; }
-.loader-light .face { background: #000; }
-.loader-light .face:after { background: #000; border-radius: 0 0 0 2px; }
-.loader-light .longfazers span { background: #000; }
+.loader-light .speeder > span { background: #000000; }
+.loader-light .speeder > span > span { background: #000000; }
+.loader-light .base span { border-right: 100px solid #000000; }
+.loader-light .base span:before { background: #000000; }
+.loader-light .base span:after { border-right: 55px solid #000000; }
+.loader-light .face { background: #000000; }
+.loader-light .face:after { background: #000000; border-radius: 0 0 0 2px; }
+.loader-light .longfazers span { background: #000000; }
 
-/* -- Dark Mode Colors (red ship, pink body, white trails) -- */
-.loader-dark { background-color: #09090B; }
-.loader-dark .speeder > span { background: #f51313; }
-.loader-dark .speeder > span > span { background: #ffffff; }
-.loader-dark .base span { border-right: 100px solid #f3cfcf; }
-.loader-dark .base span:before { background: #f3cfcf; }
-.loader-dark .base span:after { border-right: 55px solid #f3cfcf; }
-.loader-dark .face { background: #f3cfcf; }
-.loader-dark .face:after { background: #f51313; border-radius: 0 0 2px 2px; }
-.loader-dark .longfazers span { background: #ffffff; }
+/* -- Dark Mode Colors (pure black background, pure white ship & trails) -- */
+.loader-dark { background-color: #000000; }
+.loader-dark .speeder > span { background: #FFFFFF; }
+.loader-dark .speeder > span > span { background: #FFFFFF; }
+.loader-dark .base span { border-right: 100px solid #FFFFFF; }
+.loader-dark .base span:before { background: #FFFFFF; }
+.loader-dark .base span:after { border-right: 55px solid #FFFFFF; }
+.loader-dark .face { background: #FFFFFF; }
+.loader-dark .face:after { background: #FFFFFF; border-radius: 0 0 2px 2px; }
+.loader-dark .longfazers span { background: #FFFFFF; }
 
-/* -- Clouds (dark mode only) -- */
+/* -- Clouds (pure white in dark mode) -- */
 .clouds {
   position: absolute;
   width: 100%;
@@ -318,9 +319,9 @@ body:where(.dark *) {
 
 .cloud {
   position: absolute;
-  background: #fff;
+  background: #ffffff;
   border-radius: 50%;
-  opacity: 0.25;
+  opacity: 0.15;
   animation: moveClouds linear infinite;
 }
 
@@ -328,7 +329,7 @@ body:where(.dark *) {
 .cloud::after {
   content: "";
   position: absolute;
-  background: #fff;
+  background: #ffffff;
   border-radius: 50%;
 }
 
