@@ -3,9 +3,11 @@ import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
 import Modal from '../components/Modal';
 import RequierePermiso from '../components/RequierePermiso';
+import { useAuth } from '../context/AuthContext';
 import { Download, Calendar, RefreshCw, PlusCircle, Edit3 } from 'lucide-react';
 
 export default function Asistencias() {
+  const { user } = useAuth();
   const getTodayString = () => new Date().toISOString().split('T')[0];
 
   const getCurrentDatetimeLocal = () => {
@@ -41,9 +43,16 @@ export default function Asistencias() {
     setLoading(true);
     setError(null);
     try {
-      const response = await client.get('/api/asistencias', {
-        params: { fecha },
-      });
+      let response;
+      if (!user) {
+        // Modo Visitante (Sin sesión): endpoint público de hoy
+        response = await client.get('/api/asistencias/hoy');
+      } else {
+        // Modo Autenticado (Admin / Empleado): endpoint protegido con fecha seleccionable
+        response = await client.get('/api/asistencias', {
+          params: { fecha },
+        });
+      }
       setAsistencias(response.data);
     } catch (err) {
       console.error(err);
@@ -57,7 +66,7 @@ export default function Asistencias() {
 
   useEffect(() => {
     fetchAsistencias();
-  }, [fecha]);
+  }, [fecha, user]);
 
   const openManualModal = async () => {
     setManualError(null);
@@ -140,21 +149,34 @@ export default function Asistencias() {
       {/* Encabezado y Acciones */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Registro de Asistencias</h2>
-          <p className="text-sm text-gray-500 mt-1">Consulte la presencia diaria del personal y exporte reportes.</p>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+            {!user ? 'Asistencias de Hoy' : 'Registro de Asistencias'}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {!user
+              ? 'Presencia del personal en tiempo real para el día de hoy.'
+              : 'Consulte la presencia diaria del personal y exporte reportes.'}
+          </p>
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Selector de fecha */}
-          <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm shadow-2xs">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="bg-transparent border-none text-gray-700 focus:outline-none cursor-pointer font-medium"
-            />
-          </div>
+          {/* Selector de fecha (Solo para usuarios autenticados) vs Badge de Hoy (Modo Visitante) */}
+          {user ? (
+            <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm shadow-2xs">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                className="bg-transparent border-none text-gray-700 focus:outline-none cursor-pointer font-medium"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm shadow-2xs font-medium text-gray-700">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span>Día Actual (Hoy)</span>
+            </div>
+          )}
 
           <button
             onClick={fetchAsistencias}
@@ -196,7 +218,9 @@ export default function Asistencias() {
           <div className="p-12 text-center text-sm text-gray-400">Cargando registros...</div>
         ) : asistencias.length === 0 ? (
           <div className="p-12 text-center text-sm text-gray-400">
-            No hay asistencias registradas para la fecha seleccionada ({fecha}).
+            {!user
+              ? 'No hay asistencias registradas para el día de hoy.'
+              : `No hay asistencias registradas para la fecha seleccionada (${fecha}).`}
           </div>
         ) : (
           <table className="w-full text-left text-sm border-collapse">

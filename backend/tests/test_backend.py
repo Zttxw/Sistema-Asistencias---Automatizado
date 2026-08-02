@@ -266,6 +266,16 @@ class TestBackendAPI(unittest.TestCase):
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]["empleado"], "Empleado Uno")
 
+    def test_endpoint_publico_asistencias_hoy(self):
+        # 1. Petición pública sin token -> HTTP 200 OK
+        res = self.client.get("/api/asistencias/hoy")
+        self.assertEqual(res.status_code, 200)
+
+        # 2. Petición pública enviando parámetro fecha manipulado -> HTTP 200 OK e ignora querystring
+        res_fake_date = self.client.get("/api/asistencias/hoy?fecha=2026-01-01")
+        self.assertEqual(res_fake_date.status_code, 200)
+        self.assertEqual(res.json(), res_fake_date.json())
+
 
 if __name__ == '__main__':
     unittest.main()

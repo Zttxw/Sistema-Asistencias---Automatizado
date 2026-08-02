@@ -27,6 +27,15 @@ def registrar_asistencia_manual(payload: AsistenciaManualPayload, db: Session = 
     return crud.crud_asistencia.registrar_asistencia_manual(db, payload)
 
 
+@router.get("/api/asistencias/hoy", response_model=List[AsistenciaReporteItem])
+def obtener_asistencias_hoy(db: Session = Depends(get_db)):
+    """
+    Retorna el reporte de asistencias del día actual del servidor (PÚBLICO, sin autenticación).
+    Ignora cualquier parámetro query string de fecha enviado por el cliente.
+    """
+    return crud.crud_asistencia.get_asistencias_por_fecha(db, date.today())
+
+
 @router.get("/api/asistencias", response_model=List[AsistenciaReporteItem])
 def obtener_asistencias(
     fecha: Optional[date] = Query(default_factory=date.today, description="Fecha a consultar en formato YYYY-MM-DD"),
