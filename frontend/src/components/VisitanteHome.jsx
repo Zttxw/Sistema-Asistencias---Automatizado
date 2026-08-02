@@ -28,7 +28,7 @@ export default function VisitanteHome({ onOpenLogin }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-8 pt-2 relative text-gray-900 dark:text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-start pt-3 pb-8 px-4 sm:px-6 relative text-gray-900 dark:text-white font-sans overflow-x-hidden space-y-3">
       
       {/* Botones de Acción Flotantes en la Esquina Lateral Derecha */}
       <div className="absolute top-4 right-6 sm:right-8 z-30 flex items-center space-x-3">
@@ -43,9 +43,9 @@ export default function VisitanteHome({ onOpenLogin }) {
         <ThemeToggle />
       </div>
 
-      {/* Hero Banner Principal Elevado Hacia la Parte Superior */}
-      <div className="w-full max-w-6xl px-6 pt-1 pb-1">
-        <div className="relative w-full rounded-3xl overflow-hidden border border-gray-200/80 dark:border-zinc-800 shadow-2xl h-80 sm:h-[440px] flex items-center justify-center text-center px-8 sm:px-14">
+      {/* Hero Banner Principal */}
+      <div className="w-full max-w-6xl">
+        <div className="relative w-full rounded-3xl overflow-hidden border border-gray-200/80 dark:border-zinc-800 shadow-2xl h-72 sm:h-[400px] flex items-center justify-center text-center px-8 sm:px-14">
           
           {/* Imagen Modo Día (Light Mode) en color original */}
           <img
@@ -69,23 +69,23 @@ export default function VisitanteHome({ onOpenLogin }) {
             <h1 className="font-valve text-3xl sm:text-6xl font-black tracking-wide uppercase text-white drop-shadow-2xl leading-tight">
               Sistema de Control de Asistencias
             </h1>
-            <p className="text-sm sm:text-base text-white/90 font-medium mt-4 max-w-xl mx-auto leading-relaxed drop-shadow-md">
+            <p className="text-sm sm:text-base text-white/90 font-medium mt-3 max-w-xl mx-auto leading-relaxed drop-shadow-md">
               Plataforma institucional para la gestión y monitoreo en tiempo real de la presencia del personal.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Sección UNIFICADA: Tabla de Asistencias Pegada al Límite Inferior de la Imagen */}
-      <div className="w-full max-w-6xl px-6 pt-1 sm:pt-2 pb-4 space-y-4">
+      {/* Tabla de Asistencias Pegada INMEDIATAMENTE Debajo de la Imagen */}
+      <div className="w-full max-w-6xl pt-1 space-y-3">
         
         {/* Cabecera de Asistencias de Hoy */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-zinc-800 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 dark:border-zinc-800 pb-2">
           <div>
-            <h2 className="font-valve text-2xl font-bold text-gray-900 dark:text-white tracking-wide">
+            <h2 className="font-valve text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-wide">
               Asistencias de Hoy
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400">
               Presencia del personal en tiempo real para el día de hoy.
             </p>
           </div>
@@ -111,22 +111,22 @@ export default function VisitanteHome({ onOpenLogin }) {
         {/* Tabla de Asistencias de Hoy Nítida y Elegante */}
         <div className="bg-white dark:bg-black border border-gray-200/80 dark:border-zinc-800 rounded-2xl shadow-lg overflow-hidden">
           {loading ? (
-            <div className="p-12 text-center text-sm text-gray-400 dark:text-zinc-500 font-medium">
+            <div className="p-10 text-center text-sm text-gray-400 dark:text-zinc-500 font-medium">
               Cargando presencia del personal...
             </div>
           ) : asistencias.length === 0 ? (
-            <div className="p-12 text-center text-sm text-gray-400 dark:text-zinc-500 font-medium">
+            <div className="p-10 text-center text-sm text-gray-400 dark:text-zinc-500 font-medium">
               No hay asistencias registradas para el día de hoy.
             </div>
           ) : (
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="bg-gray-50/80 dark:bg-zinc-950 border-b border-gray-100 dark:border-zinc-800 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
-                  <th className="px-6 py-4">Empleado</th>
-                  <th className="px-6 py-4">Departamento</th>
-                  <th className="px-6 py-4">Hora Entrada</th>
-                  <th className="px-6 py-4">Hora Salida</th>
-                  <th className="px-6 py-4">Estado</th>
+                  <th className="px-6 py-3.5">Empleado</th>
+                  <th className="px-6 py-3.5">Departamento</th>
+                  <th className="px-6 py-3.5">Hora Entrada</th>
+                  <th className="px-6 py-3.5">Hora Salida</th>
+                  <th className="px-6 py-3.5">Estado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
@@ -134,9 +134,9 @@ export default function VisitanteHome({ onOpenLogin }) {
                   const isPresente = !item.hora_salida;
                   return (
                     <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{item.empleado}</td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-zinc-300">{item.departamento || '-'}</td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-zinc-300 font-mono text-xs">
+                      <td className="px-6 py-3.5 font-medium text-gray-900 dark:text-white">{item.empleado}</td>
+                      <td className="px-6 py-3.5 text-gray-600 dark:text-zinc-300">{item.departamento || '-'}</td>
+                      <td className="px-6 py-3.5 text-gray-600 dark:text-zinc-300 font-mono text-xs">
                         <span>{item.hora_entrada || '-'}</span>
                         {item.origen_entrada === 'manual' && (
                           <Edit3
@@ -145,7 +145,7 @@ export default function VisitanteHome({ onOpenLogin }) {
                           />
                         )}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-zinc-300 font-mono text-xs">
+                      <td className="px-6 py-3.5 text-gray-600 dark:text-zinc-300 font-mono text-xs">
                         <span>{item.hora_salida || '-'}</span>
                         {item.origen_salida === 'manual' && (
                           <Edit3
@@ -154,7 +154,7 @@ export default function VisitanteHome({ onOpenLogin }) {
                           />
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3.5">
                         {isPresente ? (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-secondary/10 text-secondary">
                             Presente
@@ -173,16 +173,6 @@ export default function VisitanteHome({ onOpenLogin }) {
           )}
         </div>
       </div>
-
-      {/* Footer Minimalista */}
-      <footer className="mt-4 pt-2 flex items-center space-x-4 text-xs text-gray-400 dark:text-zinc-500 font-medium">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-secondary"></span>
-          <span>Modo Visitante</span>
-        </div>
-        <span>•</span>
-        <span className="font-mono">v1.0.0</span>
-      </footer>
 
     </div>
   );
