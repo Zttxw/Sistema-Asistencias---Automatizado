@@ -64,19 +64,16 @@ export default function VisitanteHome({ onOpenLogin }) {
           {/* Velo traslúcido elegante para legibilidad */}
           <div className="absolute inset-0 bg-black/45 dark:bg-black/60 pointer-events-none"></div>
 
-          {/* Contenido DENTRO de la Imagen */}
-          <div className="relative z-10 max-w-3xl flex flex-col items-center">
+          {/* Título Principal DENTRO de la Imagen en Fuente Valve */}
+          <div className="relative z-10 max-w-4xl flex flex-col items-center">
             <h1 className="font-valve text-3xl sm:text-6xl font-black tracking-wide uppercase text-white drop-shadow-2xl leading-tight">
               Sistema de Control de Asistencias
             </h1>
-            <p className="text-sm sm:text-base text-white/90 font-medium mt-3 max-w-xl mx-auto leading-relaxed drop-shadow-md">
-              Plataforma institucional para la gestión y monitoreo en tiempo real de la presencia del personal.
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Tabla de Asistencias de Hoy con un Pequeño Espacio Elegante respecto a la Imagen */}
+      {/* Tabla de Asistencias de Hoy */}
       <div className="w-full max-w-6xl pt-3 sm:pt-4 space-y-3">
         
         {/* Cabecera de Asistencias de Hoy */}
