@@ -4,72 +4,72 @@ import ThemeToggle from './ThemeToggle';
 
 export default function VisitanteHome({ onVerAsistencias }) {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between p-6 sm:p-10 relative text-gray-900 dark:text-white overflow-x-hidden">
-      {/* Switch de Tema Flotante */}
-      <div className="absolute top-6 right-6 z-30">
-        <ThemeToggle />
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-12 relative text-gray-900 dark:text-white overflow-x-hidden">
+      
+      {/* Banner Superior 100% Ancho (Ancho completo de pantalla, altura delimitada) */}
+      <div className="w-full h-48 sm:h-60 relative overflow-hidden border-b border-gray-200 dark:border-zinc-800 shadow-md flex items-center justify-center text-center px-6">
+        
+        {/* Imagen Modo Día (Light Mode) en color original */}
+        <img
+          src="/imagen-mododia.jpg"
+          alt="Sistema de Asistencias - Modo Día"
+          className="absolute inset-0 w-full h-full object-cover object-center dark:hidden"
+        />
 
-      {/* Contenedor Principal Ampliado Extra Grande */}
-      <div className="w-full max-w-5xl my-auto py-4">
-        <div className="relative w-full rounded-3xl overflow-hidden border-2 border-gray-200 dark:border-zinc-800 shadow-2xl min-h-[560px] sm:min-h-[640px] flex flex-col items-center justify-center p-8 sm:p-16 text-center">
-          
-          {/* Imagen Modo Día (Light Mode) estática en color original */}
-          <img
-            src="/imagen-mododia.jpg"
-            alt="Sistema de Asistencias - Modo Día"
-            className="absolute inset-0 w-full h-full object-cover object-center dark:hidden"
-          />
+        {/* Imagen Modo Noche (Dark Mode) en color original */}
+        <img
+          src="/imagen-modo-noche.jpeg"
+          alt="Sistema de Asistencias - Modo Noche"
+          className="absolute inset-0 w-full h-full object-cover object-center hidden dark:block"
+        />
 
-          {/* Imagen Modo Noche (Dark Mode) estática en color original */}
-          <img
-            src="/imagen-modo-noche.jpeg"
-            alt="Sistema de Asistencias - Modo Noche"
-            className="absolute inset-0 w-full h-full object-cover object-center hidden dark:block"
-          />
+        {/* Velo traslúcido elegante para contraste del título */}
+        <div className="absolute inset-0 bg-black/40 dark:bg-black/60 pointer-events-none"></div>
 
-          {/* Velo de degradado equilibrado para destacar los elementos internos */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/45 dark:from-black/85 dark:via-black/55 dark:to-black/65 pointer-events-none"></div>
+        {/* Único Elemento DENTRO de la Imagen: El Título */}
+        <h1 className="relative z-10 font-valve text-3xl sm:text-5xl font-black tracking-wide uppercase text-white drop-shadow-xl max-w-3xl leading-tight">
+          Sistema de Control de Asistencias
+        </h1>
 
-          {/* Contenido DENTRO de la Imagen (Título, Subtítulo y Acción 'Asistencias de Hoy') */}
-          <div className="relative z-10 max-w-3xl flex flex-col items-center space-y-10 text-white">
-            
-            {/* Encabezado e Información Institucional */}
-            <div className="space-y-4">
-              <h1 className="font-valve text-4xl sm:text-6xl font-black tracking-wide leading-tight uppercase text-white drop-shadow-xl">
-                Sistema de Control de Asistencias
-              </h1>
-
-              <p className="text-base sm:text-lg text-white/90 font-medium max-w-xl mx-auto leading-relaxed drop-shadow-md">
-                Plataforma institucional para la gestión y monitoreo en tiempo real de la presencia del personal.
-              </p>
-            </div>
-
-            {/* Acción 'Asistencias de Hoy' Transparente Sin Recuadro de Fondo */}
-            <button
-              onClick={onVerAsistencias}
-              className="group/btn text-left transition-all cursor-pointer flex items-center space-x-5 px-6 sm:px-8 py-4 sm:py-5 rounded-2xl hover:bg-white/10 backdrop-blur-xs border border-white/30 hover:border-white/60 shadow-lg text-white max-w-lg w-full transform hover:-translate-y-0.5"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-primary text-white dark:bg-white dark:text-black flex items-center justify-center shrink-0 shadow-lg group-hover/btn:scale-105 transition-transform">
-                <CalendarCheck className="w-7 h-7" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-valve text-xl font-bold tracking-wide text-white drop-shadow-md">
-                  Asistencias de Hoy
-                </h3>
-                <p className="text-xs sm:text-sm text-white/90 font-medium drop-shadow-sm truncate">
-                  Consulta la presencia del personal en tiempo real.
-                </p>
-              </div>
-              <ArrowRight className="w-7 h-7 text-white transform group-hover/btn:translate-x-1 transition-transform shrink-0 ml-3 drop-shadow-md" />
-            </button>
-
-          </div>
+        {/* Switch de Tema Flotante sobre el Banner */}
+        <div className="absolute top-4 right-4 z-20 backdrop-blur-md bg-black/30 p-1 rounded-full border border-white/20">
+          <ThemeToggle />
         </div>
       </div>
 
+      {/* Contenido POR DEBAJO (Fuera de la Imagen) */}
+      <div className="w-full max-w-xl px-6 flex flex-col items-center my-auto space-y-8 text-center">
+        
+        {/* Subtítulo Institucional */}
+        <p className="text-sm sm:text-base text-gray-600 dark:text-zinc-400 font-medium leading-relaxed">
+          Plataforma institucional para la gestión y monitoreo en tiempo real de la presencia del personal.
+        </p>
+
+        {/* Tarjeta Única: Asistencias de Hoy */}
+        <button
+          onClick={onVerAsistencias}
+          className="w-full group text-left rounded-2xl p-6 transition-all cursor-pointer bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-black hover:dark:bg-zinc-100 border border-primary dark:border-white shadow-xl hover:shadow-2xl flex items-center justify-between"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-xl bg-white/20 dark:bg-black/10 flex items-center justify-center text-white dark:text-black shrink-0">
+              <CalendarCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-valve text-lg font-bold tracking-wide">
+                Asistencias de Hoy
+              </h3>
+              <p className="text-xs text-white/85 dark:text-zinc-700 font-medium">
+                Consulta la presencia del personal en tiempo real para el día de hoy.
+              </p>
+            </div>
+          </div>
+          <ArrowRight className="w-6 h-6 text-white dark:text-black transform group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
+        </button>
+
+      </div>
+
       {/* Footer */}
-      <div className="mt-4 text-xs text-gray-400 dark:text-zinc-600 font-medium text-center font-mono">
+      <div className="mt-8 text-xs text-gray-400 dark:text-zinc-600 font-medium text-center font-mono">
         v1.0.0
       </div>
     </div>
