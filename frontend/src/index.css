@@ -3,13 +3,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary: #3484A5;
+  --color-primary: #0F172A;
   --color-secondary: #2CA792;
   --color-accent: #F0C84F;
 }
 
 .dark {
-  --color-primary: #5BA8C8;
+  --color-primary: #38BDF8;
   --color-secondary: #3FC4AE;
   --color-accent: #F5D76E;
 }
@@ -23,7 +23,7 @@ body {
 
 .dark body,
 body:where(.dark *) {
-  background-color: #111827;
+  background-color: #09090B;
   color: #F9FAFB;
 }
 
@@ -108,7 +108,7 @@ body:where(.dark *) {
 }
 
 .dark .loader-inline {
-  border-bottom: 1px solid rgba(55, 65, 81, 1);
+  border-bottom: 1px solid rgba(39, 39, 42, 1);
 }
 
 .speeder {
@@ -221,7 +221,7 @@ body:where(.dark *) {
 .loader-light .longfazers span { background: #000; }
 
 /* -- Dark Mode Colors (red ship, pink body, white trails) -- */
-.loader-dark { background-color: #111827; }
+.loader-dark { background-color: #09090B; }
 .loader-dark .speeder > span { background: #f51313; }
 .loader-dark .speeder > span > span { background: #ffffff; }
 .loader-dark .base span { border-right: 100px solid #f3cfcf; }
