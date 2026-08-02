@@ -6,11 +6,11 @@ import Modal from '../components/Modal';
 import RequierePermiso from '../components/RequierePermiso';
 import VisitanteHome from '../components/VisitanteHome';
 import { useAuth } from '../context/AuthContext';
-import { Download, Calendar, RefreshCw, PlusCircle, Edit3, ArrowLeft } from 'lucide-react';
+import { Download, Calendar, RefreshCw, PlusCircle, Edit3 } from 'lucide-react';
 
 export default function Asistencias() {
   const { user } = useAuth();
-  const { onOpenLogin, setSidebarVisible } = useOutletContext();
+  const { onOpenLogin } = useOutletContext();
 
   const getTodayString = () => new Date().toISOString().split('T')[0];
 
@@ -19,9 +19,6 @@ export default function Asistencias() {
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().slice(0, 16);
   };
-
-  // Sub-vista para Visitante: 'menu' (tarjetas) o 'tabla' (asistencias de hoy)
-  const [vistaVisitante, setVistaVisitante] = useState('menu');
 
   const [fecha, setFecha] = useState(getTodayString());
   const [asistencias, setAsistencias] = useState([]);
@@ -46,27 +43,13 @@ export default function Asistencias() {
   const [manualError, setManualError] = useState(null);
   const [submittingManual, setSubmittingManual] = useState(false);
 
-  // Controlar visibilidad del sidebar según sub-vista del visitante
-  useEffect(() => {
-    if (!user) {
-      setSidebarVisible(vistaVisitante !== 'menu');
-    } else {
-      setSidebarVisible(true);
-    }
-  }, [user, vistaVisitante, setSidebarVisible]);
-
   const fetchAsistencias = async () => {
     setLoading(true);
     setError(null);
     try {
-      let response;
-      if (!user) {
-        response = await client.get('/api/asistencias/hoy');
-      } else {
-        response = await client.get('/api/asistencias', {
-          params: { fecha },
-        });
-      }
+      const response = await client.get('/api/asistencias', {
+        params: { fecha },
+      });
       setAsistencias(response.data);
     } catch (err) {
       console.error(err);
@@ -79,10 +62,10 @@ export default function Asistencias() {
   };
 
   useEffect(() => {
-    if (user || vistaVisitante === 'tabla') {
+    if (user) {
       fetchAsistencias();
     }
-  }, [fecha, user, vistaVisitante]);
+  }, [fecha, user]);
 
   const openManualModal = async () => {
     setManualError(null);
@@ -160,58 +143,35 @@ export default function Asistencias() {
     }
   };
 
-  // --- Visitante en Menú de Tarjetas ---
-  if (!user && vistaVisitante === 'menu') {
-    return (
-      <VisitanteHome
-        onVerAsistencias={() => setVistaVisitante('tabla')}
-        onOpenLogin={onOpenLogin}
-      />
-    );
+  // --- Vista Unificada para Visitante (Pública, Elegante y Minimalista) ---
+  if (!user) {
+    return <VisitanteHome onOpenLogin={onOpenLogin} />;
   }
 
-  // --- Vista normal: Tabla de Asistencias ---
+  // --- Vista de Gestión (Usuario Autenticado/Admin) ---
   return (
     <div className="space-y-6">
       {/* Encabezado y Acciones */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-zinc-800 pb-5">
         <div>
-          {!user && vistaVisitante === 'tabla' && (
-            <button
-              onClick={() => setVistaVisitante('menu')}
-              className="flex items-center space-x-1 text-xs font-medium text-primary dark:text-white hover:opacity-80 transition-colors mb-2 cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Volver al Menú Principal</span>
-            </button>
-          )}
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            {!user ? 'Asistencias de Hoy' : 'Registro de Asistencias'}
+          <h2 className="font-valve text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            Registro de Asistencias
           </h2>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-            {!user
-              ? 'Presencia del personal en tiempo real para el día de hoy.'
-              : 'Consulte la presencia diaria del personal y exporte reportes.'}
+            Consulte la presencia diaria del personal y exporte reportes.
           </p>
         </div>
 
         <div className="flex items-center space-x-3">
-          {user ? (
-            <div className="flex items-center space-x-2 bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm shadow-2xs">
-              <Calendar className="w-4 h-4 text-gray-400 dark:text-zinc-500" />
-              <input
-                type="date"
-                value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-                className="bg-transparent border-none text-gray-700 dark:text-zinc-200 focus:outline-none cursor-pointer font-medium"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2 bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm shadow-2xs font-medium text-gray-700 dark:text-zinc-200">
-              <Calendar className="w-4 h-4 text-secondary" />
-              <span>Día Actual (Hoy)</span>
-            </div>
-          )}
+          <div className="flex items-center space-x-2 bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm shadow-2xs">
+            <Calendar className="w-4 h-4 text-gray-400 dark:text-zinc-500" />
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className="bg-transparent border-none text-gray-700 dark:text-zinc-200 focus:outline-none cursor-pointer font-medium"
+            />
+          </div>
 
           <button
             onClick={fetchAsistencias}
@@ -251,9 +211,7 @@ export default function Asistencias() {
           <div className="p-12 text-center text-sm text-gray-400 dark:text-zinc-500">Cargando registros...</div>
         ) : asistencias.length === 0 ? (
           <div className="p-12 text-center text-sm text-gray-400 dark:text-zinc-500">
-            {!user
-              ? 'No hay asistencias registradas para el día de hoy.'
-              : `No hay asistencias registradas para la fecha seleccionada (${fecha}).`}
+            No hay asistencias registradas para la fecha seleccionada ({fecha}).
           </div>
         ) : (
           <table className="w-full text-left text-sm border-collapse">
