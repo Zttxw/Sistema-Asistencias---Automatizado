@@ -4,6 +4,7 @@ services:
     container_name: asistencias_mysql
     restart: always
     environment:
+      TZ: America/Lima
       MYSQL_DATABASE: ${MYSQL_DB:-asistencias_db}
       MYSQL_USER: ${MYSQL_USER:-asistencias_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-asistencias_pass}
@@ -25,6 +26,7 @@ services:
     ports:
       - "8001:8000"
     environment:
+      TZ: America/Lima
       MYSQL_SERVER: db
       MYSQL_PORT: 3306
       MYSQL_DB: ${MYSQL_DB:-asistencias_db}
