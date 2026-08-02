@@ -6,8 +6,8 @@ export default function VisitanteHome({ onVerAsistencias }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-12 relative text-gray-900 dark:text-white overflow-x-hidden">
       
-      {/* Banner Superior 100% Ancho con Altura Ampliada (Mucho más grande y vistoso) */}
-      <div className="w-full h-80 sm:h-[420px] relative overflow-hidden border-b border-gray-200 dark:border-zinc-800 shadow-lg flex items-center justify-center text-center px-8">
+      {/* Banner Superior 100% Ancho con Altura Ampliada Extra Grande (h-96 sm:h-[540px]) */}
+      <div className="w-full h-96 sm:h-[540px] relative overflow-hidden border-b border-gray-200 dark:border-zinc-800 shadow-xl flex items-center justify-center text-center px-8 sm:px-12">
         
         {/* Imagen Modo Día (Light Mode) en color original */}
         <img
@@ -27,7 +27,7 @@ export default function VisitanteHome({ onVerAsistencias }) {
         <div className="absolute inset-0 bg-black/45 dark:bg-black/60 pointer-events-none"></div>
 
         {/* Único Elemento DENTRO de la Imagen: El Título en Gran Formato */}
-        <h1 className="relative z-10 font-valve text-4xl sm:text-6xl font-black tracking-wide uppercase text-white drop-shadow-2xl max-w-4xl leading-tight">
+        <h1 className="relative z-10 font-valve text-4xl sm:text-7xl font-black tracking-wide uppercase text-white drop-shadow-2xl max-w-5xl leading-tight">
           Sistema de Control de Asistencias
         </h1>
 
