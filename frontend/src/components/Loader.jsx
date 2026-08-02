@@ -1,12 +1,12 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 
-export default function Loader() {
+export default function Loader({ inline = false }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   return (
-    <div className={`loader-wrapper ${isDark ? 'loader-dark' : 'loader-light'}`}>
+    <div className={`${inline ? 'loader-inline' : 'loader-wrapper'} ${isDark ? 'loader-dark' : 'loader-light'}`}>
       {isDark && (
         <div className="clouds">
           <div className="cloud cloud1"></div>

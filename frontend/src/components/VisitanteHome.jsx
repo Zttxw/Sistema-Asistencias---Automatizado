@@ -1,7 +1,7 @@
 import React from 'react';
-import { CalendarCheck, LogIn } from 'lucide-react';
+import { CalendarCheck, LogIn, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
+import Loader from './Loader';
 
 export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
   const { theme, toggleTheme } = useTheme();
@@ -37,8 +37,13 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
 
+      {/* Hero Header con la animación Speeder */}
+      <div className="w-full max-w-lg mb-8">
+        <Loader inline={true} />
+      </div>
+
       {/* Header */}
-      <div className="text-center mb-10">
+      <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
           Sistema de Control de Asistencias
         </h1>
@@ -94,7 +99,7 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
       </div>
 
       {/* Footer */}
-      <div className="mt-10 text-[11px] text-gray-400 dark:text-gray-500 font-medium">
+      <div className="mt-8 text-[11px] text-gray-400 dark:text-gray-500 font-medium">
         v1.0.0 &bull; OTI
       </div>
     </div>
