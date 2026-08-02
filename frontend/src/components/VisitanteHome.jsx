@@ -31,7 +31,7 @@ export default function VisitanteHome({ onVerAsistencias }) {
           {/* Velo de degradado equilibrado para destacar los elementos internos */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/45 dark:from-black/85 dark:via-black/55 dark:to-black/65 pointer-events-none"></div>
 
-          {/* Contenido DENTRO de la Imagen (Título, Subtítulo y Tarjeta de Asistencias) */}
+          {/* Contenido DENTRO de la Imagen (Título, Subtítulo y Acción 'Asistencias de Hoy') */}
           <div className="relative z-10 max-w-3xl flex flex-col items-center space-y-10 text-white">
             
             {/* Encabezado e Información Institucional */}
@@ -45,25 +45,23 @@ export default function VisitanteHome({ onVerAsistencias }) {
               </p>
             </div>
 
-            {/* Tarjeta Única DENTRO de la Imagen: Asistencias de Hoy */}
+            {/* Acción 'Asistencias de Hoy' Transparente Sin Recuadro de Fondo */}
             <button
               onClick={onVerAsistencias}
-              className="group/btn text-left rounded-2xl p-6 sm:p-7 bg-white/95 text-gray-900 hover:bg-white dark:bg-black/90 dark:text-white dark:hover:bg-black border border-white/40 dark:border-zinc-700 shadow-2xl backdrop-blur-md transition-all cursor-pointer flex items-center justify-between max-w-lg w-full transform hover:-translate-y-1"
+              className="group/btn text-left transition-all cursor-pointer flex items-center space-x-5 px-6 sm:px-8 py-4 sm:py-5 rounded-2xl hover:bg-white/10 backdrop-blur-xs border border-white/30 hover:border-white/60 shadow-lg text-white max-w-lg w-full transform hover:-translate-y-0.5"
             >
-              <div className="flex items-center space-x-5">
-                <div className="w-14 h-14 rounded-2xl bg-primary text-white dark:bg-white dark:text-black flex items-center justify-center shrink-0 shadow-lg">
-                  <CalendarCheck className="w-7 h-7" />
-                </div>
-                <div>
-                  <h3 className="font-valve text-xl font-bold tracking-wide">
-                    Asistencias de Hoy
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-zinc-300 font-medium">
-                    Consulta la presencia del personal en tiempo real para el día de hoy.
-                  </p>
-                </div>
+              <div className="w-14 h-14 rounded-2xl bg-primary text-white dark:bg-white dark:text-black flex items-center justify-center shrink-0 shadow-lg group-hover/btn:scale-105 transition-transform">
+                <CalendarCheck className="w-7 h-7" />
               </div>
-              <ArrowRight className="w-7 h-7 text-primary dark:text-white transform group-hover/btn:translate-x-1 transition-transform shrink-0 ml-3" />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-valve text-xl font-bold tracking-wide text-white drop-shadow-md">
+                  Asistencias de Hoy
+                </h3>
+                <p className="text-xs sm:text-sm text-white/90 font-medium drop-shadow-sm truncate">
+                  Consulta la presencia del personal en tiempo real.
+                </p>
+              </div>
+              <ArrowRight className="w-7 h-7 text-white transform group-hover/btn:translate-x-1 transition-transform shrink-0 ml-3 drop-shadow-md" />
             </button>
 
           </div>
