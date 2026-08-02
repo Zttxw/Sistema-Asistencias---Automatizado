@@ -89,23 +89,22 @@ export default function DispositivosNuevos() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-5">
         <div>
           <div className="flex items-center space-x-2">
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Dispositivos Nuevos</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">Dispositivos Nuevos</h2>
             <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" title="Escáner Activo"></span>
           </div>
-          <p className="text-sm text-gray-500 mt-1">Dispositivos Wi-Fi detectados en la red no asociados a un empleado.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Dispositivos Wi-Fi detectados en la red no asociados a un empleado.</p>
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Selector de minutos */}
-          <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm shadow-2xs">
-            <span className="text-xs text-gray-500 font-medium">Vistos en los últimos:</span>
+          <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm shadow-2xs">
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Vistos en los últimos:</span>
             <select
               value={minutos}
               onChange={(e) => setMinutos(Number(e.target.value))}
-              className="bg-transparent border-none text-gray-800 focus:outline-none cursor-pointer font-medium"
+              className="bg-transparent border-none text-gray-800 dark:text-gray-200 focus:outline-none cursor-pointer font-medium"
             >
               <option value={10}>10 minutos</option>
               <option value={30}>30 minutos</option>
@@ -115,7 +114,7 @@ export default function DispositivosNuevos() {
 
           <button
             onClick={() => fetchDispositivos()}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             title="Recargar"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -129,18 +128,18 @@ export default function DispositivosNuevos() {
       )}
 
       {/* Tabla de Dispositivos */}
-      <div className="bg-white border border-gray-100 rounded-xl shadow-2xs overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-2xs overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-sm text-gray-400">Escaneando red...</div>
+          <div className="p-12 text-center text-sm text-gray-400 dark:text-gray-500">Escaneando red...</div>
         ) : dispositivos.length === 0 ? (
-          <div className="p-12 text-center text-sm text-gray-400 flex flex-col items-center justify-center space-y-2">
-            <Radio className="w-8 h-8 text-gray-300 stroke-1" />
+          <div className="p-12 text-center text-sm text-gray-400 dark:text-gray-500 flex flex-col items-center justify-center space-y-2">
+            <Radio className="w-8 h-8 text-gray-300 dark:text-gray-600 stroke-1" />
             <p>No hay dispositivos nuevos detectados recientemente.</p>
           </div>
         ) : (
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="bg-gray-50/60 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <tr className="bg-gray-50/60 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <th className="px-6 py-4">Dirección MAC</th>
                 <th className="px-6 py-4">Fabricante (OUI)</th>
                 <th className="px-6 py-4">Primera Vez Visto</th>
@@ -149,17 +148,17 @@ export default function DispositivosNuevos() {
                 <th className="px-6 py-4 text-right">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {dispositivos.map((item, idx) => (
-                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 font-mono text-xs font-semibold text-gray-900 flex items-center space-x-2">
+                <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td className="px-6 py-4 font-mono text-xs font-semibold text-gray-900 dark:text-gray-50 flex items-center space-x-2">
                     <span className="w-2 h-2 rounded-full bg-accent shrink-0"></span>
                     <span>{item.mac}</span>
                   </td>
-                  <td className="px-6 py-4 text-gray-600 font-medium">{item.fabricante || 'Desconocido'}</td>
-                  <td className="px-6 py-4 text-gray-500 font-mono text-xs">{formatDateTime(item.primera_vez_visto)}</td>
-                  <td className="px-6 py-4 text-gray-500 font-mono text-xs">{formatDateTime(item.ultima_vez_visto)}</td>
-                  <td className="px-6 py-4 text-gray-700 font-mono text-xs font-semibold">{item.veces_visto}</td>
+                  <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">{item.fabricante || 'Desconocido'}</td>
+                  <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono text-xs">{formatDateTime(item.primera_vez_visto)}</td>
+                  <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono text-xs">{formatDateTime(item.ultima_vez_visto)}</td>
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-200 font-mono text-xs font-semibold">{item.veces_visto}</td>
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => openRegisterModal(item.mac)}
@@ -184,65 +183,29 @@ export default function DispositivosNuevos() {
       >
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Dirección MAC (Detección en Vivo)</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección MAC (Detección en Vivo)</label>
             <input
               type="text"
               readOnly
               value={selectedMac}
-              className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-600 font-mono cursor-not-allowed uppercase font-semibold"
+              className="w-full border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-300 font-mono cursor-not-allowed uppercase font-semibold"
             />
           </div>
-
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Nombre Completo del Empleado *</label>
-            <input
-              type="text"
-              required
-              value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-              placeholder="Ej. Jeanpier Merma"
-            />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Completo del Empleado *</label>
+            <input type="text" required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary" placeholder="Ej. Jeanpier Merma" />
           </div>
-
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">N° Documento *</label>
-            <input
-              type="text"
-              required
-              value={formData.documento}
-              onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary font-mono"
-              placeholder="12345678"
-            />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">N° Documento *</label>
+            <input type="text" required value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary font-mono" placeholder="12345678" />
           </div>
-
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Departamento</label>
-            <input
-              type="text"
-              value={formData.departamento}
-              onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-              placeholder="Ej. TI"
-            />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Departamento</label>
+            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary" placeholder="Ej. TI" />
           </div>
-
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => setIsRegisterModalOpen(false)}
-              className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {submitting ? 'Registrando...' : 'Asignar a Empleado'}
-            </button>
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" onClick={() => setIsRegisterModalOpen(false)} className="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">Cancelar</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Registrando...' : 'Asignar a Empleado'}</button>
           </div>
         </form>
       </Modal>

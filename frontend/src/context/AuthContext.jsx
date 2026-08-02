@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import client from '../api/client';
+import Loader from '../components/Loader';
 
 const AuthContext = createContext(null);
 
@@ -87,6 +88,11 @@ export function AuthProvider({ children }) {
     if (!user.permisos || !Array.isArray(user.permisos)) return false;
     return user.permisos.includes(codigoPermiso);
   };
+
+  // Mostrar Loader durante la inicialización de sesión
+  if (loading) {
+    return <Loader />;
+  }
 
   return (
     <AuthContext.Provider

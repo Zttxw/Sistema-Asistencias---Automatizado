@@ -61,10 +61,8 @@ export default function Asistencias() {
     try {
       let response;
       if (!user) {
-        // Modo Visitante (Sin sesión): endpoint público de hoy
         response = await client.get('/api/asistencias/hoy');
       } else {
-        // Modo Autenticado (Admin / Empleado): endpoint protegido con fecha seleccionable
         response = await client.get('/api/asistencias', {
           params: { fecha },
         });
@@ -81,7 +79,6 @@ export default function Asistencias() {
   };
 
   useEffect(() => {
-    // Cargar asistencias al cambiar a sub-vista 'tabla' (Visitante) o siempre (Autenticado)
     if (user || vistaVisitante === 'tabla') {
       fetchAsistencias();
     }
@@ -163,7 +160,7 @@ export default function Asistencias() {
     }
   };
 
-  // --- Visitante en Menú de Tarjetas (pantalla completa, sin sidebar) ---
+  // --- Visitante en Menú de Tarjetas ---
   if (!user && vistaVisitante === 'menu') {
     return (
       <VisitanteHome
@@ -173,13 +170,12 @@ export default function Asistencias() {
     );
   }
 
-  // --- Vista normal: Tabla de Asistencias (con sidebar visible) ---
+  // --- Vista normal: Tabla de Asistencias ---
   return (
     <div className="space-y-6">
       {/* Encabezado y Acciones */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-5">
         <div>
-          {/* Botón Volver al Menú — solo Visitante en sub-vista 'tabla' */}
           {!user && vistaVisitante === 'tabla' && (
             <button
               onClick={() => setVistaVisitante('menu')}
@@ -189,10 +185,10 @@ export default function Asistencias() {
               <span>Volver al Menú Principal</span>
             </button>
           )}
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
             {!user ? 'Asistencias de Hoy' : 'Registro de Asistencias'}
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {!user
               ? 'Presencia del personal en tiempo real para el día de hoy.'
               : 'Consulte la presencia diaria del personal y exporte reportes.'}
@@ -200,19 +196,18 @@ export default function Asistencias() {
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Selector de fecha (Solo para usuarios autenticados) vs Badge de Hoy (Modo Visitante) */}
           {user ? (
-            <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm shadow-2xs">
-              <Calendar className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm shadow-2xs">
+              <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
               <input
                 type="date"
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
-                className="bg-transparent border-none text-gray-700 focus:outline-none cursor-pointer font-medium"
+                className="bg-transparent border-none text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer font-medium"
               />
             </div>
           ) : (
-            <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm shadow-2xs font-medium text-gray-700">
+            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm shadow-2xs font-medium text-gray-700 dark:text-gray-200">
               <Calendar className="w-4 h-4 text-primary" />
               <span>Día Actual (Hoy)</span>
             </div>
@@ -220,13 +215,12 @@ export default function Asistencias() {
 
           <button
             onClick={fetchAsistencias}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             title="Recargar datos"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
-          {/* Botón Registrar Manual */}
           <RequierePermiso codigo="asistencias.registrar_manual">
             <button
               onClick={openManualModal}
@@ -237,7 +231,6 @@ export default function Asistencias() {
             </button>
           </RequierePermiso>
 
-          {/* Botón Exportar a Excel */}
           <RequierePermiso codigo="asistencias.exportar">
             <button
               onClick={() => setIsExportModalOpen(true)}
@@ -253,11 +246,11 @@ export default function Asistencias() {
       <AlertMessage message={error} onClose={() => setError(null)} />
 
       {/* Tabla de Asistencias */}
-      <div className="bg-white border border-gray-100 rounded-xl shadow-2xs overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-2xs overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-sm text-gray-400">Cargando registros...</div>
+          <div className="p-12 text-center text-sm text-gray-400 dark:text-gray-500">Cargando registros...</div>
         ) : asistencias.length === 0 ? (
-          <div className="p-12 text-center text-sm text-gray-400">
+          <div className="p-12 text-center text-sm text-gray-400 dark:text-gray-500">
             {!user
               ? 'No hay asistencias registradas para el día de hoy.'
               : `No hay asistencias registradas para la fecha seleccionada (${fecha}).`}
@@ -265,7 +258,7 @@ export default function Asistencias() {
         ) : (
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="bg-gray-50/60 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <tr className="bg-gray-50/60 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <th className="px-6 py-4">Empleado</th>
                 <th className="px-6 py-4">Departamento</th>
                 <th className="px-6 py-4">Hora Entrada</th>
@@ -273,14 +266,14 @@ export default function Asistencias() {
                 <th className="px-6 py-4">Estado</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {asistencias.map((item, idx) => {
                 const isPresente = !item.hora_salida;
                 return (
-                  <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{item.empleado}</td>
-                    <td className="px-6 py-4 text-gray-600">{item.departamento || '-'}</td>
-                    <td className="px-6 py-4 text-gray-600 font-mono text-xs">
+                  <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-50">{item.empleado}</td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{item.departamento || '-'}</td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-mono text-xs">
                       <span>{item.hora_entrada || '-'}</span>
                       {item.origen_entrada === 'manual' && (
                         <Edit3
@@ -289,7 +282,7 @@ export default function Asistencias() {
                         />
                       )}
                     </td>
-                    <td className="px-6 py-4 text-gray-600 font-mono text-xs">
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-mono text-xs">
                       <span>{item.hora_salida || '-'}</span>
                       {item.origen_salida === 'manual' && (
                         <Edit3
@@ -304,7 +297,7 @@ export default function Asistencias() {
                           Presente
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                           Completo
                         </span>
                       )}
@@ -327,12 +320,12 @@ export default function Asistencias() {
           <AlertMessage message={manualError} onClose={() => setManualError(null)} />
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Empleado *</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Empleado *</label>
             <select
               required
               value={manualForm.empleado_id}
               onChange={(e) => setManualForm({ ...manualForm, empleado_id: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary"
             >
               {empleadosActivos.map((emp) => (
                 <option key={emp.id} value={emp.id}>
@@ -344,11 +337,11 @@ export default function Asistencias() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Tipo de Registro *</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Registro *</label>
               <select
                 value={manualForm.tipo}
                 onChange={(e) => setManualForm({ ...manualForm, tipo: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary"
               >
                 <option value="entrada">Entrada</option>
                 <option value="salida">Salida</option>
@@ -356,33 +349,33 @@ export default function Asistencias() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Fecha y Hora *</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha y Hora *</label>
               <input
                 type="datetime-local"
                 required
                 value={manualForm.timestamp}
                 onChange={(e) => setManualForm({ ...manualForm, timestamp: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary font-mono"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Motivo (Opcional)</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Motivo (Opcional)</label>
             <textarea
               rows={2}
               value={manualForm.motivo}
               onChange={(e) => setManualForm({ ...manualForm, motivo: e.target.value })}
               placeholder="Ej. Celular sin batería, olvidó marcar, etc."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary"
             />
           </div>
 
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
             <button
               type="button"
               onClick={() => setIsManualModalOpen(false)}
-              className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              className="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -404,36 +397,36 @@ export default function Asistencias() {
         title="Exportar Reporte a Excel"
       >
         <form onSubmit={handleExport} className="space-y-4">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             Seleccione el rango de fechas opcional. Si se dejan vacías, se exportarán las asistencias del mes actual.
           </p>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Fecha Inicio</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Inicio</label>
               <input
                 type="date"
                 value={exportInicio}
                 onChange={(e) => setExportInicio(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Fecha Fin</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Fin</label>
               <input
                 type="date"
                 value={exportFin}
                 onChange={(e) => setExportFin(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
             <button
               type="button"
               onClick={() => setIsExportModalOpen(false)}
-              className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              className="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               Cancelar
             </button>

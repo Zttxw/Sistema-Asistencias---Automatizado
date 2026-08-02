@@ -37,44 +37,44 @@ export default function LoginModal({ isOpen, onClose }) {
         <AlertMessage message={error} onClose={() => setError(null)} />
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
             Correo Electrónico *
           </label>
           <div className="relative">
-            <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+            <Mail className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-2.5" />
             <input
               type="email"
               required
               placeholder="ejemplo@sistema.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-primary"
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
             Contraseña *
           </label>
           <div className="relative">
-            <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+            <Lock className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-2.5" />
             <input
               type="password"
               required
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-primary"
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+            className="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
           >
             Cancelar
           </button>
