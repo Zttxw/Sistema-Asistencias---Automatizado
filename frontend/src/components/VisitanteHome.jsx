@@ -31,8 +31,8 @@ export default function VisitanteHome({ onVerAsistencias }) {
           Sistema de Control de Asistencias
         </h1>
 
-        {/* Switch de Tema Flotante sin recuadro gris envolvente */}
-        <div className="absolute top-6 right-6 z-20">
+        {/* Switch de Tema Flotante con margen interno adecuado */}
+        <div className="absolute top-6 right-8 sm:right-14 z-20">
           <ThemeToggle />
         </div>
       </div>
