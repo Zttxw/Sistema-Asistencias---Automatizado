@@ -179,7 +179,7 @@ export default function Asistencias() {
           {!user && vistaVisitante === 'tabla' && (
             <button
               onClick={() => setVistaVisitante('menu')}
-              className="flex items-center space-x-1 text-xs font-medium text-black dark:text-white hover:opacity-80 transition-colors mb-2 cursor-pointer"
+              className="flex items-center space-x-1 text-xs font-medium text-primary dark:text-white hover:opacity-80 transition-colors mb-2 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Volver al Menú Principal</span>
@@ -234,7 +234,7 @@ export default function Asistencias() {
           <RequierePermiso codigo="asistencias.exportar">
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
             >
               <Download className="w-4 h-4" />
               <span>Exportar a Excel</span>
@@ -325,7 +325,7 @@ export default function Asistencias() {
               required
               value={manualForm.empleado_id}
               onChange={(e) => setManualForm({ ...manualForm, empleado_id: e.target.value })}
-              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
             >
               {empleadosActivos.map((emp) => (
                 <option key={emp.id} value={emp.id}>
@@ -341,7 +341,7 @@ export default function Asistencias() {
               <select
                 value={manualForm.tipo}
                 onChange={(e) => setManualForm({ ...manualForm, tipo: e.target.value })}
-                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
               >
                 <option value="entrada">Entrada</option>
                 <option value="salida">Salida</option>
@@ -355,7 +355,7 @@ export default function Asistencias() {
                 required
                 value={manualForm.timestamp}
                 onChange={(e) => setManualForm({ ...manualForm, timestamp: e.target.value })}
-                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono"
+                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono"
               />
             </div>
           </div>
@@ -367,7 +367,7 @@ export default function Asistencias() {
               value={manualForm.motivo}
               onChange={(e) => setManualForm({ ...manualForm, motivo: e.target.value })}
               placeholder="Ej. Celular sin batería, olvidó marcar, etc."
-              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-black dark:focus:border-white"
+              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-primary dark:focus:border-white"
             />
           </div>
 
@@ -382,7 +382,7 @@ export default function Asistencias() {
             <button
               type="submit"
               disabled={submittingManual}
-              className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
             >
               {submittingManual ? 'Registrando...' : 'Registrar'}
             </button>
@@ -408,7 +408,7 @@ export default function Asistencias() {
                 type="date"
                 value={exportInicio}
                 onChange={(e) => setExportInicio(e.target.value)}
-                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
               />
             </div>
             <div>
@@ -417,7 +417,7 @@ export default function Asistencias() {
                 type="date"
                 value={exportFin}
                 onChange={(e) => setExportFin(e.target.value)}
-                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
               />
             </div>
           </div>
@@ -433,7 +433,7 @@ export default function Asistencias() {
             <button
               type="submit"
               disabled={exporting}
-              className="flex items-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
               <span>{exporting ? 'Generando...' : 'Descargar Excel'}</span>

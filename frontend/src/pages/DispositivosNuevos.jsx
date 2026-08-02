@@ -162,7 +162,7 @@ export default function DispositivosNuevos() {
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => openRegisterModal(item.mac)}
-                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-black/10 dark:bg-white/10 text-black dark:text-white text-xs font-semibold rounded-lg hover:bg-black/20 dark:hover:bg-white/20 transition-colors cursor-pointer"
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary/20 dark:bg-white/10 dark:text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
                       <span>Registrar</span>
@@ -193,19 +193,19 @@ export default function DispositivosNuevos() {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Nombre Completo del Empleado *</label>
-            <input type="text" required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white" placeholder="Ej. Jeanpier Merma" />
+            <input type="text" required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. Jeanpier Merma" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">N° Documento *</label>
-            <input type="text" required value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono" placeholder="12345678" />
+            <input type="text" required value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono" placeholder="12345678" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Departamento</label>
-            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white" placeholder="Ej. TI" />
+            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. TI" />
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button type="button" onClick={() => setIsRegisterModalOpen(false)} className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer">Cancelar</button>
-            <button type="submit" disabled={submitting} className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Registrando...' : 'Asignar a Empleado'}</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Registrando...' : 'Asignar a Empleado'}</button>
           </div>
         </form>
       </Modal>

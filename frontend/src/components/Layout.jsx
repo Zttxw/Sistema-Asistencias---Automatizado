@@ -27,8 +27,8 @@ export default function Layout() {
       {!hideSidebar && (
         <aside className="w-64 bg-white dark:bg-black border-r border-gray-100 dark:border-zinc-800 flex flex-col shrink-0 fixed inset-y-0 left-0 z-30">
           <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-black dark:text-white" />
+            <div className="w-9 h-9 rounded-lg bg-primary/10 dark:bg-white/10 flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-primary dark:text-white" />
             </div>
             <div>
               <h1 className="text-base font-semibold text-gray-900 dark:text-white leading-tight">Sistema de Asistencias</h1>
@@ -47,7 +47,7 @@ export default function Layout() {
                   end={item.to === '/'}
                   className={({ isActive }) =>
                     `flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
-                      ? 'bg-black text-white dark:bg-white dark:text-black font-semibold'
+                      ? 'bg-primary/10 text-primary font-semibold dark:bg-white dark:text-black'
                       : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-white'
                     }`
                   }
@@ -79,7 +79,7 @@ export default function Layout() {
                 </div>
                 <button
                   onClick={() => setIsLoginOpen(true)}
-                  className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-black dark:bg-white text-white dark:text-black text-xs font-semibold rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
+                  className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 dark:bg-white dark:text-black dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
                 >
                   <LogIn className="w-4 h-4" />
                   <span>Iniciar sesión</span>

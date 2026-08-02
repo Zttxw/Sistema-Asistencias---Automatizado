@@ -189,7 +189,7 @@ export default function Empleados() {
 
           <button
             onClick={openCreateModal}
-            className="flex items-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
+            className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>Nuevo Empleado</span>
@@ -248,7 +248,7 @@ export default function Empleados() {
                     </button>
                     <button
                       onClick={() => openEditModal(emp)}
-                      className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-white hover:bg-black dark:hover:bg-zinc-800 rounded-md transition-colors cursor-pointer"
+                      className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-primary hover:bg-primary/5 dark:hover:bg-zinc-800 rounded-md transition-colors cursor-pointer"
                       title="Editar"
                     >
                       <Pencil className="w-4 h-4" />
@@ -275,25 +275,25 @@ export default function Empleados() {
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Nombre Completo *</label>
-            <input type="text" required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white" placeholder="Ej. Jeanpier Merma" />
+            <input type="text" required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. Jeanpier Merma" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">N° Documento *</label>
-              <input type="text" required value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono" placeholder="12345678" />
+              <input type="text" required value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono" placeholder="12345678" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Dirección MAC *</label>
-              <input type="text" required value={formData.mac} onChange={(e) => setFormData({ ...formData, mac: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono uppercase" placeholder="68:58:A0:DB:7D:4D" />
+              <input type="text" required value={formData.mac} onChange={(e) => setFormData({ ...formData, mac: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono uppercase" placeholder="68:58:A0:DB:7D:4D" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Departamento</label>
-            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white" placeholder="Ej. TI / OTI" />
+            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. TI / OTI" />
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer">Cancelar</button>
-            <button type="submit" disabled={submitting} className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Guardando...' : 'Registrar Empleado'}</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Guardando...' : 'Registrar Empleado'}</button>
           </div>
         </form>
       </Modal>
@@ -303,35 +303,35 @@ export default function Empleados() {
         <form onSubmit={handleEdit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Nombre Completo</label>
-            <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white" />
+            <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">N° Documento</label>
-              <input type="text" value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono" />
+              <input type="text" value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Dirección MAC</label>
-              <input type="text" value={formData.mac} onChange={(e) => setFormData({ ...formData, mac: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono uppercase" />
+              <input type="text" value={formData.mac} onChange={(e) => setFormData({ ...formData, mac: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono uppercase" />
             </div>
           </div>
           {isMacChanged && (
             <div className="p-3 bg-amber-50/50 dark:bg-zinc-900 border border-amber-200/80 dark:border-zinc-800 rounded-lg space-y-1">
               <label className="block text-xs font-semibold text-amber-800 dark:text-amber-300">Motivo del cambio de MAC (Opcional)</label>
-              <textarea rows={2} value={formData.motivo_cambio_mac} onChange={(e) => setFormData({ ...formData, motivo_cambio_mac: e.target.value })} placeholder="Ej. Celular perdido, celular reemplazado por garantía, etc." className="w-full border border-amber-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white" />
+              <textarea rows={2} value={formData.motivo_cambio_mac} onChange={(e) => setFormData({ ...formData, motivo_cambio_mac: e.target.value })} placeholder="Ej. Celular perdido, celular reemplazado por garantía, etc." className="w-full border border-amber-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" />
             </div>
           )}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Departamento</label>
-            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white" />
+            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" />
           </div>
           <div className="flex items-center space-x-2 pt-2">
-            <input type="checkbox" id="activo-check" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} className="rounded border-gray-300 dark:border-zinc-800 text-black dark:text-white focus:ring-black dark:focus:ring-white cursor-pointer" />
+            <input type="checkbox" id="activo-check" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} className="rounded border-gray-300 dark:border-zinc-800 text-primary dark:text-white focus:ring-primary dark:focus:ring-white cursor-pointer" />
             <label htmlFor="activo-check" className="text-sm font-medium text-gray-700 dark:text-zinc-300 cursor-pointer">Empleado Activo</label>
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer">Cancelar</button>
-            <button type="submit" disabled={submitting} className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Guardando...' : 'Guardar Cambios'}</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Guardando...' : 'Guardar Cambios'}</button>
           </div>
         </form>
       </Modal>
@@ -370,7 +370,7 @@ export default function Empleados() {
                       <span>
                         <span className="text-gray-500 dark:text-zinc-500 uppercase">{item.mac_anterior}</span>
                         <span className="mx-2 text-gray-400 dark:text-zinc-600 font-sans">→</span>
-                        <span className="text-black dark:text-white font-bold uppercase">{item.mac_nueva}</span>
+                        <span className="text-primary dark:text-white font-bold uppercase">{item.mac_nueva}</span>
                       </span>
                     ) : (
                       <span className="text-secondary font-bold">

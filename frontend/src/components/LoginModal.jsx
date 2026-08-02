@@ -48,7 +48,7 @@ export default function LoginModal({ isOpen, onClose }) {
               placeholder="ejemplo@sistema.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-black dark:focus:border-white"
+              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-primary dark:focus:border-white"
             />
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function LoginModal({ isOpen, onClose }) {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-black dark:focus:border-white"
+              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-primary dark:focus:border-white"
             />
           </div>
         </div>
@@ -81,7 +81,7 @@ export default function LoginModal({ isOpen, onClose }) {
           <button
             type="submit"
             disabled={submitting}
-            className="flex items-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
+            className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
           >
             <LogIn className="w-4 h-4" />
             <span>{submitting ? 'Ingresando...' : 'Iniciar sesión'}</span>

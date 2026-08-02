@@ -190,7 +190,7 @@ export default function Informes() {
                 <select
                   value={selectedEmpleadoId}
                   onChange={(e) => setSelectedEmpleadoId(e.target.value)}
-                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
                 >
                   {empleados.map((emp) => (
                     <option key={emp.id} value={emp.id}>
@@ -212,7 +212,7 @@ export default function Informes() {
                   required
                   value={fechaInicio}
                   onChange={(e) => setFechaInicio(e.target.value)}
-                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono"
+                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono"
                 />
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function Informes() {
                   max={getTodayString()}
                   value={fechaFin}
                   onChange={(e) => setFechaFin(e.target.value)}
-                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-black dark:focus:border-white font-mono"
+                  className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono"
                 />
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function Informes() {
               <button
                 type="submit"
                 disabled={generating}
-                className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-semibold rounded-lg hover:bg-gray-900 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-semibold rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
                 <span>{generating ? 'Generando PDF...' : 'Generar PDF'}</span>
