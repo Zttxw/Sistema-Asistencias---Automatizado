@@ -12,23 +12,23 @@ export default function VisitanteHome({ onVerAsistencias }) {
 
       {/* Contenedor Principal Ampliado Extra Grande */}
       <div className="w-full max-w-5xl my-auto py-4">
-        <div className="relative w-full rounded-3xl overflow-hidden border-2 border-gray-200 dark:border-zinc-800 shadow-2xl min-h-[560px] sm:min-h-[640px] flex flex-col items-center justify-center p-8 sm:p-16 text-center group">
+        <div className="relative w-full rounded-3xl overflow-hidden border-2 border-gray-200 dark:border-zinc-800 shadow-2xl min-h-[560px] sm:min-h-[640px] flex flex-col items-center justify-center p-8 sm:p-16 text-center">
           
-          {/* Imagen Modo Día (Light Mode) en color original como fondo del contenedor */}
+          {/* Imagen Modo Día (Light Mode) estática en color original */}
           <img
             src="/imagen-mododia.jpg"
             alt="Sistema de Asistencias - Modo Día"
-            className="absolute inset-0 w-full h-full object-cover object-center dark:hidden group-hover:scale-105 transition-transform duration-700"
+            className="absolute inset-0 w-full h-full object-cover object-center dark:hidden"
           />
 
-          {/* Imagen Modo Noche (Dark Mode) en color original como fondo del contenedor */}
+          {/* Imagen Modo Noche (Dark Mode) estática en color original */}
           <img
             src="/imagen-modo-noche.jpeg"
             alt="Sistema de Asistencias - Modo Noche"
-            className="absolute inset-0 w-full h-full object-cover object-center hidden dark:block group-hover:scale-105 transition-transform duration-700"
+            className="absolute inset-0 w-full h-full object-cover object-center hidden dark:block"
           />
 
-          {/* Velo de degradado equilibrado para destacar los elementos internos sin opacar la imagen */}
+          {/* Velo de degradado equilibrado para destacar los elementos internos */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/45 dark:from-black/85 dark:via-black/55 dark:to-black/65 pointer-events-none"></div>
 
           {/* Contenido DENTRO de la Imagen (Título, Subtítulo y Tarjeta de Asistencias) */}
