@@ -11,6 +11,7 @@ class Empleado(Base):
     documento = Column(String(20), unique=True, index=True, nullable=False)
     mac = Column(String(17), unique=True, index=True, nullable=False)
     departamento = Column(String(50), nullable=True)
+    horas_meta = Column(Integer, nullable=True, default=None)
     activo = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
 

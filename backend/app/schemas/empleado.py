@@ -8,6 +8,7 @@ class EmpleadoBase(BaseModel):
     documento: str = Field(..., example="72849102")
     mac: str = Field(..., example="68:58:A0:DB:7D:4D")
     departamento: Optional[str] = Field(None, example="OTI")
+    horas_meta: Optional[int] = Field(None, example=640)
     activo: bool = True
 
     @field_validator('mac')
@@ -25,6 +26,7 @@ class EmpleadoUpdate(BaseModel):
     documento: Optional[str] = None
     mac: Optional[str] = None
     departamento: Optional[str] = None
+    horas_meta: Optional[int] = None
     activo: Optional[bool] = None
     motivo_cambio_mac: Optional[str] = None
 

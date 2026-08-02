@@ -35,6 +35,7 @@ def create_empleado(db: Session, empleado_in: EmpleadoCreate) -> Empleado:
         documento=empleado_in.documento,
         mac=mac_clean,
         departamento=empleado_in.departamento,
+        horas_meta=empleado_in.horas_meta,
         activo=empleado_in.activo
     )
     db.add(db_empleado)
@@ -96,6 +97,8 @@ def update_empleado(db: Session, db_empleado: Empleado, empleado_in: EmpleadoUpd
         db_empleado.nombre = empleado_in.nombre
     if empleado_in.departamento is not None:
         db_empleado.departamento = empleado_in.departamento
+    if empleado_in.horas_meta is not None:
+        db_empleado.horas_meta = empleado_in.horas_meta
     if empleado_in.activo is not None:
         db_empleado.activo = empleado_in.activo
 

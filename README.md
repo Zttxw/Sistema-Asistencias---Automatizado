@@ -1,6 +1,6 @@
 # Sistema de Asistencias Automáticas (Escáner Wi-Fi / ARP + Backend FastAPI + RBAC JWT + Frontend React + Docker)
 
-El **Sistema de Asistencias** es una solución integral multi-componente diseñada para registrar la asistencia de los empleados de forma automatizada mediante la detección de sus dispositivos móviles/laptops conectados a la red local Wi-Fi de la oficina, así como soporte para registro manual de asistencias, auditoría de direcciones MAC y un **Sistema de Autenticación y Autorización Basado en Roles (RBAC)** escalable.
+El **Sistema de Asistencias** es una solución integral multi-componente diseñada para registrar la asistencia de los empleados de forma automatizada mediante la detección de sus dispositivos móviles/laptops conectados a la red local Wi-Fi de la oficina, así como soporte para registro manual de asistencias, auditoría de direcciones MAC, informes semanales de prácticas con hoja membretada oficial y un **Sistema de Autenticación y Autorización Basado en Roles (RBAC)** escalable.
 
 ---
 
@@ -25,12 +25,12 @@ El sistema implementa seguridad mediante **Bearer JWT Access Tokens (expiración
 | :--- | :--- |
 | `empleados.ver` | Ver lista y detalles del catálogo de empleados |
 | `empleados.crear` | Registrar nuevos empleados |
-| `empleados.editar` | Editar datos y dirección MAC de empleados |
+| `empleados.editar` | Editar datos, meta de horas (`horas_meta`) y dirección MAC de empleados |
 | `empleados.eliminar` | Desactivar empleados (soft-delete) |
 | `asistencias.ver` | Ver reporte general de asistencias de todos los empleados |
 | `asistencias.ver_propia` | Ver únicamente su propia asistencia como empleado vinculado |
 | `asistencias.registrar_manual` | Registrar entrada/salida manual de asistencias |
-| `asistencias.exportar` | Exportar reportes de asistencia a archivos Excel (`.xlsx`) |
+| `asistencias.exportar` | Exportar reportes de asistencia a Excel y generar informes PDF semanales de prácticas |
 | `dispositivos.ver` | Ver lista de dispositivos no registrados detectados por el agente |
 | `dispositivos.registrar` | Convertir un dispositivo no registrado en empleado |
 | `roles.gestionar` | Crear, editar y eliminar roles dinámicos y consultar catálogo de permisos |
@@ -38,8 +38,9 @@ El sistema implementa seguridad mediante **Bearer JWT Access Tokens (expiración
 
 ### Roles Iniciales de Semilla (Seed Initial Data)
 1. **Admin**: Posee automáticamente **todos los permisos** del sistema.
-2. **Empleado**: Asignado al permiso `asistencias.ver_propia` (aislamiento estricto para ver solo sus registros).
-3. **Invitado**: Asignado a `asistencias.ver`, `empleados.ver`, `dispositivos.ver` (modo lectura sin acciones).
+2. **Jefe de Oficina**: Asignado a `asistencias.ver`, `asistencias.exportar`, `empleados.ver`, `empleados.crear`, `empleados.editar`, `informes.generar`, `informes.aprobar`.
+3. **Empleado**: Asignado al permiso `asistencias.ver_propia` (aislamiento estricto para ver solo sus registros).
+4. **Invitado**: Asignado a `asistencias.ver`, `empleados.ver`, `dispositivos.ver` (modo lectura sin acciones).
 
 ---
 
@@ -64,16 +65,15 @@ El sistema implementa seguridad mediante **Bearer JWT Access Tokens (expiración
 - **`PUT /api/usuarios/{id}`**: Modifica credenciales, rol o estado activo (`usuarios.gestionar`).
 - **`DELETE /api/usuarios/{id}`**: Desactiva un usuario (`usuarios.gestionar`).
 
-### 4. Empleados, Asistencias y Dispositivos (Endpoints Protegidos)
-- **`GET /api/empleados`**: Requiere `empleados.ver`.
-- **`POST /api/empleados`**: Requiere `empleados.crear`.
-- **`PUT /api/empleados/{id}`**: Requiere `empleados.editar`.
+### 4. Empleados, Asistencias e Informes PDF (`/api/empleados` & `/api/asistencias`)
+- **`GET /api/empleados`**: Lista empleados con `horas_meta`. Requiere `empleados.ver`.
+- **`POST /api/empleados`**: Crea empleado permitiendo especificar `horas_meta`. Requiere `empleados.crear`.
+- **`PUT /api/empleados/{id}`**: Edita datos o `horas_meta` del empleado. Requiere `empleados.editar`.
 - **`DELETE /api/empleados/{id}`**: Requiere `empleados.eliminar`.
+- **`GET /api/empleados/{id}/informe_pdf?fecha_inicio=YYYY-MM-DD&fecha_fin=YYYY-MM-DD`**: Genera y descarga el informe PDF de prácticas de asistencia agrupado por semanas calendario (lunes a domingo) con hoja membretada y espacio para firma física externa. Parámetros `fecha_inicio` y `fecha_fin` obligatorios. Requiere `asistencias.exportar`.
 - **`GET /api/asistencias`**: Requiere `asistencias.ver` o `asistencias.ver_propia`.
 - **`POST /api/asistencia/manual`**: Requiere `asistencias.registrar_manual`.
-- **`GET /api/asistencias/export`**: Requiere `asistencias.exportar`.
-- **`GET /api/dispositivos/no_registrados`**: Requiere `dispositivos.ver`.
-- **`POST /api/deteccion`**: **PÚBLICO** (consumido por el agente sensor de la oficina).
+- **`GET /api/asistencias/export`**: Exportar reporte a Excel (`.xlsx`). Requiere `asistencias.exportar`.
 
 ---
 
@@ -83,24 +83,27 @@ El sistema implementa seguridad mediante **Bearer JWT Access Tokens (expiración
 ```bash
 curl -X POST http://localhost:8001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@sistema.com", "password": "<TU_ADMIN_PASSWORD>"}'
+  -d '{"email": "admin@sistema.com", "password": "admin123"}'
 ```
 
-### 2. Consultar /api/auth/me usando Bearer Token
+### 2. Descargar Informe PDF de Prácticas por Semanas (Guardar con `-o`)
 ```bash
-curl http://localhost:8001/api/auth/me \
-  -H "Authorization: Bearer <TU_ACCESS_TOKEN>"
+curl -X GET "http://localhost:8001/api/empleados/1/informe_pdf?fecha_inicio=2026-11-16&fecha_fin=2026-11-22" \
+  -H "Authorization: Bearer <TU_ACCESS_TOKEN>" \
+  -o informe_practicas_empleado1.pdf
 ```
 
-### 3. Crear un Rol Personalizado ("Supervisor")
+### 3. Crear Empleado con Meta de Horas (`horas_meta`)
 ```bash
-curl -X POST http://localhost:8001/api/roles \
-  -H "Authorization: Bearer <ADMIN_ACCESS_TOKEN>" \
+curl -X POST http://localhost:8001/api/empleados \
+  -H "Authorization: Bearer <TU_ACCESS_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
-    "nombre": "Supervisor",
-    "descripcion": "Supervisa asistencias y registra faltas manuales",
-    "permisos": ["asistencias.ver", "asistencias.registrar_manual", "asistencias.exportar"]
+    "nombre": "Practicante Ejemplo",
+    "documento": "77889900",
+    "mac": "11:22:33:44:55:66",
+    "departamento": "OTI",
+    "horas_meta": 640
   }'
 ```
 

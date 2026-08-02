@@ -1,11 +1,13 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.empleado import EmpleadoCreate, EmpleadoUpdate, EmpleadoResponse
 from app.schemas.historial_mac import HistorialMacItem
 from app import crud
-from app.core.deps import require_permission
+from app.core.deps import require_permission, get_current_user
+from app.models.usuario import Usuario
 
 router = APIRouter(prefix="/api/empleados", tags=["empleados"])
 
@@ -38,6 +40,46 @@ def crear_empleado(empleado_in: EmpleadoCreate, db: Session = Depends(get_db)):
             detail="Ya existe un empleado registrado con esa dirección MAC"
         )
     return crud.crud_empleado.create_empleado(db, empleado_in)
+
+
+@router.get("/{empleado_id}/informe_pdf", dependencies=[Depends(require_permission("asistencias.exportar"))])
+def descargar_informe_pdf_empleado(
+    empleado_id: int,
+    fecha_inicio: date,
+    fecha_fin: date,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Genera y descarga el informe PDF de asistencias del practicante/empleado agrupado por semanas.
+    Requiere los parámetros obligatorios 'fecha_inicio' y 'fecha_fin' (YYYY-MM-DD).
+    Requiere permiso 'asistencias.exportar'.
+    """
+    emp = crud.crud_empleado.get_empleado_by_id(db, empleado_id)
+    if not emp:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Empleado no encontrado"
+        )
+
+    pdf_bytes = crud.crud_informe.generar_pdf_informe_semanal_practicante(
+        db=db,
+        empleado=emp,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+        usuario_generador=current_user
+    )
+
+    nombre_limpio = emp.nombre.replace(" ", "_")
+    filename = f"informe_{nombre_limpio}_{fecha_inicio}_{fecha_fin}.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
 
 
 @router.put("/{empleado_id}", response_model=EmpleadoResponse, dependencies=[Depends(require_permission("empleados.editar"))])

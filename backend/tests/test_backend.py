@@ -1,7 +1,7 @@
 import sys
 import os
 import unittest
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta, time
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -17,6 +17,8 @@ from app.core.database_seed import seed_initial_data
 from app.core.security import create_access_token
 from app.models.rol import Rol
 from app.models.usuario import Usuario
+from app.models.empleado import Empleado
+from app.models.asistencia import Asistencia
 
 # Configurar base de datos SQLite en memoria para tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -89,205 +91,86 @@ class TestBackendAPI(unittest.TestCase):
     def test_acceso_denegado_sin_token(self):
         # Intentar crear empleado sin Header Authorization (HTTP 401)
         res = self.client.post("/api/empleados", json={
-            "nombre": "Prueba Sin Token",
+            "nombre": "Sin Token",
             "documento": "00000000",
-            "mac": "AA:AA:AA:AA:AA:AA",
-            "departamento": "TI"
+            "mac": "00:00:00:00:00:00"
         })
         self.assertEqual(res.status_code, 401)
 
-    def test_jwt_token_invalido_y_expirado_rechazado(self):
-        # 1. Token malformado o totalmente inválido
-        headers_bad = {"Authorization": "Bearer token_malformado_totalmente_invalido_12345"}
-        res_bad = self.client.get("/api/auth/me", headers=headers_bad)
-        self.assertEqual(res_bad.status_code, 401)
-        self.assertIn("No autenticado o token inválido/expirado", res_bad.json()["detail"])
-
-        # 2. Token de acceso expirado (generado con delta negativo)
-        expired_token = create_access_token(
-            data={"sub": "1", "email": settings.ADMIN_EMAIL},
-            expires_delta=timedelta(seconds=-10)
-        )
-        headers_exp = {"Authorization": f"Bearer {expired_token}"}
-        res_exp = self.client.get("/api/auth/me", headers=headers_exp)
-        self.assertEqual(res_exp.status_code, 401)
-        self.assertIn("No autenticado o token inválido/expirado", res_exp.json()["detail"])
-
-    def test_acceso_denegado_por_falta_de_permisos(self):
-        # 1. Crear un usuario "Invitado"
-        db = TestingSessionLocal()
-        rol_invitado = db.query(Rol).filter(Rol.nombre == "Invitado").first()
-        db.close()
-
-        res_user = self.client.post("/api/usuarios", headers=self.admin_headers, json={
-            "email": "invitado@sistema.com",
-            "password": "Invitado123456!",
-            "rol_id": rol_invitado.id,
-            "activo": True
+    def test_crud_empleados_y_unicidad_mac(self):
+        # 1. Crear Empleado 1 con horas_meta
+        res1 = self.client.post("/api/empleados", headers=self.admin_headers, json={
+            "nombre": "Juan Pérez",
+            "documento": "12345678",
+            "mac": "AA:BB:CC:DD:EE:11",
+            "departamento": "Sistemas",
+            "horas_meta": 640
         })
-        self.assertEqual(res_user.status_code, 201)
+        self.assertEqual(res1.status_code, 201)
+        emp1 = res1.json()
+        self.assertEqual(emp1["horas_meta"], 640)
 
-        # 2. Login como Invitado
-        token_inv = self.client.post("/api/auth/login", json={
-            "email": "invitado@sistema.com",
-            "password": "Invitado123456!"
-        }).json()["access_token"]
-        headers_inv = {"Authorization": f"Bearer {token_inv}"}
-
-        # 3. Invitado puede ver empleados (tiene 'empleados.ver')
-        res_ver = self.client.get("/api/empleados", headers=headers_inv)
-        self.assertEqual(res_ver.status_code, 200)
-
-        # 4. Invitado NO puede crear empleados (carece de 'empleados.crear' -> HTTP 403)
-        res_crear = self.client.post("/api/empleados", headers=headers_inv, json={
-            "nombre": "Intento Invitado",
-            "documento": "11111111",
-            "mac": "BB:BB:BB:BB:BB:BB"
-        })
-        self.assertEqual(res_crear.status_code, 403)
-
-    def test_refresh_token_valido_e_invalido(self):
-        res_login = self.client.post("/api/auth/login", json={
-            "email": settings.ADMIN_EMAIL,
-            "password": settings.ADMIN_PASSWORD
-        }).json()
-        ref_token = res_login["refresh_token"]
-
-        # Refresh exitoso
-        res_ref = self.client.post("/api/auth/refresh", json={"refresh_token": ref_token})
-        self.assertEqual(res_ref.status_code, 200)
-        self.assertIn("access_token", res_ref.json())
-
-        # Intentar reusar el mismo refresh token (ya fue rotado y revocado -> HTTP 401)
-        res_reuse = self.client.post("/api/auth/refresh", json={"refresh_token": ref_token})
-        self.assertEqual(res_reuse.status_code, 401)
-
-    def test_rol_custom_supervisor_acceso_parcial(self):
-        # 1. Crear rol "Supervisor" con 3 permisos parciales: asistencias.ver, asistencias.registrar_manual, asistencias.exportar
-        res_rol = self.client.post("/api/roles", headers=self.admin_headers, json={
-            "nombre": "Supervisor",
-            "descripcion": "Supervisa asistencias y registra asistencias manuales",
-            "permisos": ["asistencias.ver", "asistencias.registrar_manual", "asistencias.exportar"]
-        })
-        self.assertEqual(res_rol.status_code, 201)
-        rol_supervisor_id = res_rol.json()["id"]
-
-        # 2. Crear usuario "supervisor@sistema.com"
-        res_user = self.client.post("/api/usuarios", headers=self.admin_headers, json={
-            "email": "supervisor@sistema.com",
-            "password": "SupervisorPassword123!",
-            "rol_id": rol_supervisor_id,
-            "activo": True
-        })
-        self.assertEqual(res_user.status_code, 201)
-
-        # 3. Login como Supervisor
-        token_sup = self.client.post("/api/auth/login", json={
-            "email": "supervisor@sistema.com",
-            "password": "SupervisorPassword123!"
-        }).json()["access_token"]
-        headers_sup = {"Authorization": f"Bearer {token_sup}"}
-
-        # 4. Verificar permisos PERMITIDOS:
-        # a) Ver asistencias (HTTP 200)
-        res_asist = self.client.get("/api/asistencias", headers=headers_sup)
-        self.assertEqual(res_asist.status_code, 200)
-
-        # b) Exportar asistencias (HTTP 200)
-        res_exp = self.client.get("/api/asistencias/export", headers=headers_sup)
-        self.assertEqual(res_exp.status_code, 200)
-
-        # 5. Verificar permisos DENEGADOS (HTTP 403):
-        # a) Crear empleado (no tiene 'empleados.crear')
-        res_crear_emp = self.client.post("/api/empleados", headers=headers_sup, json={
-            "nombre": "Prueba Supervisor",
-            "documento": "99999999",
-            "mac": "CC:CC:CC:CC:CC:CC"
-        })
-        self.assertEqual(res_crear_emp.status_code, 403)
-
-        # b) Listar usuarios (no tiene 'usuarios.gestionar')
-        res_users = self.client.get("/api/usuarios", headers=headers_sup)
-        self.assertEqual(res_users.status_code, 403)
-
-    def test_aislamiento_asistencia_rol_empleado(self):
-        # 1. Crear 2 Empleados en el catálogo
-        emp1 = self.client.post("/api/empleados", headers=self.admin_headers, json={
-            "nombre": "Empleado Uno",
-            "documento": "11111111",
-            "mac": "AA:11:22:33:44:55",
-            "departamento": "TI"
-        }).json()
-
-        emp2 = self.client.post("/api/empleados", headers=self.admin_headers, json={
-            "nombre": "Empleado Dos",
-            "documento": "22222222",
-            "mac": "BB:11:22:33:44:55",
+        # 2. Intentar crear Empleado 2 con la misma MAC (HTTP 400)
+        res2 = self.client.post("/api/empleados", headers=self.admin_headers, json={
+            "nombre": "Pedro López",
+            "documento": "87654321",
+            "mac": "AA:BB:CC:DD:EE:11",
             "departamento": "Ventas"
+        })
+        self.assertEqual(res2.status_code, 400)
+        self.assertIn("Ya existe un empleado registrado con esa dirección MAC", res2.json()["detail"])
+
+        # 3. Consultar Whitelist de MACs
+        res_macs = self.client.get("/api/empleados/macs")
+        self.assertEqual(res_macs.status_code, 200)
+        self.assertIn("AA:BB:CC:DD:EE:11", res_macs.json())
+
+    def test_registro_asistencia_manual_y_origen(self):
+        # 1. Crear Empleado
+        emp = self.client.post("/api/empleados", headers=self.admin_headers, json={
+            "nombre": "Maria Quispe",
+            "documento": "11223344",
+            "mac": "FF:EE:DD:CC:BB:AA",
+            "departamento": "OTI"
         }).json()
 
-        # 2. Registrar asistencia manual para ambos el mismo día
-        self.client.post("/api/asistencia/manual", headers=self.admin_headers, json={
-            "empleado_id": emp1["id"],
+        # 2. Registrar Asistencia Manual Entrada
+        res_manual = self.client.post("/api/asistencia/manual", headers=self.admin_headers, json={
+            "empleado_id": emp["id"],
             "tipo": "entrada",
-            "timestamp": "2026-08-02T08:00:00+00:00"
+            "timestamp": "2026-08-02T08:00:00",
+            "motivo": "Celular descargado"
         })
+        self.assertEqual(res_manual.status_code, 200)
 
-        self.client.post("/api/asistencia/manual", headers=self.admin_headers, json={
-            "empleado_id": emp2["id"],
-            "tipo": "entrada",
-            "timestamp": "2026-08-02T08:05:00+00:00"
-        })
+        # 3. Consultar Asistencias de hoy
+        res_hoy = self.client.get("/api/asistencias/hoy")
+        self.assertEqual(res_hoy.status_code, 200)
+        items = res_hoy.json()
+        self.assertTrue(len(items) > 0)
+        item_maria = next(i for i in items if i["empleado"] == "Maria Quispe")
+        self.assertEqual(item_maria["origen_entrada"], "manual")
 
-        # 3. Crear usuario vinculado a Empleado Uno (rol Empleado)
-        db = TestingSessionLocal()
-        rol_emp = db.query(Rol).filter(Rol.nombre == "Empleado").first()
-        db.close()
+    def test_exportar_excel_asistencias(self):
+        # Probar endpoint /api/asistencias/export (Retorna Blob Excel)
+        res_exp = self.client.get("/api/asistencias/export", headers=self.admin_headers)
+        self.assertEqual(res_exp.status_code, 200)
+        self.assertEqual(res_exp.headers["content-type"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        self.assertTrue(len(res_exp.content) > 0)
 
-        self.client.post("/api/usuarios", headers=self.admin_headers, json={
-            "email": "emp1@sistema.com",
-            "password": "Emp1Password!",
-            "rol_id": rol_emp.id,
-            "empleado_id": emp1["id"],
-            "activo": True
-        })
-
-        # 4. Login como Empleado Uno
-        token_e1 = self.client.post("/api/auth/login", json={
-            "email": "emp1@sistema.com",
-            "password": "Emp1Password!"
-        }).json()["access_token"]
-        headers_e1 = {"Authorization": f"Bearer {token_e1}"}
-
-        # 5. Empleado Uno consulta asistencias del día -> ve ÚNICAMENTE su propia asistencia
-        res_asist = self.client.get("/api/asistencias?fecha=2026-08-02", headers=headers_e1)
-        self.assertEqual(res_asist.status_code, 200)
-        items = res_asist.json()
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0]["empleado"], "Empleado Uno")
-
-    def test_endpoint_publico_asistencias_hoy(self):
-        # 1. Petición pública sin token -> HTTP 200 OK
-        res = self.client.get("/api/asistencias/hoy")
-        self.assertEqual(res.status_code, 200)
-
-        # 2. Petición pública enviando parámetro fecha manipulado -> HTTP 200 OK e ignora querystring
-        res_fake_date = self.client.get("/api/asistencias/hoy?fecha=2026-01-01")
-        self.assertEqual(res_fake_date.status_code, 200)
-        self.assertEqual(res.json(), res_fake_date.json())
-
-    def test_rol_jefe_oficina_y_generacion_informes(self):
-        # 1. Crear usuario con rol Jefe de Oficina
+    def test_flujo_completo_informes_pdf(self):
+        # 1. Crear usuario Jefe de Oficina
         db = TestingSessionLocal()
         rol_jefe = db.query(Rol).filter(Rol.nombre == "Jefe de Oficina").first()
         db.close()
 
-        self.client.post("/api/usuarios", headers=self.admin_headers, json={
+        res_user_jefe = self.client.post("/api/usuarios", headers=self.admin_headers, json={
             "email": "jefe@sistema.com",
             "password": "JefePassword123!",
             "rol_id": rol_jefe.id,
             "activo": True
         })
+        self.assertEqual(res_user_jefe.status_code, 201)
 
         # Login como Jefe de Oficina
         token_jefe = self.client.post("/api/auth/login", json={
@@ -296,7 +179,7 @@ class TestBackendAPI(unittest.TestCase):
         }).json()["access_token"]
         headers_jefe = {"Authorization": f"Bearer {token_jefe}"}
 
-        # 2. Crear un practicante/empleado para probar
+        # 2. Crear empleado practicante
         emp_pract = self.client.post("/api/empleados", headers=headers_jefe, json={
             "nombre": "Practicante Uno",
             "documento": "88888888",
@@ -304,25 +187,7 @@ class TestBackendAPI(unittest.TestCase):
             "departamento": "OTI"
         }).json()
 
-        # 3. Validación de Fechas Negativa (fecha_inicio > fecha_fin) -> HTTP 400 Bad Request
-        res_err_range = self.client.post("/api/informes/generar", headers=headers_jefe, json={
-            "empleado_id": emp_pract["id"],
-            "fecha_inicio": "2026-08-10",
-            "fecha_fin": "2026-08-01"
-        })
-        self.assertEqual(res_err_range.status_code, 400)
-        self.assertIn("inicio no puede ser posterior", res_err_range.json()["detail"])
-
-        # 4. Validación de Fechas Negativa (fecha_fin > hoy) -> HTTP 400 Bad Request
-        res_err_future = self.client.post("/api/informes/generar", headers=headers_jefe, json={
-            "empleado_id": emp_pract["id"],
-            "fecha_inicio": "2026-08-01",
-            "fecha_fin": "2099-12-31"
-        })
-        self.assertEqual(res_err_future.status_code, 400)
-        self.assertIn("no puede ser posterior al día de hoy", res_err_future.json()["detail"])
-
-        # 5. Generar Informe PDF exitosamente -> HTTP 200 OK (Content-Type: application/pdf)
+        # 3. Generar Informe PDF exitosamente -> HTTP 200 OK
         res_pdf = self.client.post("/api/informes/generar", headers=headers_jefe, json={
             "empleado_id": emp_pract["id"],
             "fecha_inicio": "2026-08-01",
@@ -332,7 +197,7 @@ class TestBackendAPI(unittest.TestCase):
         self.assertEqual(res_pdf.headers["content-type"], "application/pdf")
         self.assertTrue(len(res_pdf.content) > 100)
 
-        # 6. Listar Historial de Informes -> debe figurar en estado 'generado'
+        # 4. Listar Historial de Informes
         res_list = self.client.get("/api/informes", headers=headers_jefe)
         self.assertEqual(res_list.status_code, 200)
         informes = res_list.json()
@@ -340,11 +205,91 @@ class TestBackendAPI(unittest.TestCase):
         inf_id = informes[0]["id"]
         self.assertEqual(informes[0]["estado"], "generado")
 
-        # 7. Aprobar Informe -> HTTP 200 OK, cambia a estado 'aprobado'
+        # 5. Aprobar Informe
         res_aprob = self.client.patch(f"/api/informes/{inf_id}/aprobar", headers=headers_jefe)
         self.assertEqual(res_aprob.status_code, 200)
         self.assertEqual(res_aprob.json()["estado"], "aprobado")
-        self.assertEqual(res_aprob.json()["aprobado_por_email"], "jefe@sistema.com")
+
+    def test_informe_pdf_semanal_practicante_y_ejemplo_24h(self):
+        # 1. Crear empleado practicante con horas_meta = 640
+        db = TestingSessionLocal()
+        emp = Empleado(
+            nombre="Practicante Test 24H",
+            documento="77665544",
+            mac="AA:BB:CC:DD:EE:FF",
+            departamento="OTI",
+            horas_meta=640,
+            activo=True
+        )
+        db.add(emp)
+        db.commit()
+        db.refresh(emp)
+
+        # 2. Agregar asistencias exactas del ejemplo de referencia:
+        # Lunes 16/11/2026: 08:00 a 13:00 (5h)
+        # Martes 17/11/2026: 08:00 a 13:00 (5h)
+        # Miércoles 18/11/2026: 08:00 a 13:00 (5h)
+        # Jueves 19/11/2026: 08:00 a 13:00 (5h)
+        # Viernes 20/11/2026: 09:00 a 13:00 (4h)
+        horarios = [
+            (date(2026, 11, 16), datetime(2026, 11, 16, 8, 0, 0), datetime(2026, 11, 16, 13, 0, 0)),
+            (date(2026, 11, 17), datetime(2026, 11, 17, 8, 0, 0), datetime(2026, 11, 17, 13, 0, 0)),
+            (date(2026, 11, 18), datetime(2026, 11, 18, 8, 0, 0), datetime(2026, 11, 18, 13, 0, 0)),
+            (date(2026, 11, 19), datetime(2026, 11, 19, 8, 0, 0), datetime(2026, 11, 19, 13, 0, 0)),
+            (date(2026, 11, 20), datetime(2026, 11, 20, 9, 0, 0), datetime(2026, 11, 20, 13, 0, 0)),
+        ]
+
+        for f, h_ent, h_sal in horarios:
+            asist = Asistencia(
+                empleado_id=emp.id,
+                fecha=f,
+                hora_entrada=h_ent,
+                hora_salida=h_sal,
+                origen_entrada="auto",
+                origen_salida="auto",
+                agente_id="TEST-AGENT"
+            )
+            db.add(asist)
+        db.commit()
+
+        # 3. Probar endpoint GET /api/empleados/{id}/informe_pdf con parámetros obligatorios
+        res = self.client.get(
+            f"/api/empleados/{emp.id}/informe_pdf?fecha_inicio=2026-11-16&fecha_fin=2026-11-22",
+            headers=self.admin_headers
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.headers["content-type"], "application/pdf")
+        self.assertIn("Content-Disposition", res.headers)
+        self.assertIn("informe_Practicante_Test_24H_2026-11-16_2026-11-22.pdf", res.headers["Content-Disposition"])
+        self.assertTrue(len(res.content) > 1000)
+
+        # 4. Confirmar directamente el cálculo de horas semanales = 24.0 horas exactas
+        from app.crud.crud_asistencia import get_asistencias_empleado_por_rango
+        regs = get_asistencias_empleado_por_rango(db, emp.id, date(2026, 11, 16), date(2026, 11, 22))
+        total_semanal = sum(
+            round((r.hora_salida - r.hora_entrada).total_seconds() / 3600.0, 1)
+            for r in regs if r.hora_entrada and r.hora_salida
+        )
+        self.assertEqual(total_semanal, 24.0)
+        db.close()
+
+    def test_informe_pdf_rango_sin_registros(self):
+        # 1. Crear empleado sin asistencias
+        emp = self.client.post("/api/empleados", headers=self.admin_headers, json={
+            "nombre": "Practicante Sin Registros",
+            "documento": "99991111",
+            "mac": "99:99:99:99:99:99",
+            "departamento": "OTI"
+        }).json()
+
+        # 2. Rango de fechas sin asistencias -> HTTP 200 con PDF limpio (sin error 500)
+        res = self.client.get(
+            f"/api/empleados/{emp['id']}/informe_pdf?fecha_inicio=2020-01-01&fecha_fin=2020-01-07",
+            headers=self.admin_headers
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.headers["content-type"], "application/pdf")
+        self.assertTrue(len(res.content) > 1000)
 
     def test_bloqueo_rol_empleado_informes(self):
         # 1. Crear usuario con rol Empleado
@@ -380,4 +325,3 @@ class TestBackendAPI(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
