@@ -43,7 +43,7 @@ export default function VisitanteHome({ onOpenLogin }) {
         <ThemeToggle />
       </div>
 
-      {/* Hero Banner Principal con Altura Ligeramente Ampliada */}
+      {/* Hero Banner Principal */}
       <div className="w-full max-w-6xl">
         <div className="relative w-full rounded-3xl overflow-hidden border border-gray-200/80 dark:border-zinc-800 shadow-2xl h-80 sm:h-[460px] flex items-center justify-center text-center px-8 sm:px-14">
           
@@ -76,8 +76,8 @@ export default function VisitanteHome({ onOpenLogin }) {
         </div>
       </div>
 
-      {/* Tabla de Asistencias Pegada INMEDIATAMENTE Debajo de la Imagen */}
-      <div className="w-full max-w-6xl pt-1 space-y-3">
+      {/* Tabla de Asistencias de Hoy con un Pequeño Espacio Elegante respecto a la Imagen */}
+      <div className="w-full max-w-6xl pt-3 sm:pt-4 space-y-3">
         
         {/* Cabecera de Asistencias de Hoy */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 dark:border-zinc-800 pb-2">
