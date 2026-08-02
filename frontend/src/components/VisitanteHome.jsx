@@ -1,11 +1,9 @@
 import React from 'react';
-import { CalendarCheck, LogIn, Sun, Moon } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { CalendarCheck, LogIn } from 'lucide-react';
 import Loader from './Loader';
+import ThemeToggle from './ThemeToggle';
 
 export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
-  const { theme, toggleTheme } = useTheme();
-
   const cards = [
     {
       id: 'asistencias',
@@ -32,17 +30,13 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
       <div className="w-full h-36 sm:h-40 relative mb-4">
         <Loader inline={true} />
 
-        {/* Botón Tema Flotante sobre el Banner */}
-        <button
-          onClick={toggleTheme}
-          className="absolute top-4 right-4 z-10 p-2 rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-900 transition-colors cursor-pointer shadow-xs"
-          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-        >
-          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-gray-600" />}
-        </button>
+        {/* Switch de Tema Animado Flotante sobre el Banner */}
+        <div className="absolute top-4 right-4 z-10">
+          <ThemeToggle />
+        </div>
       </div>
 
-      {/* Header Limpio y Gran Formato sin el badge */}
+      {/* Header Gran Formato Vistoso y Elegante */}
       <div className="w-full max-w-2xl px-6 flex flex-col items-center my-auto">
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
