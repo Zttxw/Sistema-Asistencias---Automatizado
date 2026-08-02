@@ -28,23 +28,23 @@ export default function VisitanteHome({ onOpenLogin }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-12 relative text-gray-900 dark:text-white font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-12 pt-3 sm:pt-4 relative text-gray-900 dark:text-white font-sans overflow-x-hidden">
       
-      {/* Top Bar Institucional: Botón Iniciar Sesión + ThemeToggle */}
-      <header className="w-full max-w-6xl px-6 py-5 flex items-center justify-end space-x-4 z-20">
+      {/* Botones de Acción Flotantes en la Esquina Lateral Derecha */}
+      <div className="absolute top-4 right-6 sm:right-8 z-30 flex items-center space-x-3">
         <button
           onClick={onOpenLogin}
-          className="flex items-center space-x-2 px-4 py-2 bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-black hover:dark:bg-zinc-100 text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer"
+          className="flex items-center space-x-2 px-3.5 py-1.5 bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-black hover:dark:bg-zinc-100 text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer"
         >
-          <LogIn className="w-4 h-4" />
+          <LogIn className="w-3.5 h-3.5" />
           <span>Iniciar sesión</span>
         </button>
 
         <ThemeToggle />
-      </header>
+      </div>
 
-      {/* Hero Banner Principal con Fotografías Modo Día / Modo Noche */}
-      <div className="w-full max-w-6xl px-6 py-2">
+      {/* Hero Banner Principal Elevado Hacia la Parte Superior */}
+      <div className="w-full max-w-6xl px-6 pt-2 pb-2">
         <div className="relative w-full rounded-3xl overflow-hidden border border-gray-200/80 dark:border-zinc-800 shadow-2xl h-80 sm:h-[440px] flex items-center justify-center text-center px-8 sm:px-14">
           
           {/* Imagen Modo Día (Light Mode) en color original */}
@@ -76,8 +76,8 @@ export default function VisitanteHome({ onOpenLogin }) {
         </div>
       </div>
 
-      {/* Sección UNIFICADA: Tabla de Asistencias de Hoy directamente por debajo */}
-      <div className="w-full max-w-6xl px-6 pt-6 pb-4 space-y-6">
+      {/* Sección UNIFICADA: Tabla de Asistencias de Hoy por debajo */}
+      <div className="w-full max-w-6xl px-6 pt-5 pb-4 space-y-6">
         
         {/* Cabecera de Asistencias de Hoy */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-zinc-800 pb-4">
@@ -175,7 +175,7 @@ export default function VisitanteHome({ onOpenLogin }) {
       </div>
 
       {/* Footer Minimalista */}
-      <footer className="mt-8 pt-4 flex items-center space-x-4 text-xs text-gray-400 dark:text-zinc-500 font-medium">
+      <footer className="mt-6 pt-2 flex items-center space-x-4 text-xs text-gray-400 dark:text-zinc-500 font-medium">
         <div className="flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-secondary"></span>
           <span>Modo Visitante</span>
