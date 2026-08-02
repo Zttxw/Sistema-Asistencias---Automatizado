@@ -83,7 +83,7 @@ El sistema implementa seguridad mediante **Bearer JWT Access Tokens (expiración
 ```bash
 curl -X POST http://localhost:8001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@sistema.local", "password": "Admin123456!"}'
+  -d '{"email": "admin@sistema.com", "password": "<TU_ADMIN_PASSWORD>"}'
 ```
 
 ### 2. Consultar /api/auth/me usando Bearer Token

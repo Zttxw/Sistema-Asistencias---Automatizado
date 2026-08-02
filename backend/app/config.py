@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     ADMIN_EMAIL: str = "admin@sistema.com"
-    ADMIN_PASSWORD: str = "Admin123456!"
+    ADMIN_PASSWORD: str = "CHANGE_ME_ON_FIRST_LOGIN"
 
     @property
     def DATABASE_URL(self) -> str:

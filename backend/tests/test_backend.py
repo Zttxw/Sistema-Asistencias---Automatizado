@@ -1,7 +1,7 @@
 import sys
 import os
 import unittest
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -12,7 +12,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import app.database
 from app.database import Base, get_db
+from app.config import settings
 from app.core.database_seed import seed_initial_data
+from app.core.security import create_access_token
 from app.models.rol import Rol
 from app.models.usuario import Usuario
 
@@ -56,8 +58,8 @@ class TestBackendAPI(unittest.TestCase):
 
         # Login como Admin por defecto para helper de tests
         res_login = self.client.post("/api/auth/login", json={
-            "email": "admin@sistema.com",
-            "password": "Admin123456!"
+            "email": settings.ADMIN_EMAIL,
+            "password": settings.ADMIN_PASSWORD
         })
         self.assertEqual(res_login.status_code, 200)
         self.admin_token = res_login.json()["access_token"]
@@ -69,8 +71,8 @@ class TestBackendAPI(unittest.TestCase):
     def test_login_exitoso_y_fallido(self):
         # Login correcto
         res_ok = self.client.post("/api/auth/login", json={
-            "email": "admin@sistema.com",
-            "password": "Admin123456!"
+            "email": settings.ADMIN_EMAIL,
+            "password": settings.ADMIN_PASSWORD
         })
         self.assertEqual(res_ok.status_code, 200)
         data = res_ok.json()
@@ -79,7 +81,7 @@ class TestBackendAPI(unittest.TestCase):
 
         # Login con contraseña errónea (HTTP 401)
         res_bad = self.client.post("/api/auth/login", json={
-            "email": "admin@sistema.com",
+            "email": settings.ADMIN_EMAIL,
             "password": "PasswordIncorrecta"
         })
         self.assertEqual(res_bad.status_code, 401)
@@ -93,6 +95,23 @@ class TestBackendAPI(unittest.TestCase):
             "departamento": "TI"
         })
         self.assertEqual(res.status_code, 401)
+
+    def test_jwt_token_invalido_y_expirado_rechazado(self):
+        # 1. Token malformado o totalmente inválido
+        headers_bad = {"Authorization": "Bearer token_malformado_totalmente_invalido_12345"}
+        res_bad = self.client.get("/api/auth/me", headers=headers_bad)
+        self.assertEqual(res_bad.status_code, 401)
+        self.assertIn("No autenticado o token inválido/expirado", res_bad.json()["detail"])
+
+        # 2. Token de acceso expirado (generado con delta negativo)
+        expired_token = create_access_token(
+            data={"sub": "1", "email": settings.ADMIN_EMAIL},
+            expires_delta=timedelta(seconds=-10)
+        )
+        headers_exp = {"Authorization": f"Bearer {expired_token}"}
+        res_exp = self.client.get("/api/auth/me", headers=headers_exp)
+        self.assertEqual(res_exp.status_code, 401)
+        self.assertIn("No autenticado o token inválido/expirado", res_exp.json()["detail"])
 
     def test_acceso_denegado_por_falta_de_permisos(self):
         # 1. Crear un usuario "Invitado"
@@ -129,8 +148,8 @@ class TestBackendAPI(unittest.TestCase):
 
     def test_refresh_token_valido_e_invalido(self):
         res_login = self.client.post("/api/auth/login", json={
-            "email": "admin@sistema.com",
-            "password": "Admin123456!"
+            "email": settings.ADMIN_EMAIL,
+            "password": settings.ADMIN_PASSWORD
         }).json()
         ref_token = res_login["refresh_token"]
 
@@ -143,39 +162,53 @@ class TestBackendAPI(unittest.TestCase):
         res_reuse = self.client.post("/api/auth/refresh", json={"refresh_token": ref_token})
         self.assertEqual(res_reuse.status_code, 401)
 
-    def test_creacion_de_rol_custom_y_permisos(self):
-        # Crear rol Auditor con permiso 'asistencias.exportar'
+    def test_rol_custom_supervisor_acceso_parcial(self):
+        # 1. Crear rol "Supervisor" con 3 permisos parciales: asistencias.ver, asistencias.registrar_manual, asistencias.exportar
         res_rol = self.client.post("/api/roles", headers=self.admin_headers, json={
-            "nombre": "Auditor",
-            "descripcion": "Solo exportar reportes",
-            "permisos": ["asistencias.exportar"]
+            "nombre": "Supervisor",
+            "descripcion": "Supervisa asistencias y registra asistencias manuales",
+            "permisos": ["asistencias.ver", "asistencias.registrar_manual", "asistencias.exportar"]
         })
         self.assertEqual(res_rol.status_code, 201)
-        rol_auditor_id = res_rol.json()["id"]
+        rol_supervisor_id = res_rol.json()["id"]
 
-        # Crear usuario con rol Auditor
+        # 2. Crear usuario "supervisor@sistema.com"
         res_user = self.client.post("/api/usuarios", headers=self.admin_headers, json={
-            "email": "auditor@sistema.com",
-            "password": "Auditor123456!",
-            "rol_id": rol_auditor_id,
+            "email": "supervisor@sistema.com",
+            "password": "SupervisorPassword123!",
+            "rol_id": rol_supervisor_id,
             "activo": True
         })
         self.assertEqual(res_user.status_code, 201)
 
-        # Login como Auditor
-        token_aud = self.client.post("/api/auth/login", json={
-            "email": "auditor@sistema.com",
-            "password": "Auditor123456!"
+        # 3. Login como Supervisor
+        token_sup = self.client.post("/api/auth/login", json={
+            "email": "supervisor@sistema.com",
+            "password": "SupervisorPassword123!"
         }).json()["access_token"]
-        headers_aud = {"Authorization": f"Bearer {token_aud}"}
+        headers_sup = {"Authorization": f"Bearer {token_sup}"}
 
-        # Auditor no puede listar usuarios (HTTP 403)
-        res_usr_list = self.client.get("/api/usuarios", headers=headers_aud)
-        self.assertEqual(res_usr_list.status_code, 403)
+        # 4. Verificar permisos PERMITIDOS:
+        # a) Ver asistencias (HTTP 200)
+        res_asist = self.client.get("/api/asistencias", headers=headers_sup)
+        self.assertEqual(res_asist.status_code, 200)
 
-        # Auditor puede exportar asistencias (HTTP 200)
-        res_exp = self.client.get("/api/asistencias/export", headers=headers_aud)
+        # b) Exportar asistencias (HTTP 200)
+        res_exp = self.client.get("/api/asistencias/export", headers=headers_sup)
         self.assertEqual(res_exp.status_code, 200)
+
+        # 5. Verificar permisos DENEGADOS (HTTP 403):
+        # a) Crear empleado (no tiene 'empleados.crear')
+        res_crear_emp = self.client.post("/api/empleados", headers=headers_sup, json={
+            "nombre": "Prueba Supervisor",
+            "documento": "99999999",
+            "mac": "CC:CC:CC:CC:CC:CC"
+        })
+        self.assertEqual(res_crear_emp.status_code, 403)
+
+        # b) Listar usuarios (no tiene 'usuarios.gestionar')
+        res_users = self.client.get("/api/usuarios", headers=headers_sup)
+        self.assertEqual(res_users.status_code, 403)
 
     def test_aislamiento_asistencia_rol_empleado(self):
         # 1. Crear 2 Empleados en el catálogo
