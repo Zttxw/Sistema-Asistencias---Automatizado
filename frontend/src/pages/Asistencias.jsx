@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
 import Modal from '../components/Modal';
+import RequierePermiso from '../components/RequierePermiso';
 import { Download, Calendar, RefreshCw, PlusCircle, Edit3 } from 'lucide-react';
 
 export default function Asistencias() {
@@ -164,22 +165,26 @@ export default function Asistencias() {
           </button>
 
           {/* Botón Registrar Manual */}
-          <button
-            onClick={openManualModal}
-            className="flex items-center space-x-2 px-4 py-2 bg-secondary text-white text-sm font-medium rounded-lg hover:bg-secondary/90 transition-colors shadow-2xs cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Registrar manual</span>
-          </button>
+          <RequierePermiso codigo="asistencias.registrar_manual">
+            <button
+              onClick={openManualModal}
+              className="flex items-center space-x-2 px-4 py-2 bg-secondary text-white text-sm font-medium rounded-lg hover:bg-secondary/90 transition-colors shadow-2xs cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Registrar manual</span>
+            </button>
+          </RequierePermiso>
 
           {/* Botón Exportar a Excel */}
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-2xs cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>Exportar a Excel</span>
-          </button>
+          <RequierePermiso codigo="asistencias.exportar">
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-2xs cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Exportar a Excel</span>
+            </button>
+          </RequierePermiso>
         </div>
       </div>
 
