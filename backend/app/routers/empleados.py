@@ -5,6 +5,7 @@ from app.database import get_db
 from app.schemas.empleado import EmpleadoCreate, EmpleadoUpdate, EmpleadoResponse
 from app.schemas.historial_mac import HistorialMacItem
 from app import crud
+from app.core.deps import require_permission
 
 router = APIRouter(prefix="/api/empleados", tags=["empleados"])
 
@@ -17,16 +18,19 @@ def obtener_whitelist_macs(db: Session = Depends(get_db)):
     return crud.crud_empleado.get_whitelist_macs(db)
 
 
-@router.get("", response_model=List[EmpleadoResponse])
+@router.get("", response_model=List[EmpleadoResponse], dependencies=[Depends(require_permission("empleados.ver"))])
 def listar_empleados(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
-    Lista todos los empleados (activos e inactivos).
+    Lista todos los empleados (activos e inactivos). Requiere permiso 'empleados.ver'.
     """
     return crud.crud_empleado.get_empleados(db, skip=skip, limit=limit)
 
 
-@router.post("", response_model=EmpleadoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EmpleadoResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permission("empleados.crear"))])
 def crear_empleado(empleado_in: EmpleadoCreate, db: Session = Depends(get_db)):
+    """
+    Registra un nuevo empleado. Requiere permiso 'empleados.crear'.
+    """
     emp_existente = crud.crud_empleado.get_empleado_by_mac(db, empleado_in.mac)
     if emp_existente:
         raise HTTPException(
@@ -36,8 +40,11 @@ def crear_empleado(empleado_in: EmpleadoCreate, db: Session = Depends(get_db)):
     return crud.crud_empleado.create_empleado(db, empleado_in)
 
 
-@router.put("/{empleado_id}", response_model=EmpleadoResponse)
+@router.put("/{empleado_id}", response_model=EmpleadoResponse, dependencies=[Depends(require_permission("empleados.editar"))])
 def actualizar_empleado(empleado_id: int, empleado_in: EmpleadoUpdate, db: Session = Depends(get_db)):
+    """
+    Actualiza datos de un empleado. Requiere permiso 'empleados.editar'.
+    """
     emp = crud.crud_empleado.get_empleado_by_id(db, empleado_id)
     if not emp:
         raise HTTPException(
@@ -47,8 +54,11 @@ def actualizar_empleado(empleado_id: int, empleado_in: EmpleadoUpdate, db: Sessi
     return crud.crud_empleado.update_empleado(db, emp, empleado_in)
 
 
-@router.delete("/{empleado_id}", response_model=EmpleadoResponse)
+@router.delete("/{empleado_id}", response_model=EmpleadoResponse, dependencies=[Depends(require_permission("empleados.eliminar"))])
 def desactivar_empleado(empleado_id: int, db: Session = Depends(get_db)):
+    """
+    Desactiva a un empleado (soft-delete). Requiere permiso 'empleados.eliminar'.
+    """
     emp = crud.crud_empleado.get_empleado_by_id(db, empleado_id)
     if not emp:
         raise HTTPException(
@@ -58,10 +68,10 @@ def desactivar_empleado(empleado_id: int, db: Session = Depends(get_db)):
     return crud.crud_empleado.soft_delete_empleado(db, emp)
 
 
-@router.get("/{empleado_id}/historial_mac", response_model=List[HistorialMacItem])
+@router.get("/{empleado_id}/historial_mac", response_model=List[HistorialMacItem], dependencies=[Depends(require_permission("empleados.ver"))])
 def obtener_historial_mac(empleado_id: int, db: Session = Depends(get_db)):
     """
-    Retorna el historial de cambios de dirección MAC de un empleado ordenado descendentemente.
+    Retorna el historial de cambios de dirección MAC de un empleado. Requiere permiso 'empleados.ver'.
     """
     emp = crud.crud_empleado.get_empleado_by_id(db, empleado_id)
     if not emp:

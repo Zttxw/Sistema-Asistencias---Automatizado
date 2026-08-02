@@ -8,7 +8,14 @@ class Settings(BaseSettings):
     MYSQL_DB: str = "asistencias_db"
     MYSQL_USER: str = "asistencias_user"
     MYSQL_PASSWORD: str = "asistencias_pass"
-    SECRET_KEY: str = "secret_key_super_segura"
+
+    SECRET_KEY: str = "secret_key_super_segura_sistema_asistencias_2026"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    ADMIN_EMAIL: str = "admin@sistema.com"
+    ADMIN_PASSWORD: str = "Admin123456!"
 
     @property
     def DATABASE_URL(self) -> str:

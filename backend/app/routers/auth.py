@@ -1,0 +1,75 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.schemas.auth import LoginPayload, RefreshTokenPayload, TokenResponse, UserMeResponse
+from app.models.usuario import Usuario
+from app.core.deps import get_current_user
+from app.crud.crud_auth import authenticate_user, create_user_tokens, refresh_access_token, logout_user
+
+router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+@router.post("/login", response_model=TokenResponse)
+def login(payload: LoginPayload, db: Session = Depends(get_db)):
+    """
+    Autentica un usuario con email y contraseña, retornando access_token (60m) y refresh_token (7d).
+    """
+    user = authenticate_user(db, payload.email, payload.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales incorrectas (email o contraseña inválidos)"
+        )
+    if not user.activo:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="La cuenta de usuario se encuentra inactiva"
+        )
+
+    access_token, refresh_token = create_user_tokens(db, user)
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
+
+
+@router.post("/refresh", response_model=TokenResponse)
+def refresh_token(payload: RefreshTokenPayload, db: Session = Depends(get_db)):
+    """
+    Valida un refresh token y retorna un nuevo access_token y refresh_token rotado.
+    """
+    access_token, refresh_token = refresh_access_token(db, payload.refresh_token)
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
+
+
+@router.post("/logout")
+def logout(payload: RefreshTokenPayload, db: Session = Depends(get_db)):
+    """
+    Revoca el refresh token para cerrar sesión.
+    """
+    logout_user(db, payload.refresh_token)
+    return {"message": "Sesión cerrada correctamente"}
+
+
+@router.get("/me", response_model=UserMeResponse)
+def get_me(user: Usuario = Depends(get_current_user)):
+    """
+    Retorna la información del usuario autenticado actual, su rol y sus permisos.
+    """
+    permisos = []
+    if user.rol and user.rol.permisos:
+        permisos = [p.codigo for p in user.rol.permisos]
+
+    return UserMeResponse(
+        id=user.id,
+        email=user.email,
+        rol=user.rol.nombre if user.rol else "Sin Rol",
+        empleado_id=user.empleado_id,
+        activo=user.activo,
+        permisos=permisos
+    )
