@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarCheck, LogIn, Sun, Moon, ShieldCheck } from 'lucide-react';
+import { CalendarCheck, LogIn, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import Loader from './Loader';
 
@@ -28,7 +28,7 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#09090B] flex flex-col items-center justify-between pb-12 relative overflow-x-hidden">
-      {/* Banner Superior de Animación Speeder ocupando 100% de ancho sin opacar */}
+      {/* Banner Superior de Animación Speeder ocupando 100% de ancho */}
       <div className="w-full h-36 sm:h-40 relative mb-4">
         <Loader inline={true} />
 
@@ -42,16 +42,9 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
         </button>
       </div>
 
-      {/* Header Gran Formato Vistoso y Elegante */}
+      {/* Header Limpio y Gran Formato sin el badge */}
       <div className="w-full max-w-2xl px-6 flex flex-col items-center my-auto">
         <div className="text-center mb-10">
-          {/* Badge institucional superior */}
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800/80 text-gray-800 dark:text-gray-200 border border-gray-200/80 dark:border-gray-700/60 mb-4 shadow-2xs">
-            <ShieldCheck className="w-3.5 h-3.5 text-secondary" />
-            <span>Oficina de Tecnologías de la Información</span>
-          </div>
-
-          {/* Título Principal — Grande, Vistoso y Elegante */}
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
             Sistema de Control de Asistencias
           </h1>
@@ -61,7 +54,7 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
           </p>
         </div>
 
-        {/* Grid 2 tarjetas — Con Estilo Negro Elegante */}
+        {/* Grid 2 tarjetas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
           {cards.map((card) => {
             const Icon = card.icon;
@@ -108,9 +101,9 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
         </div>
       </div>
 
-      {/* Footer Elegante */}
+      {/* Footer */}
       <div className="mt-8 text-xs text-gray-400 dark:text-gray-500 font-medium text-center">
-        v1.0.0 &bull; OTI &bull; Gobierno del Perú
+        v1.0.0
       </div>
     </div>
   );
