@@ -43,9 +43,9 @@ export default function VisitanteHome({ onOpenLogin }) {
         <ThemeToggle />
       </div>
 
-      {/* Hero Banner Principal */}
+      {/* Hero Banner Principal con Altura Ligeramente Ampliada */}
       <div className="w-full max-w-6xl">
-        <div className="relative w-full rounded-3xl overflow-hidden border border-gray-200/80 dark:border-zinc-800 shadow-2xl h-72 sm:h-[400px] flex items-center justify-center text-center px-8 sm:px-14">
+        <div className="relative w-full rounded-3xl overflow-hidden border border-gray-200/80 dark:border-zinc-800 shadow-2xl h-80 sm:h-[460px] flex items-center justify-center text-center px-8 sm:px-14">
           
           {/* Imagen Modo Día (Light Mode) en color original */}
           <img
