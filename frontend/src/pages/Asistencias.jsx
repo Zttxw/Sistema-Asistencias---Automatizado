@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
 import Modal from '../components/Modal';
 import RequierePermiso from '../components/RequierePermiso';
+import VisitanteHome from '../components/VisitanteHome';
 import { useAuth } from '../context/AuthContext';
-import { Download, Calendar, RefreshCw, PlusCircle, Edit3 } from 'lucide-react';
+import { Download, Calendar, RefreshCw, PlusCircle, Edit3, ArrowLeft } from 'lucide-react';
 
 export default function Asistencias() {
   const { user } = useAuth();
+  const { onOpenLogin, setSidebarVisible } = useOutletContext();
+
   const getTodayString = () => new Date().toISOString().split('T')[0];
 
   const getCurrentDatetimeLocal = () => {
@@ -15,6 +19,9 @@ export default function Asistencias() {
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().slice(0, 16);
   };
+
+  // Sub-vista para Visitante: 'menu' (tarjetas) o 'tabla' (asistencias de hoy)
+  const [vistaVisitante, setVistaVisitante] = useState('menu');
 
   const [fecha, setFecha] = useState(getTodayString());
   const [asistencias, setAsistencias] = useState([]);
@@ -38,6 +45,15 @@ export default function Asistencias() {
   });
   const [manualError, setManualError] = useState(null);
   const [submittingManual, setSubmittingManual] = useState(false);
+
+  // Controlar visibilidad del sidebar según sub-vista del visitante
+  useEffect(() => {
+    if (!user) {
+      setSidebarVisible(vistaVisitante !== 'menu');
+    } else {
+      setSidebarVisible(true);
+    }
+  }, [user, vistaVisitante, setSidebarVisible]);
 
   const fetchAsistencias = async () => {
     setLoading(true);
@@ -65,8 +81,11 @@ export default function Asistencias() {
   };
 
   useEffect(() => {
-    fetchAsistencias();
-  }, [fecha, user]);
+    // Cargar asistencias al cambiar a sub-vista 'tabla' (Visitante) o siempre (Autenticado)
+    if (user || vistaVisitante === 'tabla') {
+      fetchAsistencias();
+    }
+  }, [fecha, user, vistaVisitante]);
 
   const openManualModal = async () => {
     setManualError(null);
@@ -144,11 +163,32 @@ export default function Asistencias() {
     }
   };
 
+  // --- Visitante en Menú de Tarjetas (pantalla completa, sin sidebar) ---
+  if (!user && vistaVisitante === 'menu') {
+    return (
+      <VisitanteHome
+        onVerAsistencias={() => setVistaVisitante('tabla')}
+        onOpenLogin={onOpenLogin}
+      />
+    );
+  }
+
+  // --- Vista normal: Tabla de Asistencias (con sidebar visible) ---
   return (
     <div className="space-y-6">
       {/* Encabezado y Acciones */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
         <div>
+          {/* Botón Volver al Menú — solo Visitante en sub-vista 'tabla' */}
+          {!user && vistaVisitante === 'tabla' && (
+            <button
+              onClick={() => setVistaVisitante('menu')}
+              className="flex items-center space-x-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors mb-2 cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Volver al Menú Principal</span>
+            </button>
+          )}
           <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
             {!user ? 'Asistencias de Hoy' : 'Registro de Asistencias'}
           </h2>
