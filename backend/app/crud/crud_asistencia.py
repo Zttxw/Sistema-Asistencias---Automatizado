@@ -174,6 +174,25 @@ def get_asistencias_por_rango_fechas(
     )
 
 
+def get_asistencias_empleado_por_rango(
+    db: Session,
+    empleado_id: int,
+    fecha_inicio: date,
+    fecha_fin: date
+) -> List[Asistencia]:
+    return (
+        db.query(Asistencia)
+        .filter(
+            Asistencia.empleado_id == empleado_id,
+            Asistencia.fecha >= fecha_inicio,
+            Asistencia.fecha <= fecha_fin
+        )
+        .order_by(Asistencia.fecha.asc(), Asistencia.hora_entrada.asc())
+        .all()
+    )
+
+
+
 def generar_excel_asistencias(asistencias: List[Asistencia]) -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active

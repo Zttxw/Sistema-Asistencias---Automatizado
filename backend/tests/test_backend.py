@@ -276,6 +276,108 @@ class TestBackendAPI(unittest.TestCase):
         self.assertEqual(res_fake_date.status_code, 200)
         self.assertEqual(res.json(), res_fake_date.json())
 
+    def test_rol_jefe_oficina_y_generacion_informes(self):
+        # 1. Crear usuario con rol Jefe de Oficina
+        db = TestingSessionLocal()
+        rol_jefe = db.query(Rol).filter(Rol.nombre == "Jefe de Oficina").first()
+        db.close()
+
+        self.client.post("/api/usuarios", headers=self.admin_headers, json={
+            "email": "jefe@sistema.com",
+            "password": "JefePassword123!",
+            "rol_id": rol_jefe.id,
+            "activo": True
+        })
+
+        # Login como Jefe de Oficina
+        token_jefe = self.client.post("/api/auth/login", json={
+            "email": "jefe@sistema.com",
+            "password": "JefePassword123!"
+        }).json()["access_token"]
+        headers_jefe = {"Authorization": f"Bearer {token_jefe}"}
+
+        # 2. Crear un practicante/empleado para probar
+        emp_pract = self.client.post("/api/empleados", headers=headers_jefe, json={
+            "nombre": "Practicante Uno",
+            "documento": "88888888",
+            "mac": "88:77:66:55:44:33",
+            "departamento": "OTI"
+        }).json()
+
+        # 3. Validación de Fechas Negativa (fecha_inicio > fecha_fin) -> HTTP 400 Bad Request
+        res_err_range = self.client.post("/api/informes/generar", headers=headers_jefe, json={
+            "empleado_id": emp_pract["id"],
+            "fecha_inicio": "2026-08-10",
+            "fecha_fin": "2026-08-01"
+        })
+        self.assertEqual(res_err_range.status_code, 400)
+        self.assertIn("inicio no puede ser posterior", res_err_range.json()["detail"])
+
+        # 4. Validación de Fechas Negativa (fecha_fin > hoy) -> HTTP 400 Bad Request
+        res_err_future = self.client.post("/api/informes/generar", headers=headers_jefe, json={
+            "empleado_id": emp_pract["id"],
+            "fecha_inicio": "2026-08-01",
+            "fecha_fin": "2099-12-31"
+        })
+        self.assertEqual(res_err_future.status_code, 400)
+        self.assertIn("no puede ser posterior al día de hoy", res_err_future.json()["detail"])
+
+        # 5. Generar Informe PDF exitosamente -> HTTP 200 OK (Content-Type: application/pdf)
+        res_pdf = self.client.post("/api/informes/generar", headers=headers_jefe, json={
+            "empleado_id": emp_pract["id"],
+            "fecha_inicio": "2026-08-01",
+            "fecha_fin": "2026-08-02"
+        })
+        self.assertEqual(res_pdf.status_code, 200)
+        self.assertEqual(res_pdf.headers["content-type"], "application/pdf")
+        self.assertTrue(len(res_pdf.content) > 100)
+
+        # 6. Listar Historial de Informes -> debe figurar en estado 'generado'
+        res_list = self.client.get("/api/informes", headers=headers_jefe)
+        self.assertEqual(res_list.status_code, 200)
+        informes = res_list.json()
+        self.assertTrue(len(informes) >= 1)
+        inf_id = informes[0]["id"]
+        self.assertEqual(informes[0]["estado"], "generado")
+
+        # 7. Aprobar Informe -> HTTP 200 OK, cambia a estado 'aprobado'
+        res_aprob = self.client.patch(f"/api/informes/{inf_id}/aprobar", headers=headers_jefe)
+        self.assertEqual(res_aprob.status_code, 200)
+        self.assertEqual(res_aprob.json()["estado"], "aprobado")
+        self.assertEqual(res_aprob.json()["aprobado_por_email"], "jefe@sistema.com")
+
+    def test_bloqueo_rol_empleado_informes(self):
+        # 1. Crear usuario con rol Empleado
+        db = TestingSessionLocal()
+        rol_emp = db.query(Rol).filter(Rol.nombre == "Empleado").first()
+        db.close()
+
+        self.client.post("/api/usuarios", headers=self.admin_headers, json={
+            "email": "practicante_sin_permiso@sistema.com",
+            "password": "PracticantePass123!",
+            "rol_id": rol_emp.id,
+            "activo": True
+        })
+
+        token_emp = self.client.post("/api/auth/login", json={
+            "email": "practicante_sin_permiso@sistema.com",
+            "password": "PracticantePass123!"
+        }).json()["access_token"]
+        headers_emp = {"Authorization": f"Bearer {token_emp}"}
+
+        # 2. Prueba Negativa: Intentar generar informe sin permiso -> HTTP 403 Forbidden
+        res_gen = self.client.post("/api/informes/generar", headers=headers_emp, json={
+            "empleado_id": 1,
+            "fecha_inicio": "2026-08-01",
+            "fecha_fin": "2026-08-02"
+        })
+        self.assertEqual(res_gen.status_code, 403)
+
+        # 3. Prueba Negativa: Intentar aprobar informe sin permiso -> HTTP 403 Forbidden
+        res_aprob = self.client.patch("/api/informes/1/aprobar", headers=headers_emp)
+        self.assertEqual(res_aprob.status_code, 403)
+
 
 if __name__ == '__main__':
     unittest.main()
+

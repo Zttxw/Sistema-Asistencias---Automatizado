@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Asistencias from './pages/Asistencias';
 import Empleados from './pages/Empleados';
 import DispositivosNuevos from './pages/DispositivosNuevos';
+import Informes from './pages/Informes';
 
 export default function App() {
   return (
@@ -27,6 +28,14 @@ export default function App() {
               element={
                 <ProtectedRoute codigo="dispositivos.ver">
                   <DispositivosNuevos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="informes"
+              element={
+                <ProtectedRoute codigo="informes.generar">
+                  <Informes />
                 </ProtectedRoute>
               }
             />

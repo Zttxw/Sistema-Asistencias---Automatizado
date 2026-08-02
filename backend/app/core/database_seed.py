@@ -18,6 +18,8 @@ PERMISOS_CATALOGO = [
     {"codigo": "dispositivos.registrar", "descripcion": "Registrar dispositivos detectados como empleados"},
     {"codigo": "roles.gestionar", "descripcion": "Crear, editar y eliminar roles y permisos"},
     {"codigo": "usuarios.gestionar", "descripcion": "Crear, editar y gestionar cuentas de usuario"},
+    {"codigo": "informes.generar", "descripcion": "Generar PDF de asistencias por rango de fechas"},
+    {"codigo": "informes.aprobar", "descripcion": "Marcar informe generado como aprobado/firmado"},
 ]
 
 
@@ -33,7 +35,7 @@ def seed_initial_data(db: Session):
         permisos_db[item["codigo"]] = p
 
     # 2. Poblar roles
-    # Rol Admin
+    # Rol Admin (Todos los permisos)
     rol_admin = db.query(Rol).filter(Rol.nombre == "Admin").first()
     if not rol_admin:
         rol_admin = Rol(
@@ -45,6 +47,28 @@ def seed_initial_data(db: Session):
         db.flush()
     else:
         rol_admin.permisos = list(permisos_db.values())
+
+    # Rol Jefe de Oficina
+    rol_jefe = db.query(Rol).filter(Rol.nombre == "Jefe de Oficina").first()
+    permisos_jefe = [
+        permisos_db["asistencias.ver"],
+        permisos_db["asistencias.exportar"],
+        permisos_db["empleados.ver"],
+        permisos_db["empleados.crear"],
+        permisos_db["empleados.editar"],
+        permisos_db["informes.generar"],
+        permisos_db["informes.aprobar"],
+    ]
+    if not rol_jefe:
+        rol_jefe = Rol(
+            nombre="Jefe de Oficina",
+            descripcion="Jefe de oficina con gestión de practicantes e informes",
+            permisos=permisos_jefe
+        )
+        db.add(rol_jefe)
+        db.flush()
+    else:
+        rol_jefe.permisos = permisos_jefe
 
     # Rol Empleado
     rol_empleado = db.query(Rol).filter(Rol.nombre == "Empleado").first()
