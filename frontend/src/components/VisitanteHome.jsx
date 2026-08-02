@@ -6,7 +6,7 @@ export default function VisitanteHome({ onVerAsistencias }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-12 relative text-gray-900 dark:text-white overflow-x-hidden">
       
-      {/* Banner Superior 100% Ancho con Altura Ampliada Extra Grande (h-96 sm:h-[540px]) */}
+      {/* Banner Superior 100% Ancho con Altura Ampliada */}
       <div className="w-full h-96 sm:h-[540px] relative overflow-hidden border-b border-gray-200 dark:border-zinc-800 shadow-xl flex items-center justify-center text-center px-8 sm:px-12">
         
         {/* Imagen Modo Día (Light Mode) en color original */}
@@ -31,8 +31,8 @@ export default function VisitanteHome({ onVerAsistencias }) {
           Sistema de Control de Asistencias
         </h1>
 
-        {/* Switch de Tema Flotante sobre el Banner */}
-        <div className="absolute top-6 right-6 z-20 backdrop-blur-md bg-black/30 p-1.5 rounded-full border border-white/20">
+        {/* Switch de Tema Flotante sin recuadro gris envolvente */}
+        <div className="absolute top-6 right-6 z-20">
           <ThemeToggle />
         </div>
       </div>

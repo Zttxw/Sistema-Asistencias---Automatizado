@@ -64,24 +64,22 @@ body:where(.dark *) {
   height: 30px;
   --light: #FFFFFF;
   --dark: #000000;
-  --link: rgb(27, 129, 112);
-  --link-hover: rgb(24, 94, 82);
 }
 
 .switch-label {
   position: absolute;
   width: 100%;
   height: 30px;
-  background-color: var(--dark);
+  background-color: #000000;
   border-radius: 15px;
   cursor: pointer;
-  border: 2px solid var(--dark);
+  border: 2px solid #000000;
   box-sizing: border-box;
 }
 
 .dark .switch-label {
   background-color: #000000;
-  border-color: #27272A;
+  border-color: #FFFFFF;
 }
 
 .checkbox {
@@ -99,7 +97,7 @@ body:where(.dark *) {
 }
 
 .checkbox:checked ~ .slider {
-  background-color: #27272A;
+  background-color: #000000;
 }
 
 .slider::before {
@@ -110,9 +108,9 @@ body:where(.dark *) {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  -webkit-box-shadow: inset 8px -3px 0px 0px var(--light);
-  box-shadow: inset 8px -3px 0px 0px var(--light);
-  background-color: var(--dark);
+  -webkit-box-shadow: inset 8px -3px 0px 0px #FFFFFF;
+  box-shadow: inset 8px -3px 0px 0px #FFFFFF;
+  background-color: #000000;
   -webkit-transition: 0.3s;
   transition: 0.3s;
 }
