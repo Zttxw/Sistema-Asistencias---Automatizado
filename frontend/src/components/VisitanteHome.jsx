@@ -25,15 +25,15 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
 
   return (
     <div className="min-h-screen relative flex flex-col items-center justify-between p-8 overflow-hidden text-gray-900 dark:text-white">
-      {/* Imagen de fondo cubriendo toda la pantalla */}
+      {/* Imagen de fondo cubriendo toda la pantalla con filtro Blanco y Negro (grayscale) */}
       <img
         src="/sistema_asistencias.jpeg"
         alt="Fondo Sistema Asistencias"
-        className="fixed inset-0 w-full h-full object-cover z-0"
+        className="fixed inset-0 w-full h-full object-cover z-0 grayscale contrast-125"
       />
 
-      {/* Capa de velo sutil que permite ver la imagen con total claridad */}
-      <div className="fixed inset-0 bg-white/35 dark:bg-black/60 backdrop-blur-[2px] z-0"></div>
+      {/* Capa de velo sutil */}
+      <div className="fixed inset-0 bg-white/40 dark:bg-black/65 backdrop-blur-[2px] z-0"></div>
 
       {/* Switch de Tema Flotante */}
       <div className="absolute top-6 right-6 z-20 backdrop-blur-md bg-white/60 dark:bg-black/60 p-1.5 rounded-2xl border border-white/40 dark:border-zinc-800 shadow-sm">
