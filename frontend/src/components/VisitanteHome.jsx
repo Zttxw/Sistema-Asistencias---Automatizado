@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, LogIn, Calendar, RefreshCw, Edit3 } from 'lucide-react';
+import { LogIn, Calendar, RefreshCw, Edit3 } from 'lucide-react';
 import client from '../api/client';
 import AlertMessage from './AlertMessage';
 import ThemeToggle from './ThemeToggle';
@@ -30,33 +30,17 @@ export default function VisitanteHome({ onOpenLogin }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-12 relative text-gray-900 dark:text-white font-sans">
       
-      {/* Top Bar Institucional: Brand + Botón Iniciar Sesión + ThemeToggle */}
-      <header className="w-full max-w-6xl px-6 py-5 flex items-center justify-between z-20">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-white/10 flex items-center justify-center border border-primary/20 dark:border-white/20">
-            <ShieldCheck className="w-5 h-5 text-primary dark:text-white" />
-          </div>
-          <div>
-            <h2 className="font-valve text-base font-bold tracking-wide text-gray-900 dark:text-white leading-tight">
-              Sistema de Asistencias
-            </h2>
-            <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">
-              Gestión & Control
-            </p>
-          </div>
-        </div>
+      {/* Top Bar Institucional: Botón Iniciar Sesión + ThemeToggle */}
+      <header className="w-full max-w-6xl px-6 py-5 flex items-center justify-end space-x-4 z-20">
+        <button
+          onClick={onOpenLogin}
+          className="flex items-center space-x-2 px-4 py-2 bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-black hover:dark:bg-zinc-100 text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer"
+        >
+          <LogIn className="w-4 h-4" />
+          <span>Iniciar sesión</span>
+        </button>
 
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={onOpenLogin}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-black hover:dark:bg-zinc-100 text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer"
-          >
-            <LogIn className="w-4 h-4" />
-            <span>Iniciar sesión</span>
-          </button>
-
-          <ThemeToggle />
-        </div>
+        <ThemeToggle />
       </header>
 
       {/* Hero Banner Principal con Fotografías Modo Día / Modo Noche */}
