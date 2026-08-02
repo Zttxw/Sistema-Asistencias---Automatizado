@@ -31,24 +31,24 @@ export default function VisitanteHome({ onVerAsistencias }) {
           Sistema de Control de Asistencias
         </h1>
 
-        {/* Switch de Tema Flotante con margen interno adecuado */}
+        {/* Switch de Tema Flotante */}
         <div className="absolute top-6 right-8 sm:right-14 z-20">
           <ThemeToggle />
         </div>
       </div>
 
       {/* Contenido POR DEBAJO (Fuera de la Imagen) */}
-      <div className="w-full max-w-xl px-6 flex flex-col items-center my-auto space-y-8 text-center pt-8">
+      <div className="w-full max-w-xl px-6 flex flex-col items-center my-auto space-y-6 text-center pt-3 sm:pt-4">
         
-        {/* Subtítulo Institucional */}
-        <p className="text-sm sm:text-base text-gray-600 dark:text-zinc-400 font-medium leading-relaxed">
+        {/* Subtítulo Institucional pegado al límite inferior del banner */}
+        <p className="text-sm sm:text-base text-gray-600 dark:text-zinc-400 font-medium leading-relaxed -mt-1">
           Plataforma institucional para la gestión y monitoreo en tiempo real de la presencia del personal.
         </p>
 
         {/* Tarjeta Única: Asistencias de Hoy */}
         <button
           onClick={onVerAsistencias}
-          className="w-full group text-left rounded-2xl p-6 transition-all cursor-pointer bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-black hover:dark:bg-zinc-100 border border-primary dark:border-white shadow-xl hover:shadow-2xl flex items-center justify-between"
+          className="w-full group text-left rounded-2xl p-6 transition-all cursor-pointer bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-black hover:dark:bg-zinc-100 border border-primary dark:border-white shadow-xl hover:shadow-2xl flex items-center justify-between mt-2"
         >
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 rounded-xl bg-white/20 dark:bg-black/10 flex items-center justify-center text-white dark:text-black shrink-0">
