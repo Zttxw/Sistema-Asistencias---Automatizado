@@ -2,6 +2,28 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@font-face {
+  font-family: 'Valve';
+  src: url('/fonts/valve bd.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Valve';
+  src: url('/fonts/valve bd it.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+}
+
+.font-valve {
+  font-family: 'Valve', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Valve', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 @theme {
   --color-primary: #3484A5;
   --color-secondary: #2CA792;
@@ -10,8 +32,8 @@
 
 .dark {
   --color-primary: #FFFFFF;
-  --color-secondary: #FFFFFF;
-  --color-accent: #FFFFFF;
+  --color-secondary: #3FC4AE;
+  --color-accent: #F5D76E;
 }
 
 body {

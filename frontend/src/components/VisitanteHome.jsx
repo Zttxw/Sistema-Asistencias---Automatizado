@@ -1,6 +1,5 @@
 import React from 'react';
 import { CalendarCheck, LogIn } from 'lucide-react';
-import Loader from './Loader';
 import ThemeToggle from './ThemeToggle';
 
 export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
@@ -26,20 +25,26 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-12 relative overflow-x-hidden text-gray-900 dark:text-white">
-      {/* Banner Superior de Animación Speeder ocupando 100% de ancho */}
-      <div className="w-full h-36 sm:h-40 relative mb-4 border-b border-gray-200 dark:border-zinc-800">
-        <Loader inline={true} />
+      {/* Banner Superior con la Imagen Institucional 'sistema_asistencias.jpeg' */}
+      <div className="w-full h-48 sm:h-64 relative mb-6 border-b border-gray-200 dark:border-zinc-800 bg-gray-900 overflow-hidden">
+        <img
+          src="/sistema_asistencias.jpeg"
+          alt="Sistema de Asistencias"
+          className="w-full h-full object-cover object-center opacity-90 transition-opacity duration-300"
+        />
+        {/* Shadow Overlay elegante */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
 
-        {/* Switch de Tema Animado Flotante sobre el Banner */}
-        <div className="absolute top-4 right-4 z-10">
+        {/* Switch de Tema Flotante sobre la Imagen */}
+        <div className="absolute top-4 right-4 z-10 backdrop-blur-md p-1 rounded-full bg-black/40 border border-white/20">
           <ThemeToggle />
         </div>
       </div>
 
-      {/* Header Gran Formato Vistoso y Elegante */}
+      {/* Header Gran Formato con Tipografía Valve */}
       <div className="w-full max-w-2xl px-6 flex flex-col items-center my-auto">
         <div className="text-center mb-10">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
+          <h1 className="font-valve text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-wide leading-tight uppercase">
             Sistema de Control de Asistencias
           </h1>
 
@@ -76,9 +81,7 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
                   />
                 </div>
                 <h3
-                  className={`text-base font-bold mb-1 ${
-                    card.highlighted ? 'text-white dark:text-black' : 'text-gray-900 dark:text-white'
-                  }`}
+                  className="font-valve text-lg font-bold mb-1 tracking-wide"
                 >
                   {card.title}
                 </h3>
@@ -96,7 +99,7 @@ export default function VisitanteHome({ onVerAsistencias, onOpenLogin }) {
       </div>
 
       {/* Footer */}
-      <div className="mt-8 text-xs text-gray-400 dark:text-zinc-600 font-medium text-center">
+      <div className="mt-8 text-xs text-gray-400 dark:text-zinc-600 font-medium text-center font-mono">
         v1.0.0
       </div>
     </div>
