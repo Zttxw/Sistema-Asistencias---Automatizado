@@ -1,4 +1,5 @@
 import io
+import os
 from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
@@ -13,6 +14,10 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+# Ruta de la imagen del membrete institucional
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MEMBRETE_PATH = os.path.join(BASE_DIR, "..", "assets", "membrete.jpg")
 
 
 def crear_informe_registro(
@@ -84,54 +89,56 @@ def generar_pdf_informe_asistencias(
     registros = get_asistencias_empleado_por_rango(db, empleado.id, fecha_inicio, fecha_fin)
 
     buffer = io.BytesIO()
+    
+    # Documento ajustado a los márgenes del membrete institucional
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter,
-        rightMargin=36,
-        leftMargin=36,
-        topMargin=36,
-        bottomMargin=36
+        rightMargin=45,
+        leftMargin=45,
+        topMargin=105,   # Espacio reservado para el encabezado membretado
+        bottomMargin=65   # Espacio reservado para el pie membretado
     )
 
     styles = getSampleStyleSheet()
 
-    # Custom styles
+    # Estilos de texto adaptados
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Heading1'],
-        fontSize=18,
-        leading=22,
+        fontSize=15,
+        leading=18,
         textColor=colors.HexColor("#1A365D"),
         alignment=1,
-        spaceAfter=12
+        spaceAfter=6
     )
 
     subtitle_style = ParagraphStyle(
         'DocSubtitle',
         parent=styles['Normal'],
-        fontSize=10,
-        leading=14,
+        fontSize=9,
+        leading=12,
         textColor=colors.HexColor("#4A5568"),
         alignment=1,
-        spaceAfter=18
+        spaceAfter=14
     )
 
     meta_label = ParagraphStyle(
         'MetaLabel',
         parent=styles['Normal'],
-        fontSize=10,
-        leading=14,
+        fontSize=9,
+        leading=13,
         textColor=colors.HexColor("#2D3748")
     )
 
     elements = []
 
-    # Header / Title
+    # Encabezado del documento
     elements.append(Paragraph("SISTEMA DE ASISTENCIAS - REPORTE DE CONFORMIDAD DE PRÁCTICAS", title_style))
-    elements.append(Paragraph(f"Oficina de Tecnologías de la Información &bull; Documento Oficial de Registro", subtitle_style))
-    elements.append(Spacer(1, 10))
+    elements.append(Paragraph("Oficina de Tecnologías de la Información &bull; Documento Oficial de Registro", subtitle_style))
+    elements.append(Spacer(1, 6))
 
-    # Meta Info Table
+    # Tabla Metadatos
     meta_data = [
         [
             Paragraph(f"<b>Practicante:</b> {empleado.nombre}", meta_label),
@@ -147,20 +154,20 @@ def generar_pdf_informe_asistencias(
         ]
     ]
 
-    t_meta = Table(meta_data, colWidths=[270, 270])
+    t_meta = Table(meta_data, colWidths=[260, 260])
     t_meta.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F7FAFC")),
         ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#E2E8F0")),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#EDF2F7")),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
     ]))
     elements.append(t_meta)
-    elements.append(Spacer(1, 18))
+    elements.append(Spacer(1, 14))
 
-    # Asistencias Data Table
+    # Tabla de datos de asistencias
     table_data = [["N°", "Fecha", "Entrada", "Salida", "Origen Entrada", "Origen Salida", "Observaciones"]]
 
     for idx, reg in enumerate(registros, start=1):
@@ -182,24 +189,24 @@ def generar_pdf_informe_asistencias(
     if len(registros) == 0:
         table_data.append(["-", "Sin asistencias registradas en este período", "-", "-", "-", "-", "-"])
 
-    t_data = Table(table_data, colWidths=[30, 75, 65, 65, 90, 85, 130])
+    t_data = Table(table_data, colWidths=[25, 70, 65, 65, 90, 85, 120])
     t_data.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3484A5")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('FONTSIZE', (0, 0), (-1, 0), 8.5),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
     ]))
     elements.append(t_data)
 
-    elements.append(Spacer(1, 30))
+    elements.append(Spacer(1, 20))
 
-    # Signature Area Placeholder for ONPE External Digital Signature
+    # Nota explicativa
     sig_text = Paragraph(
         "<b>NOTA:</b> Este informe ha sido generado por el Sistema de Asistencias OTI para ser firmado "
         "digitalmente de manera externa mediante el certificado oficial ONPE / Firma Perú.",
@@ -207,6 +214,19 @@ def generar_pdf_informe_asistencias(
     )
     elements.append(sig_text)
 
-    doc.build(elements)
+    # Callback para dibujar el membrete de fondo en cada página
+    def draw_background(canvas, doc_page):
+        canvas.saveState()
+        if os.path.exists(MEMBRETE_PATH):
+            canvas.drawImage(
+                MEMBRETE_PATH,
+                0,
+                0,
+                width=doc_page.pagesize[0],
+                height=doc_page.pagesize[1]
+            )
+        canvas.restoreState()
+
+    doc.build(elements, onFirstPage=draw_background, onLaterPages=draw_background)
     buffer.seek(0)
     return buffer.getvalue()
