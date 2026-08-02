@@ -3,15 +3,15 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary: #000000;
+  --color-primary: #3484A5;
   --color-secondary: #2CA792;
   --color-accent: #F0C84F;
 }
 
 .dark {
   --color-primary: #FFFFFF;
-  --color-secondary: #3FC4AE;
-  --color-accent: #F5D76E;
+  --color-secondary: #FFFFFF;
+  --color-accent: #FFFFFF;
 }
 
 body {
