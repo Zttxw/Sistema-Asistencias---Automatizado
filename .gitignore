@@ -1,0 +1,47 @@
+# Virtual environments
+venv/
+**/venv/
+.venv/
+**/.venv/
+env/
+**/env/
+
+# Python bytecode & cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+**/.pytest_cache/
+
+# Node & Frontend build outputs
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.output/
+
+# Environment variables & secrets (keep .env.example)
+.env
+**/.env
+*.env
+!.env.example
+!**/.env.example
+
+# Logs
+*.log
+**/*.log
+
+# Operating System & IDE files
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Temp export files & database data
+asistencias.xlsx
+*.xlsx
+mysql_data/
+**/mysql_data/

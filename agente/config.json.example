@@ -1,0 +1,7 @@
+{
+  "network_range": "192.168.1.0/24",
+  "interface": "eth0",
+  "api_url": "http://localhost:8001/api/deteccion",
+  "interval_seconds": 60,
+  "timeout_seconds": 3
+}
