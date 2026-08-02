@@ -28,7 +28,7 @@ export default function VisitanteHome({ onOpenLogin }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-12 pt-3 sm:pt-4 relative text-gray-900 dark:text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-between pb-8 pt-2 relative text-gray-900 dark:text-white font-sans overflow-x-hidden">
       
       {/* Botones de Acción Flotantes en la Esquina Lateral Derecha */}
       <div className="absolute top-4 right-6 sm:right-8 z-30 flex items-center space-x-3">
@@ -44,7 +44,7 @@ export default function VisitanteHome({ onOpenLogin }) {
       </div>
 
       {/* Hero Banner Principal Elevado Hacia la Parte Superior */}
-      <div className="w-full max-w-6xl px-6 pt-2 pb-2">
+      <div className="w-full max-w-6xl px-6 pt-1 pb-1">
         <div className="relative w-full rounded-3xl overflow-hidden border border-gray-200/80 dark:border-zinc-800 shadow-2xl h-80 sm:h-[440px] flex items-center justify-center text-center px-8 sm:px-14">
           
           {/* Imagen Modo Día (Light Mode) en color original */}
@@ -76,29 +76,29 @@ export default function VisitanteHome({ onOpenLogin }) {
         </div>
       </div>
 
-      {/* Sección UNIFICADA: Tabla de Asistencias de Hoy por debajo */}
-      <div className="w-full max-w-6xl px-6 pt-5 pb-4 space-y-6">
+      {/* Sección UNIFICADA: Tabla de Asistencias Pegada al Límite Inferior de la Imagen */}
+      <div className="w-full max-w-6xl px-6 pt-1 sm:pt-2 pb-4 space-y-4">
         
         {/* Cabecera de Asistencias de Hoy */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-zinc-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-zinc-800 pb-3">
           <div>
             <h2 className="font-valve text-2xl font-bold text-gray-900 dark:text-white tracking-wide">
               Asistencias de Hoy
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
               Presencia del personal en tiempo real para el día de hoy.
             </p>
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2 bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs shadow-2xs font-semibold text-gray-700 dark:text-zinc-200">
+            <div className="flex items-center space-x-2 bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-1.5 text-xs shadow-2xs font-semibold text-gray-700 dark:text-zinc-200">
               <Calendar className="w-4 h-4 text-secondary" />
               <span>Día Actual (Hoy)</span>
             </div>
 
             <button
               onClick={fetchAsistenciasHoy}
-              className="p-2 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+              className="p-1.5 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
               title="Recargar asistencias"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -175,7 +175,7 @@ export default function VisitanteHome({ onOpenLogin }) {
       </div>
 
       {/* Footer Minimalista */}
-      <footer className="mt-6 pt-2 flex items-center space-x-4 text-xs text-gray-400 dark:text-zinc-500 font-medium">
+      <footer className="mt-4 pt-2 flex items-center space-x-4 text-xs text-gray-400 dark:text-zinc-500 font-medium">
         <div className="flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-secondary"></span>
           <span>Modo Visitante</span>
