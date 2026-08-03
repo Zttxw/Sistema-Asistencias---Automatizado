@@ -158,58 +158,6 @@ class TestBackendAPI(unittest.TestCase):
         self.assertEqual(res_exp.headers["content-type"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         self.assertTrue(len(res_exp.content) > 0)
 
-    def test_flujo_completo_informes_pdf(self):
-        # 1. Crear usuario Jefe de Oficina
-        db = TestingSessionLocal()
-        rol_jefe = db.query(Rol).filter(Rol.nombre == "Jefe de Oficina").first()
-        db.close()
-
-        res_user_jefe = self.client.post("/api/usuarios", headers=self.admin_headers, json={
-            "email": "jefe@sistema.com",
-            "password": "JefePassword123!",
-            "rol_id": rol_jefe.id,
-            "activo": True
-        })
-        self.assertEqual(res_user_jefe.status_code, 201)
-
-        # Login como Jefe de Oficina
-        token_jefe = self.client.post("/api/auth/login", json={
-            "email": "jefe@sistema.com",
-            "password": "JefePassword123!"
-        }).json()["access_token"]
-        headers_jefe = {"Authorization": f"Bearer {token_jefe}"}
-
-        # 2. Crear empleado practicante
-        emp_pract = self.client.post("/api/empleados", headers=headers_jefe, json={
-            "nombre": "Practicante Uno",
-            "documento": "88888888",
-            "mac": "88:77:66:55:44:33",
-            "departamento": "OTI"
-        }).json()
-
-        # 3. Generar Informe PDF exitosamente -> HTTP 200 OK
-        res_pdf = self.client.post("/api/informes/generar", headers=headers_jefe, json={
-            "empleado_id": emp_pract["id"],
-            "fecha_inicio": "2026-08-01",
-            "fecha_fin": "2026-08-02"
-        })
-        self.assertEqual(res_pdf.status_code, 200)
-        self.assertEqual(res_pdf.headers["content-type"], "application/pdf")
-        self.assertTrue(len(res_pdf.content) > 100)
-
-        # 4. Listar Historial de Informes
-        res_list = self.client.get("/api/informes", headers=headers_jefe)
-        self.assertEqual(res_list.status_code, 200)
-        informes = res_list.json()
-        self.assertTrue(len(informes) >= 1)
-        inf_id = informes[0]["id"]
-        self.assertEqual(informes[0]["estado"], "generado")
-
-        # 5. Aprobar Informe
-        res_aprob = self.client.patch(f"/api/informes/{inf_id}/aprobar", headers=headers_jefe)
-        self.assertEqual(res_aprob.status_code, 200)
-        self.assertEqual(res_aprob.json()["estado"], "aprobado")
-
     def test_informe_pdf_semanal_practicante_y_ejemplo_24h(self):
         # 1. Crear empleado practicante con horas_meta = 640
         db = TestingSessionLocal()
@@ -292,7 +240,7 @@ class TestBackendAPI(unittest.TestCase):
         self.assertTrue(len(res.content) > 1000)
 
     def test_bloqueo_rol_empleado_informes(self):
-        # 1. Crear usuario con rol Empleado
+        # 1. Crear usuario con rol Empleado (sin permiso asistencias.exportar)
         db = TestingSessionLocal()
         rol_emp = db.query(Rol).filter(Rol.nombre == "Empleado").first()
         db.close()
@@ -310,17 +258,12 @@ class TestBackendAPI(unittest.TestCase):
         }).json()["access_token"]
         headers_emp = {"Authorization": f"Bearer {token_emp}"}
 
-        # 2. Prueba Negativa: Intentar generar informe sin permiso -> HTTP 403 Forbidden
-        res_gen = self.client.post("/api/informes/generar", headers=headers_emp, json={
-            "empleado_id": 1,
-            "fecha_inicio": "2026-08-01",
-            "fecha_fin": "2026-08-02"
-        })
+        # 2. Prueba Negativa: Intentar descargar informe PDF sin permiso -> HTTP 403 Forbidden
+        res_gen = self.client.get(
+            "/api/empleados/1/informe_pdf?fecha_inicio=2026-08-01&fecha_fin=2026-08-02",
+            headers=headers_emp
+        )
         self.assertEqual(res_gen.status_code, 403)
-
-        # 3. Prueba Negativa: Intentar aprobar informe sin permiso -> HTTP 403 Forbidden
-        res_aprob = self.client.patch("/api/informes/1/aprobar", headers=headers_emp)
-        self.assertEqual(res_aprob.status_code, 403)
 
 
 if __name__ == '__main__':

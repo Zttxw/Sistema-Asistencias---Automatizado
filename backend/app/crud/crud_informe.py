@@ -3,9 +3,7 @@ import os
 from datetime import date, datetime, timedelta
 from typing import List, Optional, Dict
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 
-from app.models.informe_practicante import InformePracticante
 from app.models.empleado import Empleado
 from app.models.usuario import Usuario
 from app.crud.crud_asistencia import get_asistencias_empleado_por_rango
@@ -20,65 +18,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MEMBRETE_PATH = os.path.join(BASE_DIR, "..", "assets", "membrete.jpg")
 
 DIAS_ESPANOL = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
-
-
-def crear_informe_registro(
-    db: Session,
-    empleado_id: int,
-    fecha_inicio: date,
-    fecha_fin: date,
-    generado_por_id: int
-) -> InformePracticante:
-    informe = InformePracticante(
-        empleado_id=empleado_id,
-        fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin,
-        generado_por_id=generado_por_id,
-        estado="generado"
-    )
-    db.add(informe)
-    db.commit()
-    db.refresh(informe)
-    return informe
-
-
-def obtener_informes_historial(
-    db: Session,
-    empleado_id: Optional[int] = None,
-    estado: Optional[str] = None
-) -> List[InformePracticante]:
-    query = db.query(InformePracticante)
-    if empleado_id:
-        query = query.filter(InformePracticante.empleado_id == empleado_id)
-    if estado:
-        query = query.filter(InformePracticante.estado == estado)
-    return query.order_by(InformePracticante.fecha_generacion.desc()).all()
-
-
-def aprobar_informe_registro(
-    db: Session,
-    informe_id: int,
-    aprobado_por_id: int
-) -> InformePracticante:
-    informe = db.query(InformePracticante).filter(InformePracticante.id == informe_id).first()
-    if not informe:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="El informe especificado no existe"
-        )
-    if informe.estado == "aprobado":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El informe ya fue aprobado previamente"
-        )
-
-    informe.estado = "aprobado"
-    informe.aprobado_por_id = aprobado_por_id
-    informe.fecha_aprobacion = datetime.now()
-
-    db.commit()
-    db.refresh(informe)
-    return informe
 
 
 def generar_pdf_informe_asistencias(
@@ -283,7 +222,7 @@ def generar_pdf_informe_semanal_practicante(
 
             # Crear tabla de la semana con estilo institucional
             t_semana = Table(table_data, colWidths=[110, 85, 85, 75, 175])
-            
+
             # Estilos de celda
             ts = [
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3484A5")),
@@ -296,7 +235,7 @@ def generar_pdf_informe_semanal_practicante(
                 ('BOTTOMPADDING', (0, 0), (-1, -2), 6),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
                 ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor("#F8FAFC")]),
-                
+
                 # Fila final Total Semanal
                 ('SPAN', (0, -1), (2, -1)),
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),

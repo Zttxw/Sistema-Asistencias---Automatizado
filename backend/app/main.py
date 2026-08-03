@@ -12,9 +12,8 @@ import app.models.permiso
 import app.models.rol_permiso
 import app.models.usuario
 import app.models.refresh_token
-import app.models.informe_practicante
 from app.core.database_seed import seed_initial_data
-from app.routers import empleados, asistencia, deteccion, dispositivos, auth, roles, permisos, usuarios, informes
+from app.routers import empleados, asistencia, deteccion, dispositivos, auth, roles, permisos, usuarios
 
 
 @asynccontextmanager
@@ -59,7 +58,6 @@ app.include_router(empleados.router)
 app.include_router(asistencia.router)
 app.include_router(deteccion.router)
 app.include_router(dispositivos.router)
-app.include_router(informes.router)
 
 
 @app.get("/", tags=["health"])

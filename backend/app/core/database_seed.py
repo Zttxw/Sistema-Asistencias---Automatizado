@@ -13,13 +13,11 @@ PERMISOS_CATALOGO = [
     {"codigo": "asistencias.ver", "descripcion": "Ver reporte general de asistencias"},
     {"codigo": "asistencias.ver_propia", "descripcion": "Ver solo su propia asistencia como empleado"},
     {"codigo": "asistencias.registrar_manual", "descripcion": "Registrar entrada/salida manual de asistencias"},
-    {"codigo": "asistencias.exportar", "descripcion": "Exportar reportes de asistencia a Excel"},
+    {"codigo": "asistencias.exportar", "descripcion": "Exportar reportes de asistencia a Excel y PDF"},
     {"codigo": "dispositivos.ver", "descripcion": "Ver dispositivos no registrados detectados"},
     {"codigo": "dispositivos.registrar", "descripcion": "Registrar dispositivos detectados como empleados"},
     {"codigo": "roles.gestionar", "descripcion": "Crear, editar y eliminar roles y permisos"},
     {"codigo": "usuarios.gestionar", "descripcion": "Crear, editar y gestionar cuentas de usuario"},
-    {"codigo": "informes.generar", "descripcion": "Generar PDF de asistencias por rango de fechas"},
-    {"codigo": "informes.aprobar", "descripcion": "Marcar informe generado como aprobado/firmado"},
 ]
 
 
@@ -56,13 +54,11 @@ def seed_initial_data(db: Session):
         permisos_db["empleados.ver"],
         permisos_db["empleados.crear"],
         permisos_db["empleados.editar"],
-        permisos_db["informes.generar"],
-        permisos_db["informes.aprobar"],
     ]
     if not rol_jefe:
         rol_jefe = Rol(
             nombre="Jefe de Oficina",
-            descripcion="Jefe de oficina con gestión de practicantes e informes",
+            descripcion="Jefe de oficina con gestión de empleados e informes PDF",
             permisos=permisos_jefe
         )
         db.add(rol_jefe)

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { CalendarCheck, Users, Radio, FileText, ShieldCheck, LogIn, LogOut, User } from 'lucide-react';
+import { CalendarCheck, Users, Radio, ShieldCheck, LogIn, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import RequierePermiso from './RequierePermiso';
 import LoginModal from './LoginModal';
@@ -14,7 +14,6 @@ export default function Layout() {
     { to: '/', label: 'Asistencias', icon: CalendarCheck, permission: null },
     { to: '/empleados', label: 'Empleados', icon: Users, permission: 'empleados.ver' },
     { to: '/dispositivos', label: 'Dispositivos Nuevos', icon: Radio, permission: 'dispositivos.ver' },
-    { to: '/informes', label: 'Informes', icon: FileText, permission: 'informes.generar' },
   ];
 
   // Visitante: ocultar sidebar siempre para mantener vista pública amigable y minimalista

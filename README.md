@@ -38,7 +38,7 @@ El sistema implementa seguridad mediante **Bearer JWT Access Tokens (expiración
 
 ### Roles Iniciales de Semilla (Seed Initial Data)
 1. **Admin**: Posee automáticamente **todos los permisos** del sistema.
-2. **Jefe de Oficina**: Asignado a `asistencias.ver`, `asistencias.exportar`, `empleados.ver`, `empleados.crear`, `empleados.editar`, `informes.generar`, `informes.aprobar`.
+2. **Jefe de Oficina**: Asignado a `asistencias.ver`, `asistencias.exportar`, `empleados.ver`, `empleados.crear`, `empleados.editar`.
 3. **Empleado**: Asignado al permiso `asistencias.ver_propia` (aislamiento estricto para ver solo sus registros).
 4. **Invitado**: Asignado a `asistencias.ver`, `empleados.ver`, `dispositivos.ver` (modo lectura sin acciones).
 
