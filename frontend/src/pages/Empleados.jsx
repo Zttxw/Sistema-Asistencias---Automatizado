@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
 import Modal from '../components/Modal';
-import { UserPlus, Pencil, UserX, RefreshCw, History } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { UserPlus, Pencil, UserX, RefreshCw, History, FileText } from 'lucide-react';
 
 export default function Empleados() {
+  const { hasPermission } = useAuth();
   const [empleados, setEmpleados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -15,10 +17,16 @@ export default function Empleados() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+  const [isReporteModalOpen, setIsReporteModalOpen] = useState(false);
 
   // Historial MAC State
   const [historialMac, setHistorialMac] = useState([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
+
+  // Reporte PDF State
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -26,6 +34,7 @@ export default function Empleados() {
     documento: '',
     mac: '',
     departamento: '',
+    horas_meta: '',
     activo: true,
     motivo_cambio_mac: '',
   });
@@ -56,6 +65,7 @@ export default function Empleados() {
       documento: '',
       mac: '',
       departamento: '',
+      horas_meta: '',
       activo: true,
       motivo_cambio_mac: '',
     });
@@ -70,6 +80,7 @@ export default function Empleados() {
       documento: emp.documento,
       mac: emp.mac,
       departamento: emp.departamento || '',
+      horas_meta: emp.horas_meta !== null && emp.horas_meta !== undefined ? emp.horas_meta : '',
       activo: emp.activo,
       motivo_cambio_mac: '',
     });
@@ -99,6 +110,21 @@ export default function Empleados() {
     }
   };
 
+  const openReporteModal = (emp) => {
+    setSelectedEmpleado(emp);
+    const hoy = new Date();
+    const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    
+    // Formatear fechas YYYY-MM-DD
+    const fInicio = primerDiaMes.toISOString().split('T')[0];
+    const fFin = hoy.toISOString().split('T')[0];
+
+    setFechaInicio(fInicio);
+    setFechaFin(fFin);
+    setError(null);
+    setIsReporteModalOpen(true);
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -109,6 +135,7 @@ export default function Empleados() {
         documento: formData.documento,
         mac: formData.mac,
         departamento: formData.departamento,
+        horas_meta: formData.horas_meta !== '' ? parseInt(formData.horas_meta, 10) : null,
         activo: formData.activo,
       });
       setSuccess('Empleado registrado correctamente.');
@@ -136,6 +163,7 @@ export default function Empleados() {
         documento: formData.documento,
         mac: formData.mac,
         departamento: formData.departamento,
+        horas_meta: formData.horas_meta !== '' && formData.horas_meta !== null ? parseInt(formData.horas_meta, 10) : null,
         activo: formData.activo,
       };
       if (isMacChanged && formData.motivo_cambio_mac) {
@@ -169,13 +197,50 @@ export default function Empleados() {
     }
   };
 
+  const handleGenerarPdf = async (e) => {
+    e.preventDefault();
+    if (!fechaInicio || !fechaFin) {
+      setError('Debe seleccionar la fecha de inicio y la fecha de fin.');
+      return;
+    }
+    setGeneratingPdf(true);
+    setError(null);
+    try {
+      const response = await client.get(`/api/empleados/${selectedEmpleado.id}/informe_pdf`, {
+        params: {
+          fecha_inicio: fechaInicio,
+          fecha_fin: fechaFin
+        },
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      const nombreArchivo = `informe_${selectedEmpleado.nombre.replace(/\s+/g, '_')}_${fechaInicio}_${fechaFin}.pdf`;
+      link.setAttribute('download', nombreArchivo);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      setSuccess(`Informe PDF descargado correctamente: ${nombreArchivo}`);
+      setIsReporteModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.detail || 'Error al generar el informe PDF.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-zinc-800 pb-5">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Catálogo de Empleados</h2>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">Administre el personal registrado y asocié sus direcciones MAC.</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">Administre el personal registrado, sus metas de horas y direcciones MAC.</p>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -187,13 +252,15 @@ export default function Empleados() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
-          <button
-            onClick={openCreateModal}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Nuevo Empleado</span>
-          </button>
+          {hasPermission('empleados.crear') && (
+            <button
+              onClick={openCreateModal}
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Nuevo Empleado</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -216,6 +283,7 @@ export default function Empleados() {
                 <th className="px-6 py-4">Documento</th>
                 <th className="px-6 py-4">Dirección MAC</th>
                 <th className="px-6 py-4">Departamento</th>
+                <th className="px-6 py-4">Meta Horas</th>
                 <th className="px-6 py-4">Estado</th>
                 <th className="px-6 py-4 text-right">Acciones</th>
               </tr>
@@ -227,6 +295,15 @@ export default function Empleados() {
                   <td className="px-6 py-4 text-gray-600 dark:text-zinc-300 font-mono text-xs">{emp.documento}</td>
                   <td className="px-6 py-4 text-gray-600 dark:text-zinc-300 font-mono text-xs uppercase">{emp.mac}</td>
                   <td className="px-6 py-4 text-gray-600 dark:text-zinc-300">{emp.departamento || '-'}</td>
+                  <td className="px-6 py-4 text-gray-600 dark:text-zinc-300 font-medium">
+                    {emp.horas_meta !== null && emp.horas_meta !== undefined ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 dark:bg-zinc-900 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-zinc-800">
+                        {emp.horas_meta} hrs
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-zinc-600">-</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     {emp.activo ? (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-secondary/10 text-secondary">
@@ -239,6 +316,15 @@ export default function Empleados() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-right space-x-1">
+                    {hasPermission('asistencias.exportar') && (
+                      <button
+                        onClick={() => openReporteModal(emp)}
+                        className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-md transition-colors cursor-pointer"
+                        title="Generar Informe PDF de Prácticas"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => openHistorialModal(emp)}
                       className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-secondary hover:bg-secondary/5 dark:hover:bg-secondary/10 rounded-md transition-colors cursor-pointer"
@@ -246,14 +332,16 @@ export default function Empleados() {
                     >
                       <History className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => openEditModal(emp)}
-                      className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-primary hover:bg-primary/5 dark:hover:bg-zinc-800 rounded-md transition-colors cursor-pointer"
-                      title="Editar"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    {emp.activo && (
+                    {hasPermission('empleados.editar') && (
+                      <button
+                        onClick={() => openEditModal(emp)}
+                        className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-primary hover:bg-primary/5 dark:hover:bg-zinc-800 rounded-md transition-colors cursor-pointer"
+                        title="Editar"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
+                    {hasPermission('empleados.eliminar') && emp.activo && (
                       <button
                         onClick={() => openDeleteModal(emp)}
                         className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
@@ -287,9 +375,15 @@ export default function Empleados() {
               <input type="text" required value={formData.mac} onChange={(e) => setFormData({ ...formData, mac: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white font-mono uppercase" placeholder="68:58:A0:DB:7D:4D" />
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Departamento</label>
-            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. TI / OTI" />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Departamento</label>
+              <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. TI / OTI" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Meta de Horas (Opcional)</label>
+              <input type="number" min="1" value={formData.horas_meta} onChange={(e) => setFormData({ ...formData, horas_meta: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. 640" />
+            </div>
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer">Cancelar</button>
@@ -321,9 +415,15 @@ export default function Empleados() {
               <textarea rows={2} value={formData.motivo_cambio_mac} onChange={(e) => setFormData({ ...formData, motivo_cambio_mac: e.target.value })} placeholder="Ej. Celular perdido, celular reemplazado por garantía, etc." className="w-full border border-amber-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" />
             </div>
           )}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Departamento</label>
-            <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Departamento</label>
+              <input type="text" value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Meta de Horas (Opcional)</label>
+              <input type="number" min="1" value={formData.horas_meta} onChange={(e) => setFormData({ ...formData, horas_meta: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. 640" />
+            </div>
           </div>
           <div className="flex items-center space-x-2 pt-2">
             <input type="checkbox" id="activo-check" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} className="rounded border-gray-300 dark:border-zinc-800 text-primary dark:text-white focus:ring-primary dark:focus:ring-white cursor-pointer" />
@@ -332,6 +432,67 @@ export default function Empleados() {
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer">Cancelar</button>
             <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Guardando...' : 'Guardar Cambios'}</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Generar Informe PDF */}
+      <Modal isOpen={isReporteModalOpen} onClose={() => setIsReporteModalOpen(false)} title={`Generar Informe PDF - ${selectedEmpleado?.nombre || ''}`}>
+        <form onSubmit={handleGenerarPdf} className="space-y-4">
+          <p className="text-xs text-gray-600 dark:text-zinc-400">
+            Seleccione el rango de fechas para generar el informe semanal de asistencias del practicante.
+          </p>
+
+          <div className="p-3 bg-gray-50 dark:bg-zinc-950 border border-gray-100 dark:border-zinc-800 rounded-lg flex items-center justify-between text-xs">
+            <span className="text-gray-600 dark:text-zinc-400 font-medium">Meta de horas configurada:</span>
+            {selectedEmpleado?.horas_meta ? (
+              <span className="font-bold text-primary dark:text-white bg-primary/10 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                Meta: {selectedEmpleado.horas_meta} horas
+              </span>
+            ) : (
+              <span className="text-gray-400 dark:text-zinc-500 italic">No especificada</span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Fecha Inicio *</label>
+              <input
+                type="date"
+                required
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Fecha Fin *</label>
+              <input
+                type="date"
+                required
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setIsReporteModalOpen(false)}
+              className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={generatingPdf}
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <FileText className="w-4 h-4" />
+              <span>{generatingPdf ? 'Generando PDF...' : 'Generar PDF'}</span>
+            </button>
           </div>
         </form>
       </Modal>
