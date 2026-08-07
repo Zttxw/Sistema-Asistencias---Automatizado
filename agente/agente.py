@@ -3,11 +3,20 @@
 Agente de Asistencia (Multiplataforma: Linux / Windows)
 Escanea dispositivos en la red local mediante ARP activo (Scapy)
 y envía las direcciones MAC detectadas a una API REST especificada (/api/deteccion).
+
+Rutas de datos (config.json, agente.log):
+  - Si existe la variable de entorno AGENTE_DATA_DIR, usa esa ruta
+    (configurada por el instalador / Tarea Programada apuntando a
+     C:\ProgramData\SistemaAsistencias\Agente\)
+  - Si no, usa la carpeta donde está el ejecutable (.exe) o el script (.py)
+  Esto permite que funcione tanto instalado (Program Files + ProgramData)
+  como portátil (todo en la misma carpeta).
 """
 
 import json
 import logging
 import os
+import platform
 import socket
 import sys
 import time
@@ -31,8 +40,32 @@ except ImportError:
     sys.exit(1)
 
 
-# Configuración del sistema de logging (Consola + Archivo agente.log)
+IS_WINDOWS = platform.system() == "Windows"
+
+
+def obtener_data_dir():
+    """
+    Determina la carpeta de datos (donde viven config.json y agente.log).
+    Orden de prioridad:
+      1. Variable de entorno AGENTE_DATA_DIR (puesta por el instalador o la Tarea Programada)
+      2. Carpeta del ejecutable (.exe compilado con PyInstaller)
+      3. Carpeta del script (.py en desarrollo)
+    """
+    # 1. Variable de entorno explícita (instalación con Inno Setup)
+    env_dir = os.environ.get("AGENTE_DATA_DIR")
+    if env_dir and os.path.isdir(env_dir):
+        return env_dir
+
+    # 2. Ejecutable compilado (PyInstaller --onefile)
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+
+    # 3. Script Python normal (desarrollo)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 def setup_logging():
+    """Configuración del sistema de logging (Consola + Archivo agente.log)"""
     log_format = "%(asctime)s [%(levelname)s] %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
 
@@ -43,10 +76,27 @@ def setup_logging():
     if logger.hasHandlers():
         logger.handlers.clear()
 
+    data_dir = obtener_data_dir()
+    log_path = os.path.join(data_dir, "agente.log")
+
     # Handler para archivo de log local
-    file_handler = logging.FileHandler("agente.log", encoding="utf-8")
-    file_handler.setFormatter(logging.Formatter(log_format, date_format))
-    logger.addHandler(file_handler)
+    try:
+        file_handler = logging.FileHandler(log_path, encoding="utf-8")
+        file_handler.setFormatter(logging.Formatter(log_format, date_format))
+        logger.addHandler(file_handler)
+    except PermissionError:
+        # Si no puede escribir en la carpeta del exe (ej: Program Files),
+        # intenta en ProgramData como fallback
+        if IS_WINDOWS:
+            fallback_dir = os.path.join(
+                os.environ.get("ProgramData", r"C:\ProgramData"),
+                "SistemaAsistencias", "Agente"
+            )
+            os.makedirs(fallback_dir, exist_ok=True)
+            log_path = os.path.join(fallback_dir, "agente.log")
+            file_handler = logging.FileHandler(log_path, encoding="utf-8")
+            file_handler.setFormatter(logging.Formatter(log_format, date_format))
+            logger.addHandler(file_handler)
 
     # Handler para consola
     console_handler = logging.StreamHandler(sys.stdout)
@@ -54,9 +104,11 @@ def setup_logging():
     logger.addHandler(console_handler)
 
 
-def cargar_configuracion(ruta_config="config.json"):
+def cargar_configuracion():
     """
-    Carga el archivo config.json o retorna valores por defecto en caso de error.
+    Carga config.json desde la carpeta de datos.
+    Busca en: AGENTE_DATA_DIR > carpeta del ejecutable > carpeta del script.
+    Si no existe, busca también en ProgramData como fallback en Windows.
     """
     config_default = {
         "network_range": "auto",
@@ -66,21 +118,39 @@ def cargar_configuracion(ruta_config="config.json"):
         "interface": None
     }
 
-    if not os.path.exists(ruta_config):
-        logging.warning(f"Archivo {ruta_config} no encontrado. Creando valores por defecto.")
-        return config_default
+    # Lista de rutas candidatas para config.json
+    rutas_candidatas = []
 
-    try:
-        with open(ruta_config, "r", encoding="utf-8") as f:
-            config = json.load(f)
-            # Combinar con valores por defecto para asegurar todas las claves
-            for k, v in config_default.items():
-                if k not in config:
-                    config[k] = v
-            return config
-    except Exception as e:
-        logging.error(f"Error al leer {ruta_config}: {e}. Usando configuración por defecto.")
-        return config_default
+    data_dir = obtener_data_dir()
+    rutas_candidatas.append(os.path.join(data_dir, "config.json"))
+
+    # Fallback: ProgramData en Windows (para instalación con Inno Setup)
+    if IS_WINDOWS:
+        programdata_dir = os.path.join(
+            os.environ.get("ProgramData", r"C:\ProgramData"),
+            "SistemaAsistencias", "Agente"
+        )
+        ruta_pd = os.path.join(programdata_dir, "config.json")
+        if ruta_pd not in rutas_candidatas:
+            rutas_candidatas.append(ruta_pd)
+
+    # Intentar cargar desde cada ruta candidata
+    for ruta_config in rutas_candidatas:
+        if os.path.exists(ruta_config):
+            try:
+                with open(ruta_config, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+                    for k, v in config_default.items():
+                        if k not in config:
+                            config[k] = v
+                    logging.info(f"Configuración cargada desde: {ruta_config}")
+                    return config
+            except Exception as e:
+                logging.error(f"Error al leer {ruta_config}: {e}")
+                continue
+
+    logging.warning("No se encontró config.json en ninguna ruta. Usando configuración por defecto.")
+    return config_default
 
 
 def obtener_ip_local():
@@ -135,10 +205,10 @@ def realizar_escaneo_arp(rango_red, timeout_seconds=3, interface=None):
     Devuelve una lista de diccionarios con IP y MAC.
     """
     logging.info(f"Iniciando escaneo ARP en {rango_red} (timeout={timeout_seconds}s)...")
-    
+
     # Construcción de paquete Ethernet broadcast + ARP request
     paquete = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=rango_red)
-    
+
     kwargs = {
         "timeout": timeout_seconds,
         "retry": 2,
@@ -187,8 +257,14 @@ def enviar_dispositivo_api(url, mac, agente_id):
 def main():
     setup_logging()
     agente_hostname = socket.gethostname()
+    data_dir = obtener_data_dir()
+
     logging.info("=" * 60)
     logging.info(f"Iniciando Agente de Asistencia - Hostname: {agente_hostname}")
+    logging.info(f"Sistema operativo: {platform.system()} {platform.release()}")
+    logging.info(f"Carpeta de datos: {data_dir}")
+    if getattr(sys, 'frozen', False):
+        logging.info(f"Ejecutable: {sys.executable}")
     logging.info("=" * 60)
 
     config = cargar_configuracion()
