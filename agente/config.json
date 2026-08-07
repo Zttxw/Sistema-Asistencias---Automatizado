@@ -1,7 +1,7 @@
 {
-  "network_range": "192.168.0.0/24",
-  "interface": "wlo1",
-  "api_url": "http://10.0.30.50:8010/api/deteccion",
+  "network_range": "192.168.1.0/24",
+  "interface": "Wi-Fi",
+  "api_url": "http://localhost:8010/api/deteccion",
   "interval_seconds": 60,
   "timeout_seconds": 3,
   "_comment_timeout": "Nota: si la red tiene muchos dispositivos (30+) y se detectan menos MACs de las esperadas, subir timeout_seconds a 5-8 segundos."

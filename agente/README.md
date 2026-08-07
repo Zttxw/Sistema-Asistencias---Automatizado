@@ -75,20 +75,27 @@ El archivo `config.json` define los parámetros de red y conexión del agente:
 
 ```json
 {
-  "network_range": "192.168.0.0/24",
-  "interface": "wlo1",
-  "api_url": "http://localhost:8001/api/deteccion",
+  "network_range": "192.168.1.0/24",
+  "interface": "Wi-Fi",
+  "api_url": "http://<IP_LOCAL_DE_LA_PC_SERVIDOR>:8010/api/deteccion",
   "interval_seconds": 60,
   "timeout_seconds": 3,
   "_comment_timeout": "Nota: si la red tiene muchos dispositivos (30+) y se detectan menos MACs de las esperadas, subir timeout_seconds a 5-8 segundos."
 }
 ```
 
+> **¿Qué poner en `api_url`?**  
+> `<IP_LOCAL_DE_LA_PC_SERVIDOR>` es la **IP de red local (LAN)** de la PC Windows
+> donde corre el stack Docker Desktop (backend + MySQL + frontend).  
+> Para obtenerla, en esa PC abrir CMD y ejecutar `ipconfig` → buscar
+> **"Dirección IPv4"** en la interfaz Ethernet o Wi-Fi activa (ej. `192.168.1.100`).  
+> Ejemplo final: `"api_url": "http://192.168.1.100:8010/api/deteccion"`
+
 ### Explicación de Parámetros:
 - `interface`: Nombre explícito de la interfaz de red a escanear (ej. `"wlo1"`, `"eth0"`, `"Wi-Fi"`, o `null` para interfaz por defecto).
   > **RECOMENDACIÓN CRÍTICA PARA SISTEMAS MULTI-INTERFAZ**: En equipos que cuentan con múltiples interfaces de red activas (por ejemplo, cable Ethernet `eno1` + interfaz Wi-Fi `wlo1`), se **recomienda ampliamente especificar la interfaz manualmente** (ej. `"interface": "wlo1"`). Si se deja en `null` o `"auto"`, la autodetección de socket puede seleccionar la interfaz predeterminada del gateway (Ethernet en lugar de Wi-Fi).
 - `network_range`: Rango CIDR a escanear (ej: `"192.168.0.0/24"`). Si se especifica `"auto"` o `null`, el agente intentará autodetectar la subred `/24` asociada a la interfaz configurada o activa.
-- `api_url`: Endpoint remoto al cual enviar las peticiones HTTP POST por cada MAC detectada (ej: `"http://localhost:8001/api/deteccion"`).
+- `api_url`: Endpoint del backend al cual enviar las peticiones HTTP POST por cada MAC detectada. Debe apuntar a la IP LAN de la PC servidor donde corre Docker Desktop (ej: `"http://192.168.1.100:8010/api/deteccion"`).
 - `interval_seconds`: Tiempo de espera en segundos entre cada ciclo completo de escaneo (ej: `60`).
 - `timeout_seconds`: Tiempo máximo de espera en segundos para las respuestas ARP broadcast (default: `3`).
   > **Nota de Ajuste de Red**: En redes saturadas o con más de 30-50 dispositivos conectados simultáneamente, se recomienda aumentar `timeout_seconds` a **5 a 8 segundos** si se observa que algunas MACs tardan en responder.

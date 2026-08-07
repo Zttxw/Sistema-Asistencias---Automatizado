@@ -1,7 +1,8 @@
 {
   "network_range": "192.168.1.0/24",
-  "interface": "eth0",
-  "api_url": "http://10.0.30.50:8010/api/deteccion",
+  "interface": "Wi-Fi",
+  "api_url": "http://<IP_LOCAL_DE_LA_PC_SERVIDOR>:8010/api/deteccion",
   "interval_seconds": 60,
-  "timeout_seconds": 3
+  "timeout_seconds": 3,
+  "_comment_api_url": "Reemplazar <IP_LOCAL_DE_LA_PC_SERVIDOR> con la IP LAN de la PC donde corre Docker Desktop. Obtenerla con 'ipconfig' en esa PC (buscar 'Dirección IPv4'). Ej: http://192.168.1.100:8010/api/deteccion"
 }

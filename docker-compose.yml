@@ -42,12 +42,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://${SERVER_HOST:-localhost}:8010}
     container_name: asistencias_frontend
     restart: always
     ports:
       - "8082:80"
-    environment:
-      - VITE_API_URL=${VITE_API_URL:-http://10.0.30.50:8010}
     depends_on:
       - backend
     networks:
