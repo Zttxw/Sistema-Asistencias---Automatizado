@@ -5,16 +5,16 @@ services:
     restart: always
     environment:
       TZ: America/Lima
-      MYSQL_DATABASE: ${MYSQL_DB:-asistencias_db}
-      MYSQL_USER: ${MYSQL_USER:-asistencias_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-asistencias_pass}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pass}
+      MYSQL_DATABASE: ${MYSQL_DB:?Error: define MYSQL_DB en .env}
+      MYSQL_USER: ${MYSQL_USER:?Error: define MYSQL_USER en .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Error: define MYSQL_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Error: define MYSQL_ROOT_PASSWORD en .env}
     volumes:
       - asistencias_mysql_data:/var/lib/mysql
     networks:
       - asistencias_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_pass}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:?Error: define MYSQL_ROOT_PASSWORD en .env}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -29,9 +29,9 @@ services:
       TZ: America/Lima
       MYSQL_SERVER: db
       MYSQL_PORT: 3306
-      MYSQL_DB: ${MYSQL_DB:-asistencias_db}
-      MYSQL_USER: ${MYSQL_USER:-asistencias_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-asistencias_pass}
+      MYSQL_DB: ${MYSQL_DB:?Error: define MYSQL_DB en .env}
+      MYSQL_USER: ${MYSQL_USER:?Error: define MYSQL_USER en .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Error: define MYSQL_PASSWORD en .env}
     depends_on:
       db:
         condition: service_healthy
@@ -47,7 +47,7 @@ services:
     ports:
       - "8082:80"
     environment:
-      - VITE_API_URL=http://10.0.30.50:8010
+      - VITE_API_URL=${VITE_API_URL:-http://10.0.30.50:8010}
     depends_on:
       - backend
     networks:

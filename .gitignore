@@ -45,3 +45,8 @@ asistencias.xlsx
 *.xlsx
 mysql_data/
 **/mysql_data/
+
+# Internal VM documentation
+NOTAS_INTERNAS_VM.md
+*.internal.md
+
