@@ -8,10 +8,20 @@ El **Sistema de Asistencias** es una solución integral multi-componente diseña
 
 ```text
 Sistema de Asistencias/
-├── agente/       -> Cliente liviano Python (Linux/Windows) en la PC de oficina (Sensor puro público)
-├── backend/      -> API REST en FastAPI con RBAC (JWT + Refresh Tokens) + Base de Datos MySQL en Docker
-└── frontend/     -> Dashboard Web en React + Vite + TailwindCSS expuesto en puerto 8082
+├── agente/           -> Cliente liviano Python (Linux/Windows) para las PCs de la oficina. NO se despliega en la VM.
+├── backend/          -> API REST en FastAPI con RBAC (JWT + Refresh Tokens) + Base de Datos MySQL (desplegado en VM puerto 8010).
+├── frontend/         -> Dashboard Web en React + Vite expuesto vía Nginx (desplegado en VM puerto 8082).
+├── docker-compose.yml -> Orquestador Docker unificado (se ejecuta en la VM).
+└── deploy_vm.sh      -> Script de despliegue seguro y verificación para la VM.
 ```
+
+### Distribución y Roles de Despliegue
+
+- **`agente/`**: Código que corre únicamente en las PCs Windows/Linux de la oficina física. **NO se despliega en la VM del servidor**. Se instala manualmente en cada PC cliente (vía el ejecutable `.exe` generado con PyInstaller + Inno Setup).
+- **`backend/`**: Se despliega en la VM del servidor dentro de un contenedor Docker (`asistencias_backend`, puerto `8010`).
+- **`frontend/`**: Se despliega en la VM del servidor dentro de un contenedor Docker (`asistencias_frontend`, puerto `8082`).
+- **`docker-compose.yml` y `deploy_vm.sh`**: Viven en la raíz del repositorio y se ejecutan **únicamente en la VM**. Al clonar el repositorio completo en la VM del servidor, la carpeta `agente/` se descarga pero simplemente no se utiliza (`docker-compose.yml` no la referencia), lo cual es totalmente intencional para mantener el control de versiones unificado de todo el proyecto.
+
 
 ---
 
@@ -109,12 +119,15 @@ curl -X POST http://localhost:8001/api/empleados \
 
 ---
 
-## Ejecución Rápida (Docker)
+## Ejecución Rápida (Docker en VM)
 
 ```bash
-cd backend
+# Ejecutar desde la raíz del proyecto (o con deploy_vm.sh)
+./deploy_vm.sh
+# O manualmente:
 docker compose up -d --build
 ```
-- Frontend Dashboard: `http://localhost:8082`
-- API REST Backend: `http://localhost:8001`
-- Swagger Docs interactivo: `http://localhost:8001/docs`
+- Frontend Dashboard: `http://10.0.30.50:8082` (o `http://localhost:8082`)
+- API REST Backend: `http://10.0.30.50:8010` (o `http://localhost:8010`)
+- Swagger Docs interactivo: `http://10.0.30.50:8010/docs`
+
