@@ -217,50 +217,50 @@ export default function Agente() {
             <Activity className="w-4 h-4 text-primary dark:text-white" />
             Estado del Agente
           </h2>
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
             isRunning
               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
               : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30'
           }`}>
             {isRunning ? (
               <>
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
-                <span>En Línea</span>
+                <span>{status?.status_label || '🟢 EN LÍNEA (Bombeando)'}</span>
               </>
             ) : (
               <>
-                <XCircle className="w-3 h-3" />
-                <span>Detenido</span>
+                <XCircle className="w-3.5 h-3.5 text-red-500" />
+                <span>{status?.status_label || '🔴 DETENIDO / SIN SEÑAL'}</span>
               </>
             )}
           </div>
         </div>
 
         {status?.error && !isRunning && (
-          <div className="mx-5 mt-4 flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-700 dark:text-amber-300">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+          <div className="mx-5 mt-4 flex items-center gap-2.5 p-3.5 bg-red-500/10 border border-red-500/30 rounded-lg text-xs font-medium text-red-700 dark:text-red-300">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
             <span>{status.error}</span>
           </div>
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-gray-100 dark:bg-zinc-800">
           {[
+            { label: 'Latido de Red', value: status?.seconds_since_last_pulse !== undefined && status.seconds_since_last_pulse !== null ? `Hace ${status.seconds_since_last_pulse}s` : '--', icon: Activity },
             { label: 'PID', value: status?.pid || '--', icon: Cpu },
             { label: 'Hostname', value: status?.hostname || '--', icon: Settings2 },
             { label: 'Uptime', value: formatUptime(status?.uptime_seconds), icon: Clock },
             { label: 'Último Escaneo', value: status?.last_scan_time ? new Date(status.last_scan_time).toLocaleTimeString('es-PE') : '--', icon: Wifi },
-            { label: 'Dispositivos', value: status?.devices_last_scan ?? '--', icon: Wifi },
             { label: 'Escaneos Total', value: status?.total_scans ?? '--', icon: BarChart3 },
           ].map((item, idx) => {
             const Icon = item.icon;
             return (
               <div key={idx} className="bg-white dark:bg-zinc-950 p-4 flex flex-col items-center text-center gap-1">
-                <Icon className="w-4 h-4 text-gray-400 dark:text-zinc-500" />
+                <Icon className={`w-4 h-4 ${idx === 0 && isRunning ? 'text-emerald-500 animate-pulse' : 'text-gray-400 dark:text-zinc-500'}`} />
                 <span className="text-[10px] font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">{item.label}</span>
-                <span className="text-sm font-bold font-mono text-gray-900 dark:text-white">{item.value}</span>
+                <span className={`text-sm font-bold font-mono ${idx === 0 && isRunning ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>{item.value}</span>
               </div>
             );
           })}

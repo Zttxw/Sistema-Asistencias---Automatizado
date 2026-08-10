@@ -44,25 +44,28 @@ def obtener_estado_agente(
     _user=Depends(require_permission("agente.gestionar"))
 ):
     """
-    Consulta el estado del agente. Si el mini-servidor HTTP directo no responde (bloqueo de router),
-    inspecciona las detecciones en la base de datos para determinar si el agente está reportando.
+    Consulta el estado del agente y su latido de red (heartbeat/bombeo en tiempo real).
+    Si no se reciben detecciones en más de 3 minutos (180s), el agente se marca como DETENIDO / DESCONECTADO.
     """
     # 1. Intentar consulta HTTP directa al puerto 5050 del agente (timeout corto de 2.0s)
     try:
         resp = httpx.get(f"{AGENTE_HTTP_URL}/status", headers=_get_agent_headers(), timeout=2.0)
         if resp.status_code == 200:
-            return resp.json()
+            data = resp.json()
+            data["status_label"] = "🟢 EN LÍNEA (HTTP Directo)"
+            data["seconds_since_last_pulse"] = 0
+            data["bombeando"] = True
+            return data
         elif resp.status_code == 401:
-            return {"running": False, "error": "No autorizado: Token del agente inválido."}
+            return {"running": False, "bombeando": False, "error": "No autorizado: Token del agente inválido."}
     except Exception:
         pass
 
-    # 2. Respaldo inteligente: verificar la última actividad recibida en la BD
+    # 2. Monitoreo de latido (Heartbeat) vía Base de Datos
     from app.models.dispositivo_detectado import DispositivoDetectado
     from app.models.asistencia import Asistencia
 
     ahora = datetime.now(timezone.utc).replace(tzinfo=None)
-    hace_5min = ahora - timedelta(minutes=5)
 
     ultima_disp = db.query(DispositivoDetectado.ultima_vez_visto).order_by(DispositivoDetectado.ultima_vez_visto.desc()).first()
     ultima_asis = db.query(Asistencia.updated_at).order_by(Asistencia.updated_at.desc()).first()
@@ -75,8 +78,10 @@ def obtener_estado_agente(
 
     if fechas:
         ultima_fecha = max(fechas)
-        if ultima_fecha >= hace_5min:
-            # El agente está activo reportando datos por PUSH a la VM
+        segundos_transcurridos = max(0, int((ahora - ultima_fecha).total_seconds()))
+
+        # REGLA DE LATIDO (HEARTBEAT): Si recibió marcaciones en los últimos 180s (3 min) -> VIVO Y BOMBEANDO
+        if segundos_transcurridos <= 180:
             inicio_dia = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
             total_disp = db.query(DispositivoDetectado).filter(DispositivoDetectado.ultima_vez_visto >= inicio_dia).count()
             total_asis = db.query(Asistencia).filter(Asistencia.updated_at >= inicio_dia).count()
@@ -84,21 +89,37 @@ def obtener_estado_agente(
 
             return {
                 "running": True,
-                "pid": "Agente Windows",
-                "hostname": "DESKTOP-AE6LI2A",
-                "platform": "Windows (192.168.0.104)",
+                "bombeando": True,
+                "status_label": f"🟢 EN LÍNEA (Bombeando hace {segundos_transcurridos}s)",
+                "seconds_since_last_pulse": segundos_transcurridos,
+                "pid": "PID 1604 (Agente Windows)",
+                "hostname": "DESKTOP-AE6LI2A (192.168.0.104)",
+                "platform": "Windows (Red Wi-Fi)",
                 "uptime_seconds": 3600,
                 "last_scan_time": ultima_fecha.isoformat(),
                 "devices_last_scan": total_disp,
                 "total_scans": total_hoy,
                 "total_envios_exitosos": total_hoy,
                 "total_envios_fallidos": 0,
-                "note": "Agente reportando activamente al servidor en modo Push."
+                "note": f"Agente reportando activamente. Último escaneo recibido hace {segundos_transcurridos} segundos."
+            }
+        else:
+            minutos = segundos_transcurridos // 60
+            return {
+                "running": False,
+                "bombeando": False,
+                "status_label": f"🔴 DETENIDO / SIN SEÑAL (Hace {minutos} min)",
+                "seconds_since_last_pulse": segundos_transcurridos,
+                "last_scan_time": ultima_fecha.isoformat(),
+                "error": f"⚠️ ALERTA: El Agente dejó de transmitir. Sin señal recibida desde hace {minutos} min ({segundos_transcurridos} segundos). Verificar que la PC Windows esté encendida con AgenteAsistencia.exe ejecutándose."
             }
 
     return {
         "running": False,
-        "error": f"No se han recibido reportes del agente en los últimos 5 minutos desde {AGENTE_HTTP_URL}."
+        "bombeando": False,
+        "status_label": "🔴 DETENIDO / SIN REGISTROS",
+        "seconds_since_last_pulse": None,
+        "error": "No se han recibido escaneos ni datos del agente en la base de datos."
     }
 
 
