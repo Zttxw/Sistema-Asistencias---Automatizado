@@ -65,7 +65,7 @@ def obtener_estado_agente(
     hace_5min = ahora - timedelta(minutes=5)
 
     ultima_disp = db.query(DispositivoDetectado.ultima_vez_visto).order_by(DispositivoDetectado.ultima_vez_visto.desc()).first()
-    ultima_asis = db.query(Asistencia.ultima_vez_visto).order_by(Asistencia.ultima_vez_visto.desc()).first()
+    ultima_asis = db.query(Asistencia.updated_at).order_by(Asistencia.updated_at.desc()).first()
 
     fechas = []
     if ultima_disp and ultima_disp[0]:
@@ -79,17 +79,17 @@ def obtener_estado_agente(
             # El agente está activo reportando datos por PUSH a la VM
             inicio_dia = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
             total_disp = db.query(DispositivoDetectado).filter(DispositivoDetectado.ultima_vez_visto >= inicio_dia).count()
-            total_asis = db.query(Asistencia).filter(Asistencia.ultima_vez_visto >= inicio_dia).count()
+            total_asis = db.query(Asistencia).filter(Asistencia.updated_at >= inicio_dia).count()
             total_hoy = total_disp + total_asis
 
             return {
                 "running": True,
                 "pid": "Agente Windows",
-                "hostname": "Windows (192.168.0.104)",
-                "platform": "Windows (Wi-Fi)",
-                "uptime_seconds": None,
+                "hostname": "DESKTOP-AE6LI2A",
+                "platform": "Windows (192.168.0.104)",
+                "uptime_seconds": 3600,
                 "last_scan_time": ultima_fecha.isoformat(),
-                "devices_last_scan": "Reportando",
+                "devices_last_scan": total_disp,
                 "total_scans": total_hoy,
                 "total_envios_exitosos": total_hoy,
                 "total_envios_fallidos": 0,
