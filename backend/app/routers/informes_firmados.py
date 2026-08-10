@@ -14,22 +14,23 @@ from app.schemas.informe_firmado import SemanaDisponibleItem, InformeFirmadoResp
 router = APIRouter(prefix="/api/informes-firmados", tags=["informes-firmados"])
 
 
+@router.get("/mis-meses-completados", response_model=SemanasCompletadasResponse)
 @router.get("/mis-semanas-completadas", response_model=SemanasCompletadasResponse)
 def listar_mis_semanas_completadas(
     user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Retorna la lista de semanas completadas y el informe consolidado para el practicante autenticado.
+    Retorna la lista de meses completados del practicante autenticado.
     """
     emp = user.empleado
     if not emp and user.email:
         emp = crud.crud_empleado.get_empleado_by_email(db, user.email)
     
     if not emp:
-        return {"semanas": [], "consolidado": None}
+        return {"meses": [], "semanas": [], "consolidado": None}
 
-    return crud.crud_informe_firmado.get_semanas_completadas_empleado(db, emp.id)
+    return crud.crud_informe_firmado.get_meses_completados_empleado(db, emp.id)
 
 
 @router.get("/mi-informe-pdf")
@@ -112,20 +113,21 @@ def descargar_mi_informe_pdf(
     )
 
 
+@router.get("/empleados/{empleado_id}/meses-completados", response_model=SemanasCompletadasResponse)
 @router.get("/empleados/{empleado_id}/semanas-completadas", response_model=SemanasCompletadasResponse)
 def listar_semanas_completadas_empleado(
     empleado_id: int,
     db: Session = Depends(get_db)
 ):
     """
-    Retorna la lista de semanas COMPLETADAS pasadas del practicante y la información del informe consolidado general (1 a N semanas).
-    Indica si cada semana (o el consolidado) ya cuenta con un PDF firmado digitalmente.
+    Retorna la lista de meses COMPLETADOS del practicante (1 a N meses).
+    Indica si cada mes ya cuenta con un PDF firmado digitalmente.
     """
     emp = crud.crud_empleado.get_empleado_by_id(db, empleado_id)
     if not emp:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
 
-    return crud.crud_informe_firmado.get_semanas_completadas_empleado(db, empleado_id)
+    return crud.crud_informe_firmado.get_meses_completados_empleado(db, empleado_id)
 
 
 @router.post("/empleados/{empleado_id}/subir", response_model=InformeFirmadoResponse, dependencies=[Depends(require_permission("asistencias.exportar"))])

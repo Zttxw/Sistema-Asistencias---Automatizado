@@ -127,8 +127,7 @@ def generar_pdf_informe_semanal_practicante(
     elements = []
 
     # 1. Encabezado del documento
-    es_semanal = (fecha_fin - fecha_inicio).days <= 7
-    doc_titulo = "INFORME SEMANAL DE ASISTENCIA (LUNES A VIERNES)" if es_semanal else "INFORME DE ASISTENCIA Y CONTROL DE PRÁCTICAS PRE-PROFESIONALES"
+    doc_titulo = "INFORME MENSUAL DE ASISTENCIA Y CONTROL DE PRÁCTICAS PRE-PROFESIONALES"
     
     elements.append(Paragraph(doc_titulo, title_style))
     elements.append(Paragraph("Oficina de Tecnologías de la Información &bull; Control de Asistencia y Firma Digital", subtitle_style))
@@ -333,12 +332,10 @@ def generar_pdf_informe_semanal_practicante(
 
     meta_alcanzada = empleado.horas_meta is not None and total_consolidado_horas >= float(empleado.horas_meta)
     
-    if es_semanal:
-        cons_titulo = "<b>RESUMEN DE ASISTENCIA SEMANAL</b>"
-    elif meta_alcanzada:
-        cons_titulo = "<b>CONSOLIDADO FINAL DE PRÁCTICAS PRE-PROFESIONALES (META COMPLETADA)</b>"
+    if meta_alcanzada:
+        cons_titulo = "<b>RESUMEN MENSUAL Y CONTROL FINAL DE PRÁCTICAS (META COMPLETADA)</b>"
     else:
-        cons_titulo = "<b>AVANCE CONSOLIDADO DE PRÁCTICAS (EN CURSO - FIRMA SEMANAL)</b>"
+        cons_titulo = "<b>RESUMEN Y CONTROL MENSUAL DE ASISTENCIAS (EN CURSO - FIRMA MENSUAL)</b>"
 
     consolidado_elements.append(Paragraph(cons_titulo, consolidado_title_style))
 
@@ -387,7 +384,7 @@ def generar_pdf_informe_semanal_practicante(
     # Nota explicativa final
     sig_text = Paragraph(
         "<b>NOTA:</b> El presente informe es un documento impreso/digital oficial de asistencia. "
-        "Está diseñado para ser firmado semanalmente mediante firma digital o física.",
+        "Está diseñado para ser firmado mensualmente mediante firma digital o física.",
         ParagraphStyle('Note', parent=styles['Normal'], fontName='Helvetica-Oblique', fontSize=7.5, leading=9.5, textColor=colors.HexColor("#64748B"), alignment=1)
     )
     consolidado_elements.append(sig_text)

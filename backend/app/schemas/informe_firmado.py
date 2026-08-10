@@ -16,31 +16,34 @@ class InformeFirmadoResponse(BaseModel):
         from_attributes = True
 
 
-class SemanaDisponibleItem(BaseModel):
-    numero_semana: int
-    semana_inicio: date
-    semana_fin: date
+class MesDisponibleItem(BaseModel):
+    numero_mes: int
+    nombre_mes: str
+    fecha_inicio: date
+    fecha_fin: date
     rango_str: str
-    horas_semana: float
+    horas_mes: float
     firmado: bool
     informe_firmado_id: Optional[int] = None
     fecha_firma: Optional[datetime] = None
     nombre_archivo: Optional[str] = None
+    # Alias de compatibilidad para endpoints de fecha
+    semana_inicio: Optional[date] = None
+    semana_fin: Optional[date] = None
+    numero_semana: Optional[int] = None
+    horas_semana: Optional[float] = None
 
 
-class ConsolidadoInfo(BaseModel):
-    semana_inicio: date
-    semana_fin: date
-    rango_str: str
-    total_semanas: int
-    total_horas: float
-    firmado: bool
-    informe_firmado_id: Optional[int] = None
-    fecha_firma: Optional[datetime] = None
-    nombre_archivo: Optional[str] = None
+class MesesCompletadosResponse(BaseModel):
+    meses: list[MesDisponibleItem]
+    # Alias de compatibilidad
+    semanas: Optional[list[MesDisponibleItem]] = None
+    consolidado: Optional[dict] = None
 
 
-class SemanasCompletadasResponse(BaseModel):
-    semanas: list[SemanaDisponibleItem]
-    consolidado: Optional[ConsolidadoInfo] = None
+# Alias de compatibilidad
+SemanaDisponibleItem = MesDisponibleItem
+ConsolidadoInfo = dict
+SemanasCompletadasResponse = MesesCompletadosResponse
+
 

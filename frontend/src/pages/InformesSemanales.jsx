@@ -268,7 +268,7 @@ export default function InformesSemanales() {
 
       if (busqueda.trim() !== '') {
         const query = busqueda.toLowerCase();
-        const coincideSemana = `semana ${s.numero_semana}`.includes(query) || `${s.numero_semana}`.includes(query);
+        const coincideSemana = `semana ${s.numero_semana || s.numero_mes}`.includes(query) || `${s.numero_semana || s.numero_mes}`.includes(query) || (s.nombre_mes && s.nombre_mes.toLowerCase().includes(query));
         const coincideRango = s.rango_str.toLowerCase().includes(query);
         return coincideSemana || coincideRango;
       }
@@ -284,11 +284,11 @@ export default function InformesSemanales() {
           <div className="flex items-center gap-2">
             <FileSignature className="w-5 h-5 text-[#3484A5]" />
             <h1 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight font-mono uppercase">
-              Informes Semanales & Firma Digital
+              Informes Mensuales & Firma Digital
             </h1>
           </div>
           <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-            Oficina de Tecnologías de la Información &bull; Gestión e Inspección de Asistencias
+            Oficina de Tecnologías de la Información &bull; Gestión e Inspección de Asistencias Mensuales
           </p>
         </div>
 
@@ -345,7 +345,7 @@ export default function InformesSemanales() {
             Seleccione un Practicante
           </h3>
           <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto mt-1 leading-relaxed">
-            Elija un practicante o empleado del menú desplegable superior para consultar su avance de horas y administrar firmas digitales.
+            Elija un practicante o empleado del menú desplegable superior para consultar sus meses concluidos y administrar firmas digitales mensuales.
           </p>
         </div>
       ) : (
@@ -388,15 +388,15 @@ export default function InformesSemanales() {
               </span>
             </div>
 
-            {/* Resumen Semanas Firmadas vs Pendientes */}
+            {/* Resumen Meses Firmados vs Pendientes */}
             <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-2xs flex flex-col justify-between">
               <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest font-mono">
-                Estado de Informes
+                Estado de Informes Mensuales
               </span>
 
               <div className="grid grid-cols-2 gap-3 my-1">
                 <div className="p-2 bg-slate-50 dark:bg-zinc-800/50 rounded-lg border border-slate-200 dark:border-zinc-700/60 text-center">
-                  <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Firmadas</span>
+                  <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Firmados</span>
                   <span className="text-lg font-bold text-[#1A5C50] dark:text-emerald-400 font-mono">{firmadasCount}</span>
                 </div>
                 <div className="p-2 bg-slate-50 dark:bg-zinc-800/50 rounded-lg border border-slate-200 dark:border-zinc-700/60 text-center">
@@ -406,113 +406,10 @@ export default function InformesSemanales() {
               </div>
 
               <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono">
-                Total: {semanas.length} semanas concluidas
+                Total: {semanas.length} meses concluidos
               </span>
             </div>
           </div>
-
-          {/* INFORME CONSOLIDADO GENERAL */}
-          {infoConsolidado && (
-            <div className="p-4 bg-slate-900 dark:bg-black text-white rounded-xl border border-slate-800 shadow-2xs space-y-3 font-sans">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-2.5">
-                <div className="flex items-center gap-2.5">
-                  <FileText className="w-4 h-4 text-[#3484A5]" />
-                  <div>
-                    <h2 className="text-xs font-bold text-white font-mono uppercase tracking-wider">
-                      {porcentajeHoras >= 100
-                        ? `Informe Consolidado Final de Prácticas (Semanas 1 a ${infoConsolidado.total_semanas})`
-                        : `Avance Consolidado (Semanas 1 a ${infoConsolidado.total_semanas} — Firma Semanal)`}
-                    </h2>
-                    <p className="text-[11px] text-slate-400">
-                      {porcentajeHoras >= 100
-                        ? `Meta completada por ${empActual?.nombre || 'Practicante'}. Expediente listo para consolidado final.`
-                        : `Prácticas en curso (${horasAcumuladas} / ${horasMeta} hrs). Firma habilitada por semana (Lunes a Viernes).`}
-                    </p>
-                  </div>
-                </div>
-
-                {porcentajeHoras >= 100 ? (
-                  infoConsolidado.firmado ? (
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shrink-0 self-start sm:self-auto flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      CONSOLIDADO FINAL FIRMADO
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 shrink-0 self-start sm:self-auto flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      CONSOLIDADO PENDIENTE
-                    </span>
-                  )
-                ) : (
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30 shrink-0 self-start sm:self-auto flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    EN CURSO (FIRMA SEMANAL)
-                  </span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-950/70 p-3 rounded-lg border border-slate-800 text-[11px]">
-                <div>
-                  <span className="text-slate-400 font-mono block text-[10px]">Rango Registrado</span>
-                  <span className="font-mono font-bold text-white">{infoConsolidado.rango_str}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-mono block text-[10px]">Semanas Concluidas</span>
-                  <span className="font-mono font-bold text-white">{infoConsolidado.total_semanas} semana(s)</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-mono block text-[10px]">Horas Acumuladas</span>
-                  <span className="font-mono font-bold text-emerald-400">{infoConsolidado.total_horas} / {horasMeta} hrs</span>
-                </div>
-              </div>
-
-              {/* Acciones Consolidado */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                <button
-                  onClick={handleDescargarConsolidadoLimpio}
-                  className="px-3.5 py-2 bg-[#3484A5] hover:bg-[#2b6f8b] text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                  title="Descargar reporte PDF unificado"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Descargar Reporte PDF (1 a {infoConsolidado.total_semanas} semanas)</span>
-                </button>
-
-                {infoConsolidado.firmado ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleDescargarFirmado(infoConsolidado.informe_firmado_id, 'CONSOLIDADO')}
-                      className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      <span>Ver Consolidado Firmado</span>
-                    </button>
-
-                    <label className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg cursor-pointer transition-colors border border-slate-700">
-                      <span>Reemplazar</span>
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        className="hidden"
-                        onChange={(e) => handleSubirConsolidadoFirmado(e.target.files[0])}
-                      />
-                    </label>
-                  </div>
-                ) : (
-                  <label className="px-3.5 py-2 bg-white text-slate-900 hover:bg-slate-100 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-200">
-                    <Upload className="w-3.5 h-3.5 text-slate-700" />
-                    <span>{subiendoId === 'consolidado' ? 'Guardando...' : 'Subir Consolidado Firmado'}</span>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      disabled={subiendoId === 'consolidado'}
-                      className="hidden"
-                      onChange={(e) => handleSubirConsolidadoFirmado(e.target.files[0])}
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* DESGLOSE INDIVIDUAL CON PESTAÑAS Y BUSCADOR */}
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xs overflow-hidden">
@@ -528,7 +425,7 @@ export default function InformesSemanales() {
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  Todas ({semanas.length})
+                  Todos ({semanas.length})
                 </button>
 
                 <button
@@ -552,7 +449,7 @@ export default function InformesSemanales() {
                   }`}
                 >
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>Firmadas ({firmadasCount})</span>
+                  <span>Firmados ({firmadasCount})</span>
                 </button>
               </div>
 
@@ -561,7 +458,7 @@ export default function InformesSemanales() {
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
                 <input
                   type="text"
-                  placeholder="Buscar semana o fecha..."
+                  placeholder="Buscar mes o fecha..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#3484A5]"
@@ -569,7 +466,7 @@ export default function InformesSemanales() {
               </div>
             </div>
 
-            {/* Listado de Semanas */}
+            {/* Listado de Meses */}
             {loading ? (
               <div className="p-10 text-center text-xs text-slate-400 font-mono">
                 Cargando registros...
@@ -578,29 +475,29 @@ export default function InformesSemanales() {
               <div className="p-10 text-center text-xs text-slate-500 dark:text-zinc-400 font-mono space-y-1">
                 <p className="font-semibold text-slate-700 dark:text-zinc-300">
                   {filtroEstado === 'pendientes'
-                    ? 'No hay semanas pendientes de firma.'
-                    : 'No se encontraron semanas para el filtro seleccionado.'}
+                    ? 'No hay informes mensuales pendientes de firma.'
+                    : 'No se encontraron meses para el filtro seleccionado.'}
                 </p>
                 <p className="text-[10px] text-slate-400">
-                  {busqueda ? 'Modifique la búsqueda.' : 'Las semanas concluyen automáticamente los domingos.'}
+                  {busqueda ? 'Modifique la búsqueda.' : 'Los meses concluyen automáticamente el último día de cada mes.'}
                 </p>
               </div>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-zinc-800/60">
-                {semanasFiltradas.map((semana) => (
+                {semanasFiltradas.map((semana, idx) => (
                   <div
-                    key={semana.numero_semana}
+                    key={semana.numero_mes || semana.numero_semana || idx}
                     className="p-3.5 hover:bg-slate-50/60 dark:hover:bg-zinc-800/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3">
                       <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center font-mono font-bold text-xs text-slate-700 dark:text-zinc-300 shrink-0">
-                        S{semana.numero_semana}
+                        M{semana.numero_mes || semana.numero_semana}
                       </span>
 
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold text-xs text-slate-900 dark:text-white">
-                            Semana {semana.numero_semana}
+                            {semana.nombre_mes || `Mes ${semana.numero_mes || semana.numero_semana}`}
                           </span>
                           <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono">
                             ({semana.rango_str})
@@ -608,7 +505,7 @@ export default function InformesSemanales() {
                         </div>
 
                         <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono block mt-0.5">
-                          Horas: <b className="text-slate-900 dark:text-white">{semana.horas_semana} hrs</b>
+                          Horas del Mes: <b className="text-slate-900 dark:text-white">{semana.horas_mes || semana.horas_semana} hrs</b>
                         </span>
                       </div>
                     </div>
@@ -630,7 +527,7 @@ export default function InformesSemanales() {
                       <button
                         onClick={() => handleDescargarLimpio(semana)}
                         className="p-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                        title="Descargar PDF preliminar de esta semana"
+                        title="Descargar PDF preliminar de este mes"
                       >
                         <Download className="w-3.5 h-3.5 text-[#3484A5]" />
                       </button>
@@ -658,11 +555,11 @@ export default function InformesSemanales() {
                       ) : (
                         <label className="px-3 py-1.5 bg-slate-900 text-white dark:bg-white dark:text-black text-xs font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-zinc-200 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs">
                           <Upload className="w-3.5 h-3.5" />
-                          <span>{subiendoId === semana.numero_semana ? 'Guardando...' : 'Subir Firmado'}</span>
+                          <span>{subiendoId === (semana.numero_mes || semana.numero_semana) ? 'Guardando...' : 'Subir Firmado'}</span>
                           <input
                             type="file"
                             accept=".pdf"
-                            disabled={subiendoId === semana.numero_semana}
+                            disabled={subiendoId === (semana.numero_mes || semana.numero_semana)}
                             className="hidden"
                             onChange={(e) => handleSubirPdfFirmado(semana, e.target.files[0])}
                           />

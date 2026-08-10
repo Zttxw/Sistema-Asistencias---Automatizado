@@ -15,11 +15,14 @@ def asegurar_directorio_storage():
     os.makedirs(STORAGE_DIR, exist_ok=True)
 
 
-def get_semanas_completadas_empleado(db: Session, empleado_id: int) -> dict:
+MESES_ESPANOL = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+
+
+def get_meses_completados_empleado(db: Session, empleado_id: int) -> dict:
     """
-    Retorna la lista de semanas COMPLETADAS del practicante y la información del informe consolidado general (1 a N semanas).
-    Aplica la regla de negocio: solo semanas concluidas (semana_fin < lunes_actual).
-    Indica si cada semana (o el consolidado total) cuenta con un PDF firmado digitalmente.
+    Retorna la lista de meses COMPLETADOS del practicante (1 a N meses).
+    Cada mes representa el período oficial para su respectiva Firma Digital (1 firma por mes).
+    Aplica la regla: solo meses concluidos (ultimo_dia_mes < primer_dia_mes_actual).
     """
     registros = db.query(Asistencia).filter(
         Asistencia.empleado_id == empleado_id,
@@ -27,26 +30,34 @@ def get_semanas_completadas_empleado(db: Session, empleado_id: int) -> dict:
     ).order_by(Asistencia.fecha.asc()).all()
 
     if not registros:
-        return {"semanas": [], "consolidado": None}
+        return {"meses": [], "semanas": [], "consolidado": None}
 
-    # Fecha del lunes de la semana actual en curso
     hoy = date.today()
-    lunes_semana_actual = hoy - timedelta(days=hoy.weekday())
+    primer_dia_mes_actual = hoy.replace(day=1)
 
-    semanas_dict = {}
+    meses_dict = {}
     for reg in registros:
-        lunes = reg.fecha - timedelta(days=reg.fecha.weekday())
-        domingo = lunes + timedelta(days=6)
+        # Clave por mes calendario (año, mes)
+        clave = (reg.fecha.year, reg.fecha.month)
+        
+        primer_dia = date(reg.fecha.year, reg.fecha.month, 1)
+        if reg.fecha.month == 12:
+            ultimo_dia = date(reg.fecha.year, 12, 31)
+        else:
+            ultimo_dia = date(reg.fecha.year, reg.fecha.month + 1, 1) - timedelta(days=1)
 
-        # REGLA DE NEGOCIO: Solo mostrar semanas que YA TERMINARON (antes de esta semana en curso)
-        if domingo >= lunes_semana_actual:
+        # REGLA DE NEGOCIO: Solo mostrar meses concluidos (antes de este mes en curso)
+        if ultimo_dia >= primer_dia_mes_actual:
             continue
 
-        clave = (lunes, domingo)
-        if clave not in semanas_dict:
-            semanas_dict[clave] = 0.0
+        if clave not in meses_dict:
+            meses_dict[clave] = {
+                "primer_dia": primer_dia,
+                "ultimo_dia": ultimo_dia,
+                "horas": 0.0
+            }
 
-        # REGLA INSTITUCIONAL: Solo se computan horas de Lunes a Viernes (weekday 0 a 4). Fines de semana = 0.0 hrs.
+        # REGLA INSTITUCIONAL: Lunes a Viernes (0 a 4), máx 6.0 hrs/día
         if reg.fecha.weekday() < 5 and reg.hora_entrada and reg.hora_salida:
             dt_ent = reg.hora_entrada if isinstance(reg.hora_entrada, datetime) else datetime.combine(reg.fecha, reg.hora_entrada)
             dt_sal = reg.hora_salida if isinstance(reg.hora_salida, datetime) else datetime.combine(reg.fecha, reg.hora_salida)
@@ -54,69 +65,76 @@ def get_semanas_completadas_empleado(db: Session, empleado_id: int) -> dict:
                 dt_sal += timedelta(days=1)
             segundos = (dt_sal - dt_ent).total_seconds()
             horas_dia = min(6.0, round(segundos / 3600.0, 1))
-            semanas_dict[clave] += horas_dia
+            meses_dict[clave]["horas"] += horas_dia
 
-    if not semanas_dict:
-        return {"semanas": [], "consolidado": None}
+    if not meses_dict:
+        return {"meses": [], "semanas": [], "consolidado": None}
 
-    # Consultar informes firmados existentes para este empleado
     firmados_db = db.query(InformeFirmado).filter(InformeFirmado.empleado_id == empleado_id).all()
 
-    semanas_ordenadas = sorted(semanas_dict.keys(), key=lambda x: x[0])
-    resultado = []
+    meses_ordenados = sorted(meses_dict.keys(), key=lambda x: (x[0], x[1]))
+    resultado_meses = []
     total_horas_acumuladas = 0.0
 
-    for num_semana, (lunes, domingo) in enumerate(semanas_ordenadas, start=1):
-        horas = round(semanas_dict[(lunes, domingo)], 1)
+    for num_mes, (anio, mes) in enumerate(meses_ordenados, start=1):
+        info_m = meses_dict[(anio, mes)]
+        p_dia = info_m["primer_dia"]
+        u_dia = info_m["ultimo_dia"]
+        horas = round(info_m["horas"], 1)
         total_horas_acumuladas += horas
-        rango_str = f"{lunes.strftime('%d/%m/%Y')} – {domingo.strftime('%d/%m/%Y')}"
 
-        # Buscar si existe firma individual o consolidada que cubra esta semana
+        nombre_mes_str = f"Mes {num_mes} ({MESES_ESPANOL[mes - 1]} {anio})"
+        rango_str = f"{p_dia.strftime('%d/%m/%Y')} – {u_dia.strftime('%d/%m/%Y')}"
+
         informe_existente = None
         for f in firmados_db:
-            if f.semana_inicio <= lunes and f.semana_fin >= domingo:
+            if f.semana_inicio <= p_dia and f.semana_fin >= u_dia:
                 informe_existente = f
                 break
 
-        resultado.append({
-            "numero_semana": num_semana,
-            "semana_inicio": lunes,
-            "semana_fin": domingo,
+        item_mes = {
+            "numero_mes": num_mes,
+            "nombre_mes": nombre_mes_str,
+            "fecha_inicio": p_dia,
+            "fecha_fin": u_dia,
             "rango_str": rango_str,
-            "horas_semana": horas,
+            "horas_mes": horas,
             "firmado": informe_existente is not None,
             "informe_firmado_id": informe_existente.id if informe_existente else None,
             "fecha_firma": informe_existente.created_at if informe_existente else None,
             "nombre_archivo": informe_existente.nombre_archivo if informe_existente else None,
-        })
+            # Alias de compatibilidad
+            "semana_inicio": p_dia,
+            "semana_fin": u_dia,
+            "numero_semana": num_mes,
+            "horas_semana": horas,
+        }
+        resultado_meses.append(item_mes)
 
-    # Construir información del Consolidado Global (Semanas 1 a N)
-    primer_lunes = semanas_ordenadas[0][0]
-    ultimo_domingo = semanas_ordenadas[-1][1]
-    rango_consolidado_str = f"{primer_lunes.strftime('%d/%m/%Y')} – {ultimo_domingo.strftime('%d/%m/%Y')}"
-
-    consolidado_firmado_obj = None
-    for f in firmados_db:
-        if f.semana_inicio <= primer_lunes and f.semana_fin >= ultimo_domingo:
-            consolidado_firmado_obj = f
-            break
+    # Consolidado informativo global
+    primer_dia_global = meses_dict[meses_ordenados[0]]["primer_dia"]
+    ultimo_dia_global = meses_dict[meses_ordenados[-1]]["ultimo_dia"]
 
     consolidado_info = {
-        "semana_inicio": primer_lunes,
-        "semana_fin": ultimo_domingo,
-        "rango_str": rango_consolidado_str,
-        "total_semanas": len(semanas_ordenadas),
+        "semana_inicio": primer_dia_global,
+        "semana_fin": ultimo_dia_global,
+        "rango_str": f"{primer_dia_global.strftime('%d/%m/%Y')} – {ultimo_dia_global.strftime('%d/%m/%Y')}",
+        "total_semanas": len(resultado_meses),
         "total_horas": round(total_horas_acumuladas, 1),
-        "firmado": consolidado_firmado_obj is not None,
-        "informe_firmado_id": consolidado_firmado_obj.id if consolidado_firmado_obj else None,
-        "fecha_firma": consolidado_firmado_obj.created_at if consolidado_firmado_obj else None,
-        "nombre_archivo": consolidado_firmado_obj.nombre_archivo if consolidado_firmado_obj else None,
+        "firmado": False,
+        "informe_firmado_id": None
     }
 
     return {
-        "semanas": resultado,
+        "meses": resultado_meses,
+        "semanas": resultado_meses,
         "consolidado": consolidado_info
     }
+
+
+def get_semanas_completadas_empleado(db: Session, empleado_id: int) -> dict:
+    return get_meses_completados_empleado(db, empleado_id)
+
 
 
 def guardar_pdf_firmado(
