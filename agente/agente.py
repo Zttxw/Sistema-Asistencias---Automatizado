@@ -275,9 +275,12 @@ agent_metrics = {
 class AgenteControlHandler(BaseHTTPRequestHandler):
     """
     Mini-servidor HTTP para control remoto del agente.
-    Endpoints:
+    Endpoints (requieren cabecera 'X-Agent-Token' o parámetro '?token='):
       GET  /status  → Devuelve métricas y estado del agente en JSON.
-      POST /restart  → Reinicia el proceso del agente.
+      GET  /logs    → Devuelve las últimas N líneas del log del agente.
+      GET  /config  → Devuelve la configuración actual (config.json).
+      PUT  /config  → Actualiza la configuración y reinicia el agente.
+      POST /restart → Reinicia el proceso del agente.
     """
 
     def log_message(self, format, *args):
@@ -291,8 +294,33 @@ class AgenteControlHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
 
+    def _validar_token(self):
+        config = cargar_configuracion()
+        expected_token = config.get("secret_token") or os.environ.get("AGENTE_SECRET_TOKEN")
+        if not expected_token:
+            return True
+
+        header_token = self.headers.get("X-Agent-Token")
+        query_token = None
+        if "?" in self.path:
+            from urllib.parse import parse_qs, urlparse
+            query_params = parse_qs(urlparse(self.path).query)
+            query_token = query_params.get("token", [None])[0]
+
+        token_recibido = header_token or query_token
+        if token_recibido == expected_token:
+            return True
+
+        self._send_json(401, {"error": "Acceso no autorizado. Token 'X-Agent-Token' inválido o no provisto."})
+        return False
+
     def do_GET(self):
-        if self.path == "/status":
+        if not self._validar_token():
+            return
+
+        clean_path = self.path.split("?")[0]
+
+        if clean_path == "/status":
             uptime = 0
             if agent_metrics["start_time"]:
                 uptime = int(time.time() - agent_metrics["start_time"])
@@ -309,23 +337,95 @@ class AgenteControlHandler(BaseHTTPRequestHandler):
                 "total_envios_exitosos": agent_metrics["total_envios_exitosos"],
                 "total_envios_fallidos": agent_metrics["total_envios_fallidos"],
             })
+        elif clean_path == "/logs":
+            lines = 150
+            if "?" in self.path:
+                from urllib.parse import parse_qs, urlparse
+                query = parse_qs(urlparse(self.path).query)
+                try:
+                    lines = int(query.get("lines", [150])[0])
+                except ValueError:
+                    lines = 150
+
+            data_dir = obtener_data_dir()
+            log_path = os.path.join(data_dir, "agente.log")
+            if not os.path.exists(log_path):
+                self._send_json(404, {"error": "Archivo agente.log no encontrado"})
+                return
+
+            try:
+                with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                    all_lines = f.readlines()
+                    tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
+                    self._send_json(200, {
+                        "total_lines": len(all_lines),
+                        "returned_lines": len(tail),
+                        "content": "".join(tail)
+                    })
+            except Exception as e:
+                self._send_json(500, {"error": f"Error al leer logs del agente: {str(e)}"})
+
+        elif clean_path == "/config":
+            config = cargar_configuracion()
+            self._send_json(200, config)
+        else:
+            self._send_json(404, {"error": "Endpoint no encontrado"})
+
+    def do_PUT(self):
+        if not self._validar_token():
+            return
+
+        clean_path = self.path.split("?")[0]
+        if clean_path == "/config":
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                body = self.rfile.read(content_length)
+                new_data = json.loads(body.decode('utf-8'))
+
+                data_dir = obtener_data_dir()
+                config_path = os.path.join(data_dir, "config.json")
+
+                config_actual = cargar_configuracion()
+                for key in ["network_range", "interface", "api_url", "secret_token", "interval_seconds", "timeout_seconds"]:
+                    if key in new_data:
+                        config_actual[key] = new_data[key]
+
+                os.makedirs(os.path.dirname(config_path), exist_ok=True)
+                with open(config_path, "w", encoding="utf-8") as f:
+                    json.dump(config_actual, f, indent=2, ensure_ascii=False)
+
+                self._send_json(200, {"ok": True, "message": "Configuración del agente guardada.", "config": config_actual})
+
+                def _restart():
+                    time.sleep(1)
+                    exe_path = sys.executable
+                    if getattr(sys, 'frozen', False):
+                        subprocess.Popen([exe_path], creationflags=subprocess.DETACHED_PROCESS if IS_WINDOWS else 0)
+                    else:
+                        subprocess.Popen([exe_path, os.path.abspath(__file__)], creationflags=subprocess.DETACHED_PROCESS if IS_WINDOWS else 0)
+                    os._exit(0)
+                threading.Thread(target=_restart, daemon=True).start()
+
+            except Exception as e:
+                self._send_json(500, {"error": f"Error al actualizar configuración: {str(e)}"})
         else:
             self._send_json(404, {"error": "Endpoint no encontrado"})
 
     def do_POST(self):
-        if self.path == "/restart":
-            self._send_json(200, {"ok": True, "message": "Reiniciando agente..."})
-            logging.info("[CONTROL] Señal de reinicio recibida vía HTTP. Reiniciando proceso...")
+        if not self._validar_token():
+            return
 
-            # Reiniciar el proceso del agente
+        clean_path = self.path.split("?")[0]
+        if clean_path == "/restart":
+            self._send_json(200, {"ok": True, "message": "Reiniciando agente..."})
+            logging.info("[CONTROL] Señal de reinicio recibida vía HTTP con token válido. Reiniciando proceso...")
+
             def _restart():
-                time.sleep(1)  # Dar tiempo a que la respuesta HTTP se envíe
+                time.sleep(1)
                 exe_path = sys.executable
                 if getattr(sys, 'frozen', False):
-                    # Ejecutable compilado con PyInstaller
                     subprocess.Popen([exe_path], creationflags=subprocess.DETACHED_PROCESS if IS_WINDOWS else 0)
                 else:
-                    # Script Python en desarrollo
                     subprocess.Popen([exe_path, os.path.abspath(__file__)],
                                      creationflags=subprocess.DETACHED_PROCESS if IS_WINDOWS else 0)
                 os._exit(0)
@@ -338,8 +438,8 @@ class AgenteControlHandler(BaseHTTPRequestHandler):
         """Soporte CORS preflight."""
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Agent-Token")
         self.end_headers()
 
 

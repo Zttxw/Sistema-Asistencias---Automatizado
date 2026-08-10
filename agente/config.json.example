@@ -1,8 +1,10 @@
 {
   "network_range": "auto",
   "interface": null,
-  "api_url": "http://<IP_LOCAL_DE_LA_PC_SERVIDOR>:8010/api/deteccion",
+  "api_url": "http://10.0.30.50:8082/api/deteccion",
+  "secret_token": "<TOKEN_SEGURO_DEBE_COINCIDIR_CON_AGENTE_SECRET_TOKEN>",
   "interval_seconds": 60,
   "timeout_seconds": 3,
-  "_comment_api_url": "Reemplazar <IP_LOCAL_DE_LA_PC_SERVIDOR> con la IP LAN de la PC donde corre Docker Desktop. Obtenerla con 'ipconfig' en esa PC (buscar 'Dirección IPv4'). Ej: http://192.168.1.100:8010/api/deteccion"
+  "_comment_api_url": "Reemplazar con la IP y puerto del backend en la VM. Ej: http://10.0.30.50:8082/api/deteccion"
 }
+

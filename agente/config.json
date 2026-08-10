@@ -2,7 +2,10 @@
   "network_range": "auto",
   "interface": null,
   "api_url": "http://192.168.0.17:8010/api/deteccion",
+  "secret_token": "ast_b874c0f21e593a1d904e286f5c71a39d",
   "interval_seconds": 60,
   "timeout_seconds": 3,
   "_comment_timeout": "Nota: si la red tiene muchos dispositivos (30+) y se detectan menos MACs de las esperadas, subir timeout_seconds a 5-8 segundos."
 }
+
+

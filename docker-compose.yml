@@ -1,3 +1,5 @@
+name: sistema_asistencias
+
 services:
   db:
     image: mysql:8.0
@@ -19,10 +21,11 @@ services:
     networks:
       - asistencias_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysqladmin ping -h localhost -u root"]
       interval: 5s
       timeout: 5s
       retries: 10
+
 
   backend:
     build: ./backend
@@ -34,7 +37,7 @@ services:
         max-size: "10m"
         max-file: "3"
     ports:
-      - "8010:8000"
+      - "8082:8000"
     environment:
       TZ: America/Lima
       MYSQL_SERVER: db
@@ -42,13 +45,11 @@ services:
       MYSQL_DB: "${MYSQL_DB:?Error: define MYSQL_DB en .env}"
       MYSQL_USER: "${MYSQL_USER:?Error: define MYSQL_USER en .env}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?Error: define MYSQL_PASSWORD en .env}"
+      AGENTE_HTTP_URL: "${AGENTE_HTTP_URL:-http://192.168.0.104:5050}"
+      AGENTE_SECRET_TOKEN: "${AGENTE_SECRET_TOKEN:?Error: define AGENTE_SECRET_TOKEN en .env}"
     depends_on:
       db:
         condition: service_healthy
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ${AGENTE_DATA_DIR:-C:\ProgramData\SistemaAsistencias\Agente}:/agente_data
     networks:
       - asistencias_net
 
@@ -57,7 +58,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://${SERVER_HOST:-localhost}:8010}
+        VITE_API_URL: ${VITE_API_URL:-http://${SERVER_HOST:-10.0.30.50}:8082}
     container_name: asistencias_frontend
     restart: always
     logging:
@@ -66,7 +67,7 @@ services:
         max-size: "10m"
         max-file: "3"
     ports:
-      - "8082:80"
+      - "8080:80"
     depends_on:
       - backend
     networks:
@@ -78,3 +79,4 @@ networks:
 
 volumes:
   asistencias_mysql_data:
+

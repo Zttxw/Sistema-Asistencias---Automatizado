@@ -11,16 +11,26 @@ router = APIRouter(
     tags=["agente"]
 )
 
-# Ruta al directorio de datos del agente montado como volumen Docker
+# URL interna del mini-servidor HTTP del agente (por defecto PC local 192.168.0.104)
+AGENTE_HTTP_URL = os.environ.get("AGENTE_HTTP_URL", "http://192.168.0.104:5050")
+# Token de seguridad para autenticarse contra el mini-servidor del agente
+AGENTE_SECRET_TOKEN = os.environ.get("AGENTE_SECRET_TOKEN", "")
+# Ruta de respaldo para entorno de desarrollo local directo
 AGENTE_DATA_DIR = os.environ.get("AGENTE_DATA_DIR", "/agente_data")
-# URL interna del mini-servidor HTTP del agente corriendo en el host Windows
-AGENTE_HTTP_URL = os.environ.get("AGENTE_HTTP_URL", "http://host.docker.internal:5050")
+
+
+def _get_agent_headers() -> dict:
+    headers = {"Content-Type": "application/json"}
+    if AGENTE_SECRET_TOKEN:
+        headers["X-Agent-Token"] = AGENTE_SECRET_TOKEN
+    return headers
 
 
 class AgenteConfigPayload(BaseModel):
     network_range: str = "auto"
     interface: Optional[str] = None
     api_url: str
+    secret_token: Optional[str] = None
     interval_seconds: int = 60
     timeout_seconds: int = 3
 
@@ -31,25 +41,29 @@ def obtener_estado_agente(
 ):
     """
     Consulta el estado del agente contactando su mini-servidor HTTP.
-    Si el agente no responde, se asume que está detenido.
     """
     try:
-        resp = httpx.get(f"{AGENTE_HTTP_URL}/status", timeout=5.0)
-        return resp.json()
+        resp = httpx.get(f"{AGENTE_HTTP_URL}/status", headers=_get_agent_headers(), timeout=5.0)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 401:
+            return {"running": False, "error": "No autorizado: Token del agente inválido."}
+        else:
+            return {"running": False, "error": f"Error del agente: HTTP {resp.status_code}"}
     except httpx.ConnectError:
         return {
             "running": False,
-            "error": "El agente no responde. Puede estar detenido o el mini-servidor no está activo."
+            "error": f"El agente en {AGENTE_HTTP_URL} no responde. Verificar red o servicio."
         }
     except httpx.TimeoutException:
         return {
             "running": False,
-            "error": "Timeout al contactar el agente. Puede estar sobrecargado."
+            "error": "Timeout al contactar el agente."
         }
     except Exception as e:
         return {
             "running": False,
-            "error": f"Error inesperado al contactar el agente: {str(e)}"
+            "error": f"Error al contactar el agente: {str(e)}"
         }
 
 
@@ -59,30 +73,37 @@ def obtener_logs_agente(
     _user=Depends(require_permission("agente.gestionar"))
 ):
     """
-    Lee las últimas N líneas del archivo agente.log montado como volumen.
+    Obtiene los logs del agente vía HTTP desde su mini-servidor local.
     """
-    log_path = os.path.join(AGENTE_DATA_DIR, "agente.log")
-
-    if not os.path.exists(log_path):
-        raise HTTPException(
-            status_code=404,
-            detail="No se encontró el archivo de logs del agente. Verificar que el volumen esté montado."
-        )
-
+    # 1. Intentar obtener vía HTTP desde el agente
     try:
-        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
-            all_lines = f.readlines()
-            tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
-            return {
-                "total_lines": len(all_lines),
-                "returned_lines": len(tail),
-                "content": "".join(tail)
-            }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al leer los logs del agente: {str(e)}"
-        )
+        resp = httpx.get(f"{AGENTE_HTTP_URL}/logs?lines={lines}", headers=_get_agent_headers(), timeout=5.0)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 401:
+            raise HTTPException(status_code=401, detail="No autorizado: Token del agente inválido.")
+    except (httpx.ConnectError, httpx.TimeoutException):
+        pass
+
+    # 2. Respaldo local si el volumen estuviese montado (desarrollo local)
+    log_path = os.path.join(AGENTE_DATA_DIR, "agente.log")
+    if os.path.exists(log_path):
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                all_lines = f.readlines()
+                tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
+                return {
+                    "total_lines": len(all_lines),
+                    "returned_lines": len(tail),
+                    "content": "".join(tail)
+                }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al leer logs locales: {str(e)}")
+
+    raise HTTPException(
+        status_code=503,
+        detail=f"No se pudo conectar al agente en {AGENTE_HTTP_URL} ni se encontraron logs locales."
+    )
 
 
 @router.get("/config")
@@ -90,25 +111,31 @@ def obtener_config_agente(
     _user=Depends(require_permission("agente.gestionar"))
 ):
     """
-    Lee y retorna el config.json del agente montado como volumen.
+    Obtiene la configuración actual del agente vía HTTP.
     """
-    config_path = os.path.join(AGENTE_DATA_DIR, "config.json")
-
-    if not os.path.exists(config_path):
-        raise HTTPException(
-            status_code=404,
-            detail="No se encontró el archivo config.json del agente."
-        )
-
+    # 1. Intentar obtener vía HTTP desde el agente
     try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = json.load(f)
-            return config
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al leer la configuración del agente: {str(e)}"
-        )
+        resp = httpx.get(f"{AGENTE_HTTP_URL}/config", headers=_get_agent_headers(), timeout=5.0)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 401:
+            raise HTTPException(status_code=401, detail="No autorizado: Token del agente inválido.")
+    except (httpx.ConnectError, httpx.TimeoutException):
+        pass
+
+    # 2. Respaldo local
+    config_path = os.path.join(AGENTE_DATA_DIR, "config.json")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al leer config local: {str(e)}")
+
+    raise HTTPException(
+        status_code=503,
+        detail=f"No se pudo consultar la configuración del agente en {AGENTE_HTTP_URL}."
+    )
 
 
 @router.put("/config")
@@ -117,40 +144,32 @@ def actualizar_config_agente(
     _user=Depends(require_permission("agente.gestionar"))
 ):
     """
-    Guarda la nueva configuración en config.json y reinicia el agente para aplicar los cambios.
+    Envía la nueva configuración al agente vía HTTP para actualizar config.json y reiniciarlo.
     """
-    config_path = os.path.join(AGENTE_DATA_DIR, "config.json")
+    data = {
+        "network_range": payload.network_range,
+        "interface": payload.interface,
+        "api_url": payload.api_url,
+        "interval_seconds": payload.interval_seconds,
+        "timeout_seconds": payload.timeout_seconds,
+    }
+    if payload.secret_token:
+        data["secret_token"] = payload.secret_token
+    elif AGENTE_SECRET_TOKEN:
+        data["secret_token"] = AGENTE_SECRET_TOKEN
 
     try:
-        data = {
-            "network_range": payload.network_range,
-            "interface": payload.interface,
-            "api_url": payload.api_url,
-            "interval_seconds": payload.interval_seconds,
-            "timeout_seconds": payload.timeout_seconds,
-        }
-
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
-        with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-
-        # Enviar señal de reinicio al agente para que aplique los cambios
-        restarted = False
-        try:
-            httpx.post(f"{AGENTE_HTTP_URL}/restart", timeout=3.0)
-            restarted = True
-        except Exception:
-            pass
-
-        return {
-            "ok": True,
-            "message": "Configuración del agente guardada correctamente" + (" y agente reiniciado." if restarted else "."),
-            "config": data
-        }
-    except Exception as e:
+        resp = httpx.put(f"{AGENTE_HTTP_URL}/config", json=data, headers=_get_agent_headers(), timeout=5.0)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 401:
+            raise HTTPException(status_code=401, detail="No autorizado: Token del agente inválido.")
+        else:
+            raise HTTPException(status_code=resp.status_code, detail=f"Error del agente: {resp.text}")
+    except (httpx.ConnectError, httpx.TimeoutException):
         raise HTTPException(
-            status_code=500,
-            detail=f"Error al guardar la configuración del agente: {str(e)}"
+            status_code=503,
+            detail=f"No se pudo contactar al agente en {AGENTE_HTTP_URL} para actualizar su configuración."
         )
 
 
@@ -159,21 +178,27 @@ def reiniciar_agente(
     _user=Depends(require_permission("agente.gestionar"))
 ):
     """
-    Envía una señal de reinicio al agente vía su mini-servidor HTTP.
+    Envía una señal de reinicio al agente vía HTTP con token de autorización.
     """
     try:
-        resp = httpx.post(f"{AGENTE_HTTP_URL}/restart", timeout=5.0)
-        return resp.json()
+        resp = httpx.post(f"{AGENTE_HTTP_URL}/restart", headers=_get_agent_headers(), timeout=5.0)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 401:
+            raise HTTPException(status_code=401, detail="No autorizado: Token del agente inválido.")
+        else:
+            raise HTTPException(status_code=resp.status_code, detail=f"Error al reiniciar: {resp.text}")
     except httpx.ConnectError:
         raise HTTPException(
             status_code=503,
-            detail="No se pudo contactar al agente. Puede estar detenido."
+            detail=f"No se pudo contactar al agente en {AGENTE_HTTP_URL}. Puede estar detenido."
         )
     except httpx.TimeoutException:
-        # Un timeout al reiniciar es normal: el agente puede cerrarse antes de responder
+        # Un timeout al reiniciar es normal si el agente se apaga antes de responder
         return {"ok": True, "message": "Señal de reinicio enviada. El agente se reiniciará en breve."}
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Error al reiniciar el agente: {str(e)}"
         )
+
