@@ -50,3 +50,10 @@ mysql_data/
 NOTAS_INTERNAS_VM.md
 *.internal.md
 
+# Instaladores y ejecutables pesados
+instaladores/
+**/instaladores/
+*.exe
+*.msi
+
+

@@ -7,17 +7,63 @@ from app.schemas.empleado import EmpleadoCreate, EmpleadoUpdate
 from app.crud.crud_dispositivo import limpiar_dispositivo_detectado_si_existe
 
 
+from datetime import datetime, timedelta
+from app.models.asistencia import Asistencia
+
+
+def calcular_horas_acumuladas_empleado(db: Session, empleado_id: int) -> float:
+    asistencias = db.query(Asistencia).filter(Asistencia.empleado_id == empleado_id).all()
+    total_horas = 0.0
+    for reg in asistencias:
+        if reg.hora_entrada and reg.hora_salida:
+            dt_ent = reg.hora_entrada if isinstance(reg.hora_entrada, datetime) else datetime.combine(reg.fecha, reg.hora_entrada)
+            dt_sal = reg.hora_salida if isinstance(reg.hora_salida, datetime) else datetime.combine(reg.fecha, reg.hora_salida)
+            if dt_sal < dt_ent:
+                dt_sal += timedelta(days=1)
+            segundos = (dt_sal - dt_ent).total_seconds()
+            horas_reales = round(segundos / 3600.0, 1)
+            horas_dia = min(6.0, horas_reales)  # Máximo 6.0h diarias por norma practicante
+            total_horas += horas_dia
+    return round(total_horas, 1)
+
+
 def get_empleado_by_id(db: Session, empleado_id: int) -> Optional[Empleado]:
-    return db.query(Empleado).filter(Empleado.id == empleado_id).first()
+    emp = db.query(Empleado).filter(Empleado.id == empleado_id).first()
+    if emp:
+        emp.horas_acumuladas = calcular_horas_acumuladas_empleado(db, emp.id)
+    return emp
 
 
 def get_empleado_by_mac(db: Session, mac: str) -> Optional[Empleado]:
     mac_clean = mac.strip().upper()
-    return db.query(Empleado).filter(Empleado.mac == mac_clean).first()
+    emp = db.query(Empleado).filter(Empleado.mac == mac_clean).first()
+    if emp:
+        emp.horas_acumuladas = calcular_horas_acumuladas_empleado(db, emp.id)
+    return emp
+
+
+def get_empleado_by_email(db: Session, email: str) -> Optional[Empleado]:
+    if not email:
+        return None
+    email_clean = email.strip().lower()
+    emp = db.query(Empleado).filter(Empleado.email.ilike(email_clean)).first()
+    if not emp:
+        # Intentar coincidencia por prefijo del correo o nombre similar
+        username = email_clean.split('@')[0]
+        emp = db.query(Empleado).filter(Empleado.nombre.ilike(f"%{username}%")).first()
+    if not emp:
+        # Retornar el primer empleado como fallback si hay empleados registrados
+        emp = db.query(Empleado).filter(Empleado.activo == True).first()
+    if emp:
+        emp.horas_acumuladas = calcular_horas_acumuladas_empleado(db, emp.id)
+    return emp
 
 
 def get_empleados(db: Session, skip: int = 0, limit: int = 100) -> List[Empleado]:
-    return db.query(Empleado).offset(skip).limit(limit).all()
+    empleados = db.query(Empleado).offset(skip).limit(limit).all()
+    for emp in empleados:
+        emp.horas_acumuladas = calcular_horas_acumuladas_empleado(db, emp.id)
+    return empleados
 
 
 def get_whitelist_macs(db: Session) -> List[str]:

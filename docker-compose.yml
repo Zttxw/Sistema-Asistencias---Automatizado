@@ -3,18 +3,23 @@ services:
     image: mysql:8.0
     container_name: asistencias_mysql
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       TZ: America/Lima
-      MYSQL_DATABASE: ${MYSQL_DB:?Error: define MYSQL_DB en .env}
-      MYSQL_USER: ${MYSQL_USER:?Error: define MYSQL_USER en .env}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Error: define MYSQL_PASSWORD en .env}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Error: define MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: "${MYSQL_DB:?Error: define MYSQL_DB en .env}"
+      MYSQL_USER: "${MYSQL_USER:?Error: define MYSQL_USER en .env}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?Error: define MYSQL_PASSWORD en .env}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Error: define MYSQL_ROOT_PASSWORD en .env}"
     volumes:
       - asistencias_mysql_data:/var/lib/mysql
     networks:
       - asistencias_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:?Error: define MYSQL_ROOT_PASSWORD en .env}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -23,18 +28,27 @@ services:
     build: ./backend
     container_name: asistencias_backend
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "8010:8000"
     environment:
       TZ: America/Lima
       MYSQL_SERVER: db
       MYSQL_PORT: 3306
-      MYSQL_DB: ${MYSQL_DB:?Error: define MYSQL_DB en .env}
-      MYSQL_USER: ${MYSQL_USER:?Error: define MYSQL_USER en .env}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Error: define MYSQL_PASSWORD en .env}
+      MYSQL_DB: "${MYSQL_DB:?Error: define MYSQL_DB en .env}"
+      MYSQL_USER: "${MYSQL_USER:?Error: define MYSQL_USER en .env}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?Error: define MYSQL_PASSWORD en .env}"
     depends_on:
       db:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${AGENTE_DATA_DIR:-C:\ProgramData\SistemaAsistencias\Agente}:/agente_data
     networks:
       - asistencias_net
 
@@ -46,6 +60,11 @@ services:
         VITE_API_URL: ${VITE_API_URL:-http://${SERVER_HOST:-localhost}:8010}
     container_name: asistencias_frontend
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "8082:80"
     depends_on:

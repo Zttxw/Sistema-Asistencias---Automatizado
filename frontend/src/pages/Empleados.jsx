@@ -41,12 +41,25 @@ export default function Empleados() {
   const [selectedEmpleado, setSelectedEmpleado] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // User account creation in Empleados modal
+  const [crearCuenta, setCrearCuenta] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [usuarioData, setUsuarioData] = useState({
+    email: '',
+    password: '',
+    rol_id: '',
+  });
+
   const fetchEmpleados = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await client.get('/api/empleados');
       setEmpleados(response.data);
+      if (hasPermission('usuarios.gestionar')) {
+        const resRoles = await client.get('/api/roles').catch(() => ({ data: [] }));
+        setRoles(resRoles.data);
+      }
     } catch (err) {
       console.error(err);
       setError('No se pudo cargar la lista de empleados.');
@@ -68,6 +81,12 @@ export default function Empleados() {
       horas_meta: '',
       activo: true,
       motivo_cambio_mac: '',
+    });
+    setCrearCuenta(false);
+    setUsuarioData({
+      email: '',
+      password: 'Muni2026',
+      rol_id: roles.length > 0 ? roles[0].id : '',
     });
     setError(null);
     setIsCreateModalOpen(true);
@@ -130,7 +149,7 @@ export default function Empleados() {
     setSubmitting(true);
     setError(null);
     try {
-      await client.post('/api/empleados', {
+      const empRes = await client.post('/api/empleados', {
         nombre: formData.nombre,
         documento: formData.documento,
         mac: formData.mac,
@@ -138,7 +157,17 @@ export default function Empleados() {
         horas_meta: formData.horas_meta !== '' ? parseInt(formData.horas_meta, 10) : null,
         activo: formData.activo,
       });
-      setSuccess('Empleado registrado correctamente.');
+
+      if (crearCuenta && usuarioData.email && usuarioData.password && usuarioData.rol_id) {
+        await client.post('/api/usuarios', {
+          email: usuarioData.email,
+          password: usuarioData.password,
+          rol_id: parseInt(usuarioData.rol_id, 10),
+          empleado_id: empRes.data.id,
+        });
+      }
+
+      setSuccess('Empleado' + (crearCuenta ? ' y cuenta de usuario registrados' : ' registrado') + ' correctamente.');
       setIsCreateModalOpen(false);
       fetchEmpleados();
     } catch (err) {
@@ -209,7 +238,8 @@ export default function Empleados() {
       const response = await client.get(`/api/empleados/${selectedEmpleado.id}/informe_pdf`, {
         params: {
           fecha_inicio: fechaInicio,
-          fecha_fin: fechaFin
+          fecha_fin: fechaFin,
+          _t: Date.now()
         },
         responseType: 'blob'
       });
@@ -234,12 +264,42 @@ export default function Empleados() {
     }
   };
 
+  const handleGenerarConsolidadoPdf = async () => {
+    if (!selectedEmpleado) return;
+    setGeneratingPdf(true);
+    setError(null);
+    try {
+      const response = await client.get(`/api/empleados/${selectedEmpleado.id}/informe_pdf`, {
+        params: { _t: Date.now() },
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      const nombreArchivo = `informe_CONSOLIDADO_${selectedEmpleado.nombre.replace(/\s+/g, '_')}.pdf`;
+      link.setAttribute('download', nombreArchivo);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      setSuccess(`Informe PDF Consolidado descargado correctamente: ${nombreArchivo}`);
+      setIsReporteModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.detail || 'Error al generar el informe PDF consolidado.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-zinc-800 pb-5">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Catálogo de Empleados</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Catálogo de Practicantes</h2>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">Administre el personal registrado, sus metas de horas y direcciones MAC.</p>
         </div>
 
@@ -258,7 +318,7 @@ export default function Empleados() {
               className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Nuevo Empleado</span>
+              <span>Nuevo Practicante</span>
             </button>
           )}
         </div>
@@ -279,7 +339,7 @@ export default function Empleados() {
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50/60 dark:bg-zinc-950 border-b border-gray-100 dark:border-zinc-800 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
-                <th className="px-6 py-4">Empleado</th>
+                <th className="px-6 py-4">Practicante</th>
                 <th className="px-6 py-4">Documento</th>
                 <th className="px-6 py-4">Dirección MAC</th>
                 <th className="px-6 py-4">Departamento</th>
@@ -358,8 +418,8 @@ export default function Empleados() {
         )}
       </div>
 
-      {/* Modal Nuevo Empleado */}
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Nuevo Empleado">
+      {/* Modal Nuevo Practicante */}
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Nuevo Practicante">
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Nombre Completo *</label>
@@ -385,15 +445,80 @@ export default function Empleados() {
               <input type="number" min="1" value={formData.horas_meta} onChange={(e) => setFormData({ ...formData, horas_meta: e.target.value })} className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white" placeholder="Ej. 640" />
             </div>
           </div>
+
+          {hasPermission('usuarios.gestionar') && (
+            <div className="pt-2 border-t border-gray-100 dark:border-zinc-800 space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="crear_cuenta_checkbox"
+                  checked={crearCuenta}
+                  onChange={(e) => setCrearCuenta(e.target.checked)}
+                  className="w-4 h-4 text-primary border-gray-300 rounded-md focus:ring-primary cursor-pointer"
+                />
+                <label htmlFor="crear_cuenta_checkbox" className="text-xs font-semibold text-gray-900 dark:text-white cursor-pointer select-none">
+                  Crear cuenta de acceso (Usuario / Rol) para este practicante
+                </label>
+              </div>
+
+              {crearCuenta && (
+                <div className="p-3 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Correo Electrónico / Usuario *</label>
+                    <input
+                      type="text"
+                      required={crearCuenta}
+                      value={usuarioData.email}
+                      onChange={(e) => setUsuarioData({ ...usuarioData, email: e.target.value })}
+                      placeholder="ej: juan.perez@oficina.com"
+                      className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Contraseña Inicial (Por defecto: Muni2026) *</label>
+                      <input
+                        type="text"
+                        required={crearCuenta}
+                        minLength={6}
+                        value={usuarioData.password}
+                        onChange={(e) => setUsuarioData({ ...usuarioData, password: e.target.value })}
+                        placeholder="Muni2026"
+                        className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm font-mono bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Rol Asignado *</label>
+                      <select
+                        required={crearCuenta}
+                        value={usuarioData.rol_id}
+                        onChange={(e) => setUsuarioData({ ...usuarioData, rol_id: e.target.value })}
+                        className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary"
+                      >
+                        <option value="">-- Seleccionar Rol --</option>
+                        {roles.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer">Cancelar</button>
-            <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Guardando...' : 'Registrar Empleado'}</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50">{submitting ? 'Guardando...' : 'Registrar Practicante'}</button>
           </div>
         </form>
       </Modal>
 
-      {/* Modal Editar Empleado */}
-      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Empleado">
+      {/* Modal Editar Practicante */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Practicante">
         <form onSubmit={handleEdit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Nombre Completo</label>
@@ -427,7 +552,7 @@ export default function Empleados() {
           </div>
           <div className="flex items-center space-x-2 pt-2">
             <input type="checkbox" id="activo-check" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} className="rounded border-gray-300 dark:border-zinc-800 text-primary dark:text-white focus:ring-primary dark:focus:ring-white cursor-pointer" />
-            <label htmlFor="activo-check" className="text-sm font-medium text-gray-700 dark:text-zinc-300 cursor-pointer">Empleado Activo</label>
+            <label htmlFor="activo-check" className="text-sm font-medium text-gray-700 dark:text-zinc-300 cursor-pointer">Practicante Activo</label>
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
             <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer">Cancelar</button>
@@ -442,6 +567,21 @@ export default function Empleados() {
           <p className="text-xs text-gray-600 dark:text-zinc-400">
             Seleccione el rango de fechas para generar el informe semanal de asistencias del practicante.
           </p>
+
+          <div className="p-3.5 bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-xl flex items-center justify-between shadow-xs">
+            <div>
+              <p className="text-xs font-bold text-white uppercase tracking-wide">Informe Consolidado Completo</p>
+              <p className="text-[11px] text-blue-200/90">Descarga todas las semanas concluidas registradas en 1 solo PDF</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerarConsolidadoPdf}
+              disabled={generatingPdf}
+              className="px-3 py-1.5 bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+            >
+              Descargar 1 PDF
+            </button>
+          </div>
 
           <div className="p-3 bg-gray-50 dark:bg-zinc-950 border border-gray-100 dark:border-zinc-800 rounded-lg flex items-center justify-between text-xs">
             <span className="text-gray-600 dark:text-zinc-400 font-medium">Meta de horas configurada:</span>

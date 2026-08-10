@@ -18,6 +18,7 @@ PERMISOS_CATALOGO = [
     {"codigo": "dispositivos.registrar", "descripcion": "Registrar dispositivos detectados como empleados"},
     {"codigo": "roles.gestionar", "descripcion": "Crear, editar y eliminar roles y permisos"},
     {"codigo": "usuarios.gestionar", "descripcion": "Crear, editar y gestionar cuentas de usuario"},
+    {"codigo": "agente.gestionar", "descripcion": "Ver estado, logs y reiniciar el Agente de Asistencia"},
 ]
 
 
@@ -66,16 +67,20 @@ def seed_initial_data(db: Session):
     else:
         rol_jefe.permisos = permisos_jefe
 
-    # Rol Empleado
-    rol_empleado = db.query(Rol).filter(Rol.nombre == "Empleado").first()
-    if not rol_empleado:
-        rol_empleado = Rol(
-            nombre="Empleado",
-            descripcion="Empleado con acceso a su propia asistencia",
+    # Rol Practicante
+    rol_practicante = db.query(Rol).filter((Rol.nombre == "Practicante") | (Rol.nombre == "Empleado")).first()
+    if not rol_practicante:
+        rol_practicante = Rol(
+            nombre="Practicante",
+            descripcion="Practicante con acceso a su propia asistencia",
             permisos=[permisos_db["asistencias.ver_propia"]]
         )
-        db.add(rol_empleado)
+        db.add(rol_practicante)
         db.flush()
+    else:
+        rol_practicante.nombre = "Practicante"
+        rol_practicante.descripcion = "Practicante con acceso a su propia asistencia"
+        rol_practicante.permisos = [permisos_db["asistencias.ver_propia"]]
 
     # Rol Invitado
     rol_invitado = db.query(Rol).filter(Rol.nombre == "Invitado").first()

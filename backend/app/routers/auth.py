@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.auth import LoginPayload, RefreshTokenPayload, TokenResponse, UserMeResponse
+from app.schemas.auth import LoginPayload, RefreshTokenPayload, TokenResponse, UserMeResponse, CambiarPasswordPayload
 from app.models.usuario import Usuario
 from app.core.deps import get_current_user
+from app.core.security import verify_password, get_password_hash
 from app.crud.crud_auth import authenticate_user, create_user_tokens, refresh_access_token, logout_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -73,3 +74,23 @@ def get_me(user: Usuario = Depends(get_current_user)):
         activo=user.activo,
         permisos=permisos
     )
+
+
+@router.post("/cambiar-password")
+def cambiar_password(
+    payload: CambiarPasswordPayload,
+    user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Permite al usuario o admin cambiar su propia contraseña cifrada unidireccionalmente con Bcrypt + Salt.
+    """
+    if not verify_password(payload.password_actual, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual ingresada es incorrecta"
+        )
+
+    user.password_hash = get_password_hash(payload.password_nuevo)
+    db.commit()
+    return {"message": "Contraseña actualizada y cifrada correctamente con Bcrypt"}

@@ -1,12 +1,12 @@
 from datetime import date
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, Response, HTTPException, status
+from fastapi import APIRouter, Depends, Query, Response, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.asistencia import AsistenciaCreatePayload, AsistenciaManualPayload, AsistenciaResponse, AsistenciaReporteItem
 from app.models.usuario import Usuario
 from app import crud
-from app.core.deps import require_permission, require_any_permission
+from app.core.deps import require_permission, require_any_permission, get_current_user
 
 router = APIRouter(tags=["asistencias"])
 
@@ -25,6 +25,49 @@ def registrar_asistencia_manual(payload: AsistenciaManualPayload, db: Session = 
     Registra manualmente la entrada o salida de un empleado. Requiere permiso 'asistencias.registrar_manual'.
     """
     return crud.crud_asistencia.registrar_asistencia_manual(db, payload)
+
+
+@router.post("/api/asistencia/marcar_propia", response_model=AsistenciaResponse)
+def marcar_asistencia_propia(
+    tipo: str = Query(..., regex="^(entrada|salida)$", description="Tipo de marcación: entrada o salida"),
+    user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Permite al usuario autenticado (Practicante/Empleado) registrar su propia entrada o salida del día
+    en caso de no portar su teléfono móvil o si el agente ARP no detectó su MAC.
+    """
+    if not user.empleado_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Su cuenta de usuario no tiene un perfil de Practicante vinculado."
+        )
+
+    payload = AsistenciaManualPayload(
+        empleado_id=user.empleado_id,
+        tipo=tipo,
+        timestamp=datetime.now(),
+        motivo="Marcación web propia (Sin dispositivo móvil)"
+    )
+    return crud.crud_asistencia.registrar_asistencia_manual(db, payload)
+
+
+@router.get("/api/asistencias/mias", response_model=List[AsistenciaReporteItem])
+def obtener_mis_asistencias(
+    user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna el historial completo diario de asistencias del practicante autenticado.
+    """
+    emp = user.empleado
+    if not emp and user.email:
+        emp = crud.crud_empleado.get_empleado_by_email(db, user.email)
+
+    if not emp:
+        return []
+
+    return crud.crud_asistencia.get_historial_diario_empleado(db, emp.id)
 
 
 @router.get("/api/asistencias/hoy", response_model=List[AsistenciaReporteItem])
@@ -83,3 +126,58 @@ def exportar_asistencias_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers=headers
     )
+
+
+@router.get("/api/asistencias/migracion/plantilla", dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
+def descargar_plantilla_migracion(formato: str = "excel"):
+    """
+    Genera y descarga la plantilla Excel (.xlsx) o CSV (.csv) para migración masiva de asistencias.
+    """
+    from app.crud.crud_migracion import generar_plantilla_excel, generar_plantilla_csv
+    if formato.lower() == "csv":
+        csv_bytes = generar_plantilla_csv()
+        headers = {
+            "Content-Disposition": "attachment; filename=plantilla_migracion_asistencias.csv"
+        }
+        return Response(
+            content=csv_bytes,
+            media_type="text/csv; charset=utf-8",
+            headers=headers
+        )
+    else:
+        excel_bytes = generar_plantilla_excel()
+        headers = {
+            "Content-Disposition": "attachment; filename=plantilla_migracion_asistencias.xlsx"
+        }
+        return Response(
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers=headers
+        )
+
+
+@router.post("/api/asistencias/migracion/importar", dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
+async def importar_asistencias_excel(
+    file: UploadFile = File(...),
+    fecha_limite: date = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Procesa la carga masiva de asistencias históricas desde un archivo Excel (.xlsx / .xls) o CSV (.csv).
+    """
+    from app.crud.crud_migracion import procesar_migracion_archivo
+    filename = file.filename or "migracion.xlsx"
+    if not filename.lower().endswith(('.xlsx', '.xls', '.csv')):
+        raise HTTPException(
+            status_code=400,
+            detail="Formato de archivo no soportado. Debe ser un archivo Excel (.xlsx, .xls) o CSV (.csv)."
+        )
+
+    file_content = await file.read()
+    res = procesar_migracion_archivo(db, file_content, filename, fecha_limite)
+    if not res.get("ok", True):
+        raise HTTPException(status_code=400, detail=res.get("error", "Error procesando el archivo de migración."))
+
+    return res
+
+

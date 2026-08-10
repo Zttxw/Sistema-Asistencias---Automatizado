@@ -24,3 +24,9 @@ class UserMeResponse(BaseModel):
     empleado_id: Optional[int] = None
     activo: bool
     permisos: List[str]
+
+
+class CambiarPasswordPayload(BaseModel):
+    password_actual: str
+    password_nuevo: str
+

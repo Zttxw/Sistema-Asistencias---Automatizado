@@ -15,12 +15,16 @@ Rutas de datos (config.json, agente.log):
 
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 import platform
 import socket
+import subprocess
 import sys
 import time
+import threading
 from datetime import datetime, timezone
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import ipaddress
 
 try:
@@ -79,9 +83,9 @@ def setup_logging():
     data_dir = obtener_data_dir()
     log_path = os.path.join(data_dir, "agente.log")
 
-    # Handler para archivo de log local
+    # Handler para archivo de log local con rotación automática (Máx 5MB, 3 copias)
     try:
-        file_handler = logging.FileHandler(log_path, encoding="utf-8")
+        file_handler = RotatingFileHandler(log_path, maxBytes=5*1024*1024, backupCount=3, encoding="utf-8")
         file_handler.setFormatter(logging.Formatter(log_format, date_format))
         logger.addHandler(file_handler)
     except PermissionError:
@@ -94,7 +98,7 @@ def setup_logging():
             )
             os.makedirs(fallback_dir, exist_ok=True)
             log_path = os.path.join(fallback_dir, "agente.log")
-            file_handler = logging.FileHandler(log_path, encoding="utf-8")
+            file_handler = RotatingFileHandler(log_path, maxBytes=5*1024*1024, backupCount=3, encoding="utf-8")
             file_handler.setFormatter(logging.Formatter(log_format, date_format))
             logger.addHandler(file_handler)
 
@@ -254,6 +258,105 @@ def enviar_dispositivo_api(url, mac, agente_id):
         return False
 
 
+# =====================================================
+# Métricas compartidas entre el loop de escaneo
+# y el mini-servidor HTTP de control
+# =====================================================
+agent_metrics = {
+    "start_time": None,
+    "last_scan_time": None,
+    "devices_last_scan": 0,
+    "total_scans": 0,
+    "total_envios_exitosos": 0,
+    "total_envios_fallidos": 0,
+}
+
+
+class AgenteControlHandler(BaseHTTPRequestHandler):
+    """
+    Mini-servidor HTTP para control remoto del agente.
+    Endpoints:
+      GET  /status  → Devuelve métricas y estado del agente en JSON.
+      POST /restart  → Reinicia el proceso del agente.
+    """
+
+    def log_message(self, format, *args):
+        """Silenciar logs HTTP del mini-servidor para no ensuciar agente.log."""
+        pass
+
+    def _send_json(self, code, data):
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
+
+    def do_GET(self):
+        if self.path == "/status":
+            uptime = 0
+            if agent_metrics["start_time"]:
+                uptime = int(time.time() - agent_metrics["start_time"])
+
+            self._send_json(200, {
+                "running": True,
+                "pid": os.getpid(),
+                "hostname": socket.gethostname(),
+                "platform": f"{platform.system()} {platform.release()}",
+                "uptime_seconds": uptime,
+                "last_scan_time": agent_metrics["last_scan_time"],
+                "devices_last_scan": agent_metrics["devices_last_scan"],
+                "total_scans": agent_metrics["total_scans"],
+                "total_envios_exitosos": agent_metrics["total_envios_exitosos"],
+                "total_envios_fallidos": agent_metrics["total_envios_fallidos"],
+            })
+        else:
+            self._send_json(404, {"error": "Endpoint no encontrado"})
+
+    def do_POST(self):
+        if self.path == "/restart":
+            self._send_json(200, {"ok": True, "message": "Reiniciando agente..."})
+            logging.info("[CONTROL] Señal de reinicio recibida vía HTTP. Reiniciando proceso...")
+
+            # Reiniciar el proceso del agente
+            def _restart():
+                time.sleep(1)  # Dar tiempo a que la respuesta HTTP se envíe
+                exe_path = sys.executable
+                if getattr(sys, 'frozen', False):
+                    # Ejecutable compilado con PyInstaller
+                    subprocess.Popen([exe_path], creationflags=subprocess.DETACHED_PROCESS if IS_WINDOWS else 0)
+                else:
+                    # Script Python en desarrollo
+                    subprocess.Popen([exe_path, os.path.abspath(__file__)],
+                                     creationflags=subprocess.DETACHED_PROCESS if IS_WINDOWS else 0)
+                os._exit(0)
+
+            threading.Thread(target=_restart, daemon=True).start()
+        else:
+            self._send_json(404, {"error": "Endpoint no encontrado"})
+
+    def do_OPTIONS(self):
+        """Soporte CORS preflight."""
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+
+
+def iniciar_servidor_control(port=5050):
+    """Inicia el mini-servidor HTTP de control en un thread daemon."""
+    def _run_server():
+        try:
+            server = HTTPServer(("0.0.0.0", port), AgenteControlHandler)
+            logging.info(f"[CONTROL] Mini-servidor HTTP de control escuchando en 0.0.0.0:{port}")
+            server.serve_forever()
+        except Exception as e:
+            logging.error(f"[CONTROL] Error en el servidor de control HTTP: {e}", exc_info=True)
+
+    thread = threading.Thread(target=_run_server, daemon=True)
+    thread.start()
+
+
 def main():
     setup_logging()
     agente_hostname = socket.gethostname()
@@ -281,6 +384,7 @@ def main():
     api_url = config.get("api_url", "http://localhost:5000/api/deteccion")
     intervalo = config.get("interval_seconds", 60)
     timeout_scan = config.get("timeout_seconds", 3)
+    control_port = config.get("control_port", 5050)
     iface = config.get("interface")
 
     logging.info(f"API Endpoint: {api_url}")
@@ -289,20 +393,34 @@ def main():
     if iface:
         logging.info(f"Interfaz de red forzada: {iface}")
 
+    # Inicializar métricas y arrancar mini-servidor HTTP de control
+    agent_metrics["start_time"] = time.time()
+    iniciar_servidor_control(port=control_port)
+
     try:
         while True:
             inicio_escaneo = time.time()
             dispositivos = realizar_escaneo_arp(rango_red, timeout_seconds=timeout_scan, interface=iface)
             
             num_detectados = len(dispositivos)
-            logging.info(f"Escaneo completado en {time.time() - inicio_escaneo:.2f}s. Dispositivos detectados: {num_detectados}")
+            duracion = time.time() - inicio_escaneo
+            logging.info(f"Escaneo completado en {duracion:.2f}s. Dispositivos detectados: {num_detectados}")
+
+            # Actualizar métricas
+            agent_metrics["last_scan_time"] = datetime.now(timezone.utc).isoformat()
+            agent_metrics["devices_last_scan"] = num_detectados
+            agent_metrics["total_scans"] += 1
 
             if num_detectados > 0:
                 for dev in dispositivos:
                     mac = dev["mac"]
                     ip = dev["ip"]
                     logging.debug(f"Procesando dispositivo detectado IP: {ip}, MAC: {mac}")
-                    enviar_dispositivo_api(api_url, mac, agente_hostname)
+                    exito = enviar_dispositivo_api(api_url, mac, agente_hostname)
+                    if exito:
+                        agent_metrics["total_envios_exitosos"] += 1
+                    else:
+                        agent_metrics["total_envios_fallidos"] += 1
             else:
                 logging.info("No se detectaron respuestas ARP en este ciclo.")
 

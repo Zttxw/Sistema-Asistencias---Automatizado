@@ -1,18 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
 import Modal from '../components/Modal';
 import RequierePermiso from '../components/RequierePermiso';
 import VisitanteHome from '../components/VisitanteHome';
+import DashboardGrafico from '../components/DashboardGrafico';
+import VistaPresenciaDia from '../components/VistaPresenciaDia';
+import VistaPracticante from '../components/VistaPracticante';
+import MigracionModal from '../components/MigracionModal';
 import { useAuth } from '../context/AuthContext';
-import { Download, Calendar, RefreshCw, PlusCircle, Edit3 } from 'lucide-react';
+import { Calendar, RefreshCw, PlusCircle, Edit3, FileSpreadsheet } from 'lucide-react';
 
 export default function Asistencias() {
   const { user } = useAuth();
   const { onOpenLogin } = useOutletContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const vista = searchParams.get('tab') || 'dashboard';
 
-  const getTodayString = () => new Date().toISOString().split('T')[0];
+  const setVista = (v) => {
+    setSearchParams({ tab: v });
+  };
+
+  const getTodayString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const getCurrentDatetimeLocal = () => {
     const now = new Date();
@@ -22,17 +38,13 @@ export default function Asistencias() {
 
   const [fecha, setFecha] = useState(getTodayString());
   const [asistencias, setAsistencias] = useState([]);
+  const [empleados, setEmpleados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Modal para Exportar
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [exportInicio, setExportInicio] = useState('');
-  const [exportFin, setExportFin] = useState('');
-  const [exporting, setExporting] = useState(false);
-
-  // Modal para Registro Manual
+  // Modal para Registro Manual y Migración Excel
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isMigracionModalOpen, setIsMigracionModalOpen] = useState(false);
   const [empleadosActivos, setEmpleadosActivos] = useState([]);
   const [manualForm, setManualForm] = useState({
     empleado_id: '',
@@ -47,10 +59,12 @@ export default function Asistencias() {
     setLoading(true);
     setError(null);
     try {
-      const response = await client.get('/api/asistencias', {
-        params: { fecha },
-      });
-      setAsistencias(response.data);
+      const [resAsis, resEmp] = await Promise.all([
+        client.get('/api/asistencias', { params: { fecha } }),
+        client.get('/api/empleados').catch(() => ({ data: [] })),
+      ]);
+      setAsistencias(resAsis.data);
+      setEmpleados(resEmp.data);
     } catch (err) {
       console.error(err);
       setError(
@@ -61,11 +75,14 @@ export default function Asistencias() {
     }
   };
 
+  const userPermisos = user?.permisos || [];
+  const esAdminOJefe = user?.rol === 'Admin' || user?.rol === 'Jefe de Oficina' || userPermisos.includes('asistencias.ver');
+
   useEffect(() => {
-    if (user) {
+    if (user && esAdminOJefe) {
       fetchAsistencias();
     }
-  }, [fecha, user]);
+  }, [fecha, user, esAdminOJefe]);
 
   const openManualModal = async () => {
     setManualError(null);
@@ -91,55 +108,24 @@ export default function Asistencias() {
 
   const handleManualSubmit = async (e) => {
     e.preventDefault();
-    setSubmittingManual(true);
     setManualError(null);
+    setSubmittingManual(true);
     try {
-      const payload = {
+      await client.post('/api/asistencias/manual', {
         empleado_id: parseInt(manualForm.empleado_id, 10),
         tipo: manualForm.tipo,
-        timestamp: manualForm.timestamp ? new Date(manualForm.timestamp).toISOString() : null,
-        motivo: manualForm.motivo || null,
-      };
-      await client.post('/api/asistencia/manual', payload);
+        timestamp: new Date(manualForm.timestamp).toISOString(),
+        motivo: manualForm.motivo || undefined,
+      });
       setIsManualModalOpen(false);
       fetchAsistencias();
     } catch (err) {
       console.error(err);
-      setManualError(err.response?.data?.detail || 'Error al registrar la asistencia manual.');
+      setManualError(
+        err.response?.data?.detail || 'No se pudo realizar el registro manual.'
+      );
     } finally {
       setSubmittingManual(false);
-    }
-  };
-
-  const handleExport = async (e) => {
-    e.preventDefault();
-    setExporting(true);
-    setError(null);
-    try {
-      const params = {};
-      if (exportInicio) params.fecha_inicio = exportInicio;
-      if (exportFin) params.fecha_fin = exportFin;
-
-      const response = await client.get('/api/asistencias/export', {
-        params,
-        responseType: 'blob',
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'asistencias.xlsx');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      setIsExportModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      setError('Error al generar la exportación del archivo Excel.');
-    } finally {
-      setExporting(false);
     }
   };
 
@@ -148,28 +134,34 @@ export default function Asistencias() {
     return <VisitanteHome onOpenLogin={onOpenLogin} />;
   }
 
-  // --- Vista de Gestión (Usuario Autenticado/Admin) ---
+  // Si el usuario es un Practicante / Empleado sin acceso global, mostrar su portal personal
+  if (user && !esAdminOJefe) {
+    return <VistaPracticante user={user} />;
+  }
+
+  // --- Vista de Gestión (Usuario Autenticado/Admin/Jefe) ---
   return (
-    <div className="space-y-6">
-      {/* Encabezado y Acciones */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-zinc-800 pb-5">
+    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Encabezado y Acciones Principales */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-zinc-800 pb-4">
         <div>
-          <h2 className="font-valve text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Registro de Asistencias
-          </h2>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Control de Asistencia
+          </h1>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-            Consulte la presencia diaria del personal y exporte reportes.
+            Consulte la presencia diaria del personal, indicadores ejecutivos y exporte reportes.
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        {/* Acciones Secundarias a la Derecha */}
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center space-x-2 bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm shadow-2xs">
             <Calendar className="w-4 h-4 text-gray-400 dark:text-zinc-500" />
             <input
               type="date"
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
-              className="bg-transparent border-none text-gray-700 dark:text-zinc-200 focus:outline-none cursor-pointer font-medium"
+              className="bg-transparent border-none text-gray-700 dark:text-zinc-200 focus:outline-none cursor-pointer font-medium text-xs"
             />
           </div>
 
@@ -183,30 +175,36 @@ export default function Asistencias() {
 
           <RequierePermiso codigo="asistencias.registrar_manual">
             <button
+              onClick={() => setIsMigracionModalOpen(true)}
+              className="flex items-center space-x-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors shadow-2xs cursor-pointer"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Migrar Asistencias (Excel / CSV)</span>
+            </button>
+            <button
               onClick={openManualModal}
-              className="flex items-center space-x-2 px-4 py-2 bg-secondary text-white text-sm font-medium rounded-lg hover:bg-secondary/90 transition-colors shadow-2xs cursor-pointer"
+              className="flex items-center space-x-2 px-3 py-2 bg-secondary text-white text-xs font-medium rounded-lg hover:bg-secondary/90 transition-colors shadow-2xs cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Registrar manual</span>
             </button>
           </RequierePermiso>
 
-          <RequierePermiso codigo="asistencias.exportar">
-            <button
-              onClick={() => setIsExportModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              <span>Exportar a Excel</span>
-            </button>
-          </RequierePermiso>
         </div>
       </div>
 
+
+
       <AlertMessage message={error} onClose={() => setError(null)} />
 
-      {/* Tabla de Asistencias */}
-      <div className="bg-white dark:bg-black border border-gray-100 dark:border-zinc-800 rounded-xl shadow-2xs overflow-hidden">
+      {/* Renderizado dinámico de los 3 Módulos */}
+      {vista === 'dashboard' ? (
+        <DashboardGrafico asistencias={asistencias} empleados={empleados} />
+      ) : vista === 'dia' ? (
+        <VistaPresenciaDia asistencias={asistencias} empleados={empleados} fecha={fecha} />
+      ) : (
+        /* Tabla de Asistencias */
+        <div className="bg-white dark:bg-black border border-gray-100 dark:border-zinc-800 rounded-xl shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-sm text-gray-400 dark:text-zinc-500">Cargando registros...</div>
         ) : asistencias.length === 0 ? (
@@ -217,7 +215,7 @@ export default function Asistencias() {
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50/60 dark:bg-zinc-950 border-b border-gray-100 dark:border-zinc-800 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
-                <th className="px-6 py-4">Empleado</th>
+                <th className="px-6 py-4">Practicante</th>
                 <th className="px-6 py-4">Departamento</th>
                 <th className="px-6 py-4">Hora Entrada</th>
                 <th className="px-6 py-4">Hora Salida</th>
@@ -267,6 +265,7 @@ export default function Asistencias() {
           </table>
         )}
       </div>
+      )}
 
       {/* Modal Registrar Asistencia Manual */}
       <Modal
@@ -347,58 +346,12 @@ export default function Asistencias() {
           </div>
         </form>
       </Modal>
-
-      {/* Modal de Exportación */}
-      <Modal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        title="Exportar Reporte a Excel"
-      >
-        <form onSubmit={handleExport} className="space-y-4">
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
-            Seleccione el rango de fechas opcional. Si se dejan vacías, se exportarán las asistencias del mes actual.
-          </p>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Fecha Inicio</label>
-              <input
-                type="date"
-                value={exportInicio}
-                onChange={(e) => setExportInicio(e.target.value)}
-                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">Fecha Fin</label>
-              <input
-                type="date"
-                value={exportFin}
-                onChange={(e) => setExportFin(e.target.value)}
-                className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary dark:focus:border-white"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={() => setIsExportModalOpen(false)}
-              className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={exporting}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
-            >
-              <Download className="w-4 h-4" />
-              <span>{exporting ? 'Generando...' : 'Descargar Excel'}</span>
-            </button>
-          </div>
-        </form>
-      </Modal>
+      {/* Modal Migración Excel */}
+      <MigracionModal
+        isOpen={isMigracionModalOpen}
+        onClose={() => setIsMigracionModalOpen(false)}
+        onSuccess={() => fetchAsistencias()}
+      />
     </div>
   );
 }

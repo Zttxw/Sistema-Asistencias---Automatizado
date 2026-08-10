@@ -1,1 +1,1 @@
-from app.crud import crud_empleado, crud_asistencia, crud_informe
+from app.crud import crud_empleado, crud_asistencia, crud_informe, crud_informe_firmado

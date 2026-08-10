@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from io import BytesIO
 import calendar
 from typing import List, Optional
@@ -25,13 +25,28 @@ def registrar_deteccion_asistencia(db: Session, payload: AsistenciaCreatePayload
             detail=f"Empleado no encontrado o inactivo para la MAC {mac_normalizada}"
         )
 
-    # Convertir timestamp a timezone-naive para almacenar y comparar homogéneamente
-    dt = payload.timestamp
-    if dt.tzinfo is not None:
-        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    PERU_TZ = timezone(timedelta(hours=-5))
 
-    # 2. Extraer la fecha (sin hora) del timestamp recibido
+    # Convertir timestamp a hora local de Perú (UTC-5)
+    dt_local = payload.timestamp
+    if dt_local.tzinfo is None:
+        dt_local = dt_local.replace(tzinfo=timezone.utc)
+    dt = dt_local.astimezone(PERU_TZ).replace(tzinfo=None)
+
+    # 2. Extraer la fecha local (sin hora)
     fecha_hoy = dt.date()
+
+    # Regla Institucional: No se computan ni registran asistencias los fines de semana (Sábados y Domingos)
+    if fecha_hoy.weekday() >= 5:
+        if asistencia:
+            return asistencia
+        return Asistencia(
+            id=0,
+            empleado_id=empleado.id,
+            fecha=fecha_hoy,
+            origen_entrada="ignorado_fin_de_semana",
+            agente_id=payload.agente_id
+        )
 
     # 3. Buscar en asistencias un registro con ese empleado_id y esa fecha
     asistencia = db.query(Asistencia).filter(
@@ -76,9 +91,11 @@ def registrar_asistencia_manual(db: Session, payload: AsistenciaManualPayload) -
             detail="Empleado no encontrado o inactivo"
         )
 
-    dt = payload.timestamp or datetime.now(timezone.utc)
-    if dt.tzinfo is not None:
-        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    PERU_TZ = timezone(timedelta(hours=-5))
+    dt_local = payload.timestamp or datetime.now(timezone.utc)
+    if dt_local.tzinfo is None:
+        dt_local = dt_local.replace(tzinfo=timezone.utc)
+    dt = dt_local.astimezone(PERU_TZ).replace(tzinfo=None)
 
     fecha_hoy = dt.date()
 
@@ -100,25 +117,26 @@ def registrar_asistencia_manual(db: Session, payload: AsistenciaManualPayload) -
             hora_salida=None,
             origen_entrada="manual",
             origen_salida=None,
-            motivo=payload.motivo,
-            agente_id="manual"
+            motivo=payload.motivo
         )
         db.add(asistencia)
-    elif payload.tipo == "salida":
+    else:
         if not asistencia:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No se puede registrar salida sin una entrada previa ese día"
+            asistencia = Asistencia(
+                empleado_id=empleado.id,
+                fecha=fecha_hoy,
+                hora_entrada=dt,
+                hora_salida=dt,
+                origen_entrada="manual",
+                origen_salida="manual",
+                motivo=payload.motivo
             )
-        if dt <= asistencia.hora_entrada:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La hora de salida debe ser posterior a la hora de entrada"
-            )
-        asistencia.hora_salida = dt
-        asistencia.origen_salida = "manual"
-        if payload.motivo:
-            asistencia.motivo = payload.motivo
+            db.add(asistencia)
+        else:
+            asistencia.hora_salida = dt
+            asistencia.origen_salida = "manual"
+            if payload.motivo:
+                asistencia.motivo = payload.motivo
 
     db.commit()
     db.refresh(asistencia)
@@ -138,6 +156,7 @@ def get_asistencias_por_fecha(db: Session, fecha_consulta: date) -> List[Asisten
     for item in asistencias:
         h_entrada_str = item.hora_entrada.strftime("%H:%M:%S") if item.hora_entrada else ""
         h_salida_str = item.hora_salida.strftime("%H:%M:%S") if item.hora_salida else None
+
         resultado.append(
             AsistenciaReporteItem(
                 empleado=item.empleado.nombre,
@@ -151,6 +170,12 @@ def get_asistencias_por_fecha(db: Session, fecha_consulta: date) -> List[Asisten
             )
         )
     return resultado
+
+
+def get_asistencias_hoy(db: Session) -> List[AsistenciaReporteItem]:
+    PERU_TZ = timezone(timedelta(hours=-5))
+    fecha_hoy = datetime.now(PERU_TZ).date()
+    return get_asistencias_por_fecha(db, fecha_hoy)
 
 
 def get_asistencias_por_rango_fechas(
@@ -190,6 +215,53 @@ def get_asistencias_empleado_por_rango(
         .order_by(Asistencia.fecha.asc(), Asistencia.hora_entrada.asc())
         .all()
     )
+
+
+def get_historial_diario_empleado(db: Session, empleado_id: int) -> List[AsistenciaReporteItem]:
+    registros = (
+        db.query(Asistencia)
+        .filter(
+            Asistencia.empleado_id == empleado_id,
+            Asistencia.hora_entrada != None
+        )
+        .order_by(Asistencia.fecha.desc())
+        .all()
+    )
+
+    DIAS_ESPANOL = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
+    resultado = []
+
+    for reg in registros:
+        nom_dia = DIAS_ESPANOL[reg.fecha.weekday()]
+        h_ent = reg.hora_entrada.strftime("%H:%M") if reg.hora_entrada else None
+        h_sal = reg.hora_salida.strftime("%H:%M") if reg.hora_salida else None
+
+        horas_comp = 0.0
+        # REGLA INSTITUCIONAL: Solo Lunes a Viernes (0 a 4) computan horas
+        if reg.fecha.weekday() < 5 and reg.hora_entrada and reg.hora_salida:
+            dt_ent = reg.hora_entrada if isinstance(reg.hora_entrada, datetime) else datetime.combine(reg.fecha, reg.hora_entrada)
+            dt_sal = reg.hora_salida if isinstance(reg.hora_salida, datetime) else datetime.combine(reg.fecha, reg.hora_salida)
+            if dt_sal < dt_ent:
+                dt_sal += timedelta(days=1)
+            segundos = (dt_sal - dt_ent).total_seconds()
+            horas_comp = min(6.0, round(segundos / 3600.0, 1))
+
+        resultado.append(
+            AsistenciaReporteItem(
+                id=reg.id,
+                empleado=reg.empleado.nombre if reg.empleado else "Practicante",
+                departamento=reg.empleado.departamento if (reg.empleado and reg.empleado.departamento) else "OTI",
+                fecha=f"{nom_dia} {reg.fecha.strftime('%d/%m/%Y')}",
+                hora_entrada=h_ent,
+                hora_salida=h_sal,
+                horas_computables=horas_comp,
+                origen_entrada=reg.origen_entrada or "automático",
+                origen_salida=reg.origen_salida,
+                motivo=reg.motivo,
+                agente_id=reg.agente_id
+            )
+        )
+    return resultado
 
 
 

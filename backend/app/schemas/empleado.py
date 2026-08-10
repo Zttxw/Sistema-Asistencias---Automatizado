@@ -40,6 +40,7 @@ class EmpleadoUpdate(BaseModel):
 
 class EmpleadoResponse(EmpleadoBase):
     id: int
+    horas_acumuladas: float = 0.0
     created_at: datetime
 
     class Config:

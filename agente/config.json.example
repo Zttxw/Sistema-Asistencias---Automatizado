@@ -1,6 +1,6 @@
 {
-  "network_range": "192.168.1.0/24",
-  "interface": "Wi-Fi",
+  "network_range": "auto",
+  "interface": null,
   "api_url": "http://<IP_LOCAL_DE_LA_PC_SERVIDOR>:8010/api/deteccion",
   "interval_seconds": 60,
   "timeout_seconds": 3,

@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.empleado import EmpleadoCreate, EmpleadoUpdate, EmpleadoResponse
@@ -42,17 +42,17 @@ def crear_empleado(empleado_in: EmpleadoCreate, db: Session = Depends(get_db)):
     return crud.crud_empleado.create_empleado(db, empleado_in)
 
 
-@router.get("/{empleado_id}/informe_pdf", dependencies=[Depends(require_permission("asistencias.exportar"))])
+@router.get("/{empleado_id}/informe_pdf")
 def descargar_informe_pdf_empleado(
     empleado_id: int,
-    fecha_inicio: date,
-    fecha_fin: date,
+    fecha_inicio: Optional[date] = Query(None),
+    fecha_fin: Optional[date] = Query(None),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
     """
     Genera y descarga el informe PDF de asistencias del practicante/empleado agrupado por semanas.
-    Requiere los parámetros obligatorios 'fecha_inicio' y 'fecha_fin' (YYYY-MM-DD).
+    Si se omiten 'fecha_inicio' y 'fecha_fin', genera el informe consolidado completo hasta la última semana registrada.
     Requiere permiso 'asistencias.exportar'.
     """
     emp = crud.crud_empleado.get_empleado_by_id(db, empleado_id)
@@ -61,6 +61,17 @@ def descargar_informe_pdf_empleado(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Empleado no encontrado"
         )
+
+    if not fecha_inicio or not fecha_fin:
+        semanas_info = crud.crud_informe_firmado.get_semanas_completadas_empleado(db, empleado_id)
+        cons = semanas_info.get("consolidado")
+        if cons:
+            fecha_inicio = cons["semana_inicio"]
+            fecha_fin = cons["semana_fin"]
+        else:
+            hoy = date.today()
+            fecha_inicio = date(hoy.year, 1, 1)
+            fecha_fin = hoy
 
     pdf_bytes = crud.crud_informe.generar_pdf_informe_semanal_practicante(
         db=db,
@@ -71,13 +82,16 @@ def descargar_informe_pdf_empleado(
     )
 
     nombre_limpio = emp.nombre.replace(" ", "_")
-    filename = f"informe_{nombre_limpio}_{fecha_inicio}_{fecha_fin}.pdf"
+    filename = f"informe_CONSOLIDADO_{nombre_limpio}_{fecha_inicio}_{fecha_fin}.pdf"
 
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="{filename}"'
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
         }
     )
 

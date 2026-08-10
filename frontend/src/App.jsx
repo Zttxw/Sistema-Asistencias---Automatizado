@@ -6,7 +6,10 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Asistencias from './pages/Asistencias';
 import Empleados from './pages/Empleados';
+import InformesSemanales from './pages/InformesSemanales';
 import DispositivosNuevos from './pages/DispositivosNuevos';
+import Usuarios from './pages/Usuarios';
+import Agente from './pages/Agente';
 
 export default function App() {
   return (
@@ -25,10 +28,34 @@ export default function App() {
                 }
               />
               <Route
+                path="informes"
+                element={
+                  <ProtectedRoute codigo="asistencias.exportar">
+                    <InformesSemanales />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="dispositivos"
                 element={
                   <ProtectedRoute codigo="dispositivos.ver">
                     <DispositivosNuevos />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="usuarios"
+                element={
+                  <ProtectedRoute codigo="usuarios.gestionar">
+                    <Usuarios />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="agente"
+                element={
+                  <ProtectedRoute codigo="agente.gestionar">
+                    <Agente />
                   </ProtectedRoute>
                 }
               />
@@ -39,3 +66,4 @@ export default function App() {
     </ThemeProvider>
   );
 }
+

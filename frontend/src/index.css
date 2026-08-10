@@ -28,12 +28,15 @@ h1, h2, h3 {
   --color-primary: #3484A5;
   --color-secondary: #2CA792;
   --color-accent: #F0C84F;
+  --color-inst-blue: #3484A5;
+  --color-inst-green: #2CA792;
+  --color-inst-gold: #F0C84F;
 }
 
 .dark {
-  --color-primary: #FFFFFF;
-  --color-secondary: #3FC4AE;
-  --color-accent: #F5D76E;
+  --color-primary: #3484A5;
+  --color-secondary: #2CA792;
+  --color-accent: #F0C84F;
 }
 
 body {
