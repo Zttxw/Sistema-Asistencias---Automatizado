@@ -24,6 +24,17 @@ class UserMeResponse(BaseModel):
     empleado_id: Optional[int] = None
     activo: bool
     permisos: List[str]
+    nombre_firmante: Optional[str] = None
+    cargo_firmante: Optional[str] = None
+    colegiatura_firmante: Optional[str] = None
+    institucion_firmante: Optional[str] = None
+
+
+class PerfilFirmantePayload(BaseModel):
+    nombre_firmante: Optional[str] = None
+    cargo_firmante: Optional[str] = None
+    colegiatura_firmante: Optional[str] = None
+    institucion_firmante: Optional[str] = None
 
 
 class CambiarPasswordPayload(BaseModel):

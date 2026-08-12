@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
+import ModalPerfilFirmante from '../components/ModalPerfilFirmante';
 
 export default function InformesSemanales() {
   const [empleados, setEmpleados] = useState([]);
@@ -24,16 +25,23 @@ export default function InformesSemanales() {
   const [error, setError] = useState(null);
   const [exito, setExito] = useState(null);
 
+  // Perfil del Usuario Firmante Autenticado
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
+
   // UX Filters
   const [filtroEstado, setFiltroEstado] = useState('todas'); // 'todas' | 'pendientes' | 'firmadas'
   const [busqueda, setBusqueda] = useState('');
 
-  // Cargar lista de empleados (Sin seleccionar por defecto)
+  // Cargar lista de empleados y usuario autenticado
   const fetchEmpleados = async () => {
     try {
       const res = await client.get('/api/empleados/');
       const activos = res.data.filter((e) => e.activo !== false);
       setEmpleados(activos);
+
+      const resMe = await client.get('/api/auth/me');
+      setCurrentUser(resMe.data);
     } catch (err) {
       console.error(err);
       setError('Error al cargar la lista de practicantes.');
@@ -115,7 +123,7 @@ export default function InformesSemanales() {
     }
   }, [empSeleccionado]);
 
-  // Descargar PDF preliminar de una semana
+  // Descargar PDF preliminar de un bloque de 4 semanas
   const handleDescargarLimpio = async (semana) => {
     try {
       const empObj = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
@@ -129,43 +137,17 @@ export default function InformesSemanales() {
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `informe_semanal_${nomLimpio}_${semana.semana_inicio}_al_${semana.semana_fin}.pdf`);
+      link.setAttribute('download', `informe_mes_${semana.numero_mes || semana.numero_semana}_${nomLimpio}_${semana.semana_inicio}_al_${semana.semana_fin}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (err) {
       console.error(err);
-      setError('Error al generar el documento PDF preliminar.');
+      setError('Error al generar el documento PDF preliminar del mes (4 semanas).');
     }
   };
 
-  // Descargar PDF preliminar CONSOLIDADO (Semanas 1 a N)
-  const handleDescargarConsolidadoLimpio = async () => {
-    try {
-      const empObj = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
-      const nomLimpio = empObj ? empObj.nombre.replace(/\s+/g, '_') : 'Practicante';
-
-      const res = await client.get(`/api/empleados/${empSeleccionado}/informe_pdf`, {
-        params: consolidado
-          ? { fecha_inicio: consolidado.semana_inicio, fecha_fin: consolidado.semana_fin, _t: Date.now() }
-          : { _t: Date.now() },
-        responseType: 'blob',
-      });
-
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `informe_CONSOLIDADO_${nomLimpio}_1_a_${consolidado?.total_semanas || 'N'}_semanas.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      setError('Error al generar el documento PDF consolidado.');
-    }
-  };
-
-  // Subir el PDF individual firmado
+  // Subir el PDF firmado del Mes (4 semanas)
   const handleSubirPdfFirmado = async (semana, file) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
@@ -187,43 +169,11 @@ export default function InformesSemanales() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setExito(`Informe de la Semana ${semana.numero_semana} firmado y archivado correctamente.`);
+      setExito(`Informe del Mes ${semana.numero_mes || semana.numero_semana} (4 semanas) firmado por el Ingeniero y archivado correctamente.`);
       cargarSemanas(empSeleccionado);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.detail || 'Error al subir el PDF firmado.');
-    } finally {
-      setSubiendoId(null);
-    }
-  };
-
-  // Subir el PDF CONSOLIDADO firmado
-  const handleSubirConsolidadoFirmado = async (file) => {
-    if (!file || !consolidado) return;
-    if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
-      setError('El archivo seleccionado debe ser un documento PDF (*.pdf).');
-      return;
-    }
-
-    setSubiendoId('consolidado');
-    setError(null);
-    setExito(null);
-
-    const formData = new FormData();
-    formData.append('semana_inicio', consolidado.semana_inicio);
-    formData.append('semana_fin', consolidado.semana_fin);
-    formData.append('archivo', file);
-
-    try {
-      await client.post(`/api/informes-firmados/empleados/${empSeleccionado}/subir`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      setExito(`Informe CONSOLIDADO (Semanas 1 a ${consolidado.total_semanas}) firmado y archivado correctamente.`);
-      cargarSemanas(empSeleccionado);
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.detail || 'Error al subir el informe PDF consolidado firmado.');
     } finally {
       setSubiendoId(null);
     }
@@ -292,8 +242,15 @@ export default function InformesSemanales() {
           </p>
         </div>
 
-        {empSeleccionado && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsPerfilModalOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 text-white dark:bg-zinc-100 dark:text-black text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+            <span>Perfil de Firma Jefatura</span>
+          </button>
+          {empSeleccionado && (
             <button
               onClick={() => cargarSemanas(empSeleccionado)}
               className="flex items-center space-x-1.5 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-semibold rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
@@ -301,8 +258,8 @@ export default function InformesSemanales() {
               <RefreshCw className={`w-3.5 h-3.5 text-[#3484A5] ${loading ? 'animate-spin' : ''}`} />
               <span>Actualizar Datos</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <AlertMessage message={error} onClose={() => setError(null)} />
@@ -573,6 +530,13 @@ export default function InformesSemanales() {
           </div>
         </>
       )}
+
+      <ModalPerfilFirmante
+        isOpen={isPerfilModalOpen}
+        onClose={() => setIsPerfilModalOpen(false)}
+        currentUser={currentUser}
+        onProfileUpdated={(updatedUser) => setCurrentUser(updatedUser)}
+      />
     </div>
   );
 }

@@ -46,6 +46,12 @@ asistencias.xlsx
 mysql_data/
 **/mysql_data/
 
+# Agente build & embed binaries
+agente/build/
+agente/python_embed/
+agente/dist/
+*.spec
+
 # Internal VM documentation
 NOTAS_INTERNAS_VM.md
 *.internal.md

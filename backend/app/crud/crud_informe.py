@@ -47,39 +47,40 @@ def generar_pdf_informe_semanal_practicante(
     registros = get_asistencias_empleado_por_rango(db, empleado.id, fecha_inicio, fecha_fin)
 
     buffer = io.BytesIO()
-    # Ancho total imprimible = 612 - (40 + 40) = 532 pt
+    # Ancho imprimible = 612 - (40 + 40) = 532 pt
+    # topMargin = 125 para dejar espacio adecuado debajo del membrete institucional de cabecera
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter,
         rightMargin=40,
         leftMargin=40,
-        topMargin=110,
-        bottomMargin=45
+        topMargin=125,
+        bottomMargin=40
     )
 
     styles = getSampleStyleSheet()
 
-    # Estilos de título y texto
+    # Estilos de título y texto optimizados para 2 hojas ejecutivas y holgadas
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Heading1'],
         fontName='Helvetica-Bold',
-        fontSize=13,
-        leading=16,
-        textColor=colors.HexColor("#3484A5"),  # Azul Institucional
+        fontSize=12,
+        leading=15,
+        textColor=colors.HexColor("#0F2942"),  # Azul Marino Institucional
         alignment=1,  # Centrado
-        spaceAfter=3
+        spaceAfter=2
     )
 
     subtitle_style = ParagraphStyle(
         'DocSubtitle',
         parent=styles['Normal'],
-        fontName='Helvetica',
+        fontName='Helvetica-Bold',
         fontSize=8.5,
-        leading=11,
+        leading=10.5,
         textColor=colors.HexColor("#475569"),
         alignment=1,  # Centrado
-        spaceAfter=10
+        spaceAfter=8
     )
 
     meta_label_left = ParagraphStyle(
@@ -87,8 +88,8 @@ def generar_pdf_informe_semanal_practicante(
         parent=styles['Normal'],
         fontName='Helvetica',
         fontSize=8.5,
-        leading=12,
-        textColor=colors.HexColor("#1E293B"),
+        leading=11.5,
+        textColor=colors.HexColor("#0F172A"),
         alignment=0  # Izquierda
     )
 
@@ -97,8 +98,8 @@ def generar_pdf_informe_semanal_practicante(
         parent=styles['Normal'],
         fontName='Helvetica',
         fontSize=8.5,
-        leading=12,
-        textColor=colors.HexColor("#1E293B"),
+        leading=11.5,
+        textColor=colors.HexColor("#0F172A"),
         alignment=2  # Derecha
     )
 
@@ -107,9 +108,9 @@ def generar_pdf_informe_semanal_practicante(
         parent=styles['Heading2'],
         fontName='Helvetica-Bold',
         fontSize=8.5,
-        leading=10.5,
-        textColor=colors.HexColor("#3484A5"),
-        spaceBefore=3,
+        leading=11,
+        textColor=colors.HexColor("#0F2942"),
+        spaceBefore=4,
         spaceAfter=2
     )
 
@@ -118,10 +119,30 @@ def generar_pdf_informe_semanal_practicante(
         parent=styles['Heading2'],
         fontName='Helvetica-Bold',
         fontSize=8.5,
-        leading=10.5,
-        textColor=colors.HexColor("#3484A5"),
-        spaceBefore=5,
+        leading=11,
+        textColor=colors.HexColor("#0F2942"),
+        spaceBefore=6,
         spaceAfter=3
+    )
+
+    signer_name_style = ParagraphStyle(
+        'SignerName',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=8.5,
+        leading=10.5,
+        textColor=colors.HexColor("#0F2942"),
+        alignment=1
+    )
+
+    signer_sub_style = ParagraphStyle(
+        'SignerSub',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=7.5,
+        leading=9,
+        textColor=colors.HexColor("#334155"),
+        alignment=1
     )
 
     elements = []
@@ -130,8 +151,14 @@ def generar_pdf_informe_semanal_practicante(
     doc_titulo = "INFORME MENSUAL DE ASISTENCIA Y CONTROL DE PRÁCTICAS PRE-PROFESIONALES"
     
     elements.append(Paragraph(doc_titulo, title_style))
-    elements.append(Paragraph("Oficina de Tecnologías de la Información &bull; Control de Asistencia y Firma Digital", subtitle_style))
+    elements.append(Paragraph("Oficina de Tecnologías de la Información &bull; Control Oficial de Asistencia y Firma Digital", subtitle_style))
     elements.append(Spacer(1, 2))
+
+    # Nombre del firmante / Jefe de Oficina
+    nombre_firmante_str = getattr(usuario_generador, "nombre_firmante", None) or usuario_generador.email
+    cargo_firmante_str = getattr(usuario_generador, "cargo_firmante", None) or "Jefe de la Oficina de Tecnologías de la Información"
+    colegiatura_firmante_str = getattr(usuario_generador, "colegiatura_firmante", None) or ""
+    institucion_firmante_str = getattr(usuario_generador, "institucion_firmante", None) or "Oficina de Tecnologías de la Información - OTI"
 
     # 2. Ficha de Metadatos del Practicante/Empleado (Ancho Total: 532 pt = 296 + 236)
     meta_data = [
@@ -144,7 +171,7 @@ def generar_pdf_informe_semanal_practicante(
             Paragraph(f"<b>Período Solicitado:</b> {fecha_inicio.strftime('%d/%m/%Y')} – {fecha_fin.strftime('%d/%m/%Y')}", meta_label_left)
         ],
         [
-            Paragraph(f"<b>Emitido por:</b> {usuario_generador.email}", meta_label_left),
+            Paragraph(f"<b>Jefatura / Responsable:</b> {nombre_firmante_str}", meta_label_left),
             Paragraph(f"<b>Meta de Horas:</b> {f'{empleado.horas_meta} hrs' if empleado.horas_meta else 'No definida'}", meta_label_left)
         ]
     ]
@@ -152,16 +179,16 @@ def generar_pdf_informe_semanal_practicante(
     t_meta = Table(meta_data, colWidths=[296, 236])
     t_meta.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
-        ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor("#CBD5E1")),
-        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
-        ('TOPPADDING', (0, 0), (-1, -1), 3.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('BOX', (0, 0), (-1, -1), 0.6, colors.HexColor("#CBD5E1")),
+        ('INNERGRID', (0, 0), (-1, -1), 0.4, colors.HexColor("#E2E8F0")),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 7),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 7),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     elements.append(t_meta)
-    elements.append(Spacer(1, 5))
+    elements.append(Spacer(1, 4))
 
     # 3. Agrupar asistencias por semanas calendario (lunes-domingo)
     semanas_dict: Dict[tuple, List] = {}
@@ -208,8 +235,8 @@ def generar_pdf_informe_semanal_practicante(
                     dias_semana.append(reg.fecha)
             dias_semana.sort()
 
-            # Tabla de días de la semana (Ancho Total: 532 pt = 115 + 80 + 80 + 75 + 182)
-            table_data = [["Día / Fecha", "Hora Entrada", "Hora Salida", "Horas", "Firma y Sello"]]
+            # Tabla de días de la semana: 4 Columnas Limpias y Equilibradas (Ancho Total: 532 pt = 180 + 110 + 110 + 132)
+            table_data = [["Día / Fecha", "Hora Entrada", "Hora Salida", "Horas Computadas"]]
             total_semana_horas = 0.0
 
             for dia_fecha in dias_semana:
@@ -258,8 +285,7 @@ def generar_pdf_informe_semanal_practicante(
                     fecha_str,
                     h_ent,
                     h_sal,
-                    horas_str,
-                    ""
+                    horas_str
                 ])
 
             total_semana_horas = round(total_semana_horas, 1)
@@ -269,49 +295,45 @@ def generar_pdf_informe_semanal_practicante(
                 "Total semanal",
                 "",
                 "",
-                f"{total_semana_horas:.1f}",
-                ""
+                f"{total_semana_horas:.1f} hrs"
             ])
 
-            t_semana = Table(table_data, colWidths=[115, 80, 80, 75, 182])
+            t_semana = Table(table_data, colWidths=[180, 110, 110, 132])
 
             ts = [
-                # Encabezado
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3484A5")),
+                # Encabezado estilo Corte Superior de Justicia (Azul Marino Institucional)
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0F2942")),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 7.5),
                 ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-                ('ALIGN', (1, 0), (4, 0), 'CENTER'),
+                ('ALIGN', (1, 0), (3, 0), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('TOPPADDING', (0, 0), (-1, -1), 2.5),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+                ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),
                 ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor("#F8FAFC")]),
                 
                 # Alineación de datos
                 ('ALIGN', (0, 1), (0, -2), 'LEFT'),
                 ('ALIGN', (1, 1), (2, -2), 'CENTER'),
                 ('ALIGN', (3, 1), (3, -2), 'RIGHT'),
+                ('FONTSIZE', (0, 1), (-1, -2), 7.5),
 
-                # Bloque sólido unificado para la columna 'Firma y Sello' (sin rayas internas)
-                ('SPAN', (4, 1), (4, -2)),
-                ('BACKGROUND', (4, 1), (4, -2), colors.white),
-
-                # Fila final Total Semanal (Verde Institucional sutil)
+                # Fila final Total Semanal (Azul Institucional sutil)
                 ('SPAN', (0, -1), (2, -1)),
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, -1), (-1, -1), 7.5),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#E6F7F4")),
-                ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor("#1A5C50")),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#EBF3F8")),
+                ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor("#0F2942")),
                 ('ALIGN', (0, -1), (0, -1), 'RIGHT'),
                 ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
-                ('RIGHTPADDING', (0, -1), (0, -1), 10),
+                ('RIGHTPADDING', (0, -1), (0, -1), 8),
                 ('RIGHTPADDING', (3, -1), (3, -1), 8),
             ]
             t_semana.setStyle(TableStyle(ts))
             
-            # Envolver cada semana en KeepTogether para evitar desfasamiento / corte a la mitad
+            # Envolver cada semana en KeepTogether
             bloque_semana = KeepTogether([
                 p_semana_title,
                 t_semana,
@@ -319,7 +341,7 @@ def generar_pdf_informe_semanal_practicante(
             ])
             elements.append(bloque_semana)
 
-            # Salto a la 2da Hoja al iniciar Semana 4 debido a los datos de cabecera en Hoja 1
+            # Salto limpio a la 2da Hoja al finalizar la Semana 3 (semanas 1, 2 y 3 en Hoja 1; semana 4 y firma en Hoja 2)
             if num_semana == 3 and total_semanas > 3:
                 elements.append(PageBreak())
             elif num_semana > 3 and (num_semana - 3) % 4 == 0 and num_semana < total_semanas:
@@ -327,15 +349,15 @@ def generar_pdf_informe_semanal_practicante(
 
     total_consolidado_horas = round(total_consolidado_horas, 1)
 
-    # 4. Sección Consolidado Final (Ancho Total: 532 pt = 340 + 192) y Signaturas agrupadas
+    # 4. Sección Consolidado Final (Ancho Total: 532 pt = 340 + 192) y Signaturas en Hoja 2
     consolidado_elements = []
 
     meta_alcanzada = empleado.horas_meta is not None and total_consolidado_horas >= float(empleado.horas_meta)
     
     if meta_alcanzada:
-        cons_titulo = "<b>RESUMEN MENSUAL Y CONTROL FINAL DE PRÁCTICAS (META COMPLETADA)</b>"
+        cons_titulo = "<b>RESUMEN MENSUAL - 4 SEMANAS (META COMPLETADA)</b>"
     else:
-        cons_titulo = "<b>RESUMEN Y CONTROL MENSUAL DE ASISTENCIAS (EN CURSO - FIRMA MENSUAL)</b>"
+        cons_titulo = "<b>RESUMEN MENSUAL (4 SEMANAS) Y FIRMA DEL INGENIERO RESPONSABLE</b>"
 
     consolidado_elements.append(Paragraph(cons_titulo, consolidado_title_style))
 
@@ -362,12 +384,12 @@ def generar_pdf_informe_semanal_practicante(
     t_cons = Table(consolidado_rows, colWidths=[340, 192])
     t_cons_style = [
         ('BACKGROUND', (0, 0), (-1, -2), colors.HexColor("#F8FAFC")),
-        ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor("#CBD5E1")),
-        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
-        ('TOPPADDING', (0, 0), (-1, -1), 3.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('BOX', (0, 0), (-1, -1), 0.6, colors.HexColor("#CBD5E1")),
+        ('INNERGRID', (0, 0), (-1, -1), 0.4, colors.HexColor("#E2E8F0")),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 7),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 7),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]
     if len(consolidado_rows) > 1:
@@ -376,20 +398,48 @@ def generar_pdf_informe_semanal_practicante(
     
     t_cons.setStyle(TableStyle(t_cons_style))
     consolidado_elements.append(t_cons)
-    consolidado_elements.append(Spacer(1, 6))
+    # Espaciado amplio y holgado antes de la firma del Jefe (100 pt)
+    consolidado_elements.append(Spacer(1, 100))
 
-    # 5. Espacio limpio para Firma Digital (sin líneas de guiones ni textos)
-    consolidado_elements.append(Spacer(1, 25))
+    # 5. BLOQUE DE FIRMA Y SELLO DEL JEFE DE OFICINA (SIN CUADRO)
+    sig_box_data = [
+        [Paragraph("____________________________________________________", signer_sub_style)],
+        [Spacer(1, 12)],
+        [Paragraph(f"<b>{nombre_firmante_str.upper()}</b>", signer_name_style)],
+        [Paragraph(cargo_firmante_str, signer_sub_style)],
+    ]
+    if colegiatura_firmante_str:
+        sig_box_data.append([Paragraph(colegiatura_firmante_str, signer_sub_style)])
+    if institucion_firmante_str:
+        sig_box_data.append([Paragraph(f"<b>{institucion_firmante_str}</b>", signer_sub_style)])
+
+    t_firma_box = Table(sig_box_data, colWidths=[360])
+    t_firma_box.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+    ]))
+
+    # Centrar la firma en el informe de 532 pt
+    t_firma_wrapper = Table([[t_firma_box]], colWidths=[532])
+    t_firma_wrapper.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 86),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 86),
+    ]))
+    consolidado_elements.append(t_firma_wrapper)
+    consolidado_elements.append(Spacer(1, 15))
 
     # Nota explicativa final
     sig_text = Paragraph(
-        "<b>NOTA:</b> El presente informe es un documento impreso/digital oficial de asistencia. "
-        "Está diseñado para ser firmado mensualmente mediante firma digital o física.",
+        "<b>NOTA:</b> El presente informe es un documento oficial de asistencia de prácticas correspondiente a 1 Mes (4 semanas). "
+        "Firmado digital o físicamente por el Jefe de la Oficina de Tecnologías de la Información.",
         ParagraphStyle('Note', parent=styles['Normal'], fontName='Helvetica-Oblique', fontSize=7.5, leading=9.5, textColor=colors.HexColor("#64748B"), alignment=1)
     )
     consolidado_elements.append(sig_text)
 
-    # Mantener juntos el Consolidado y los recuadros de firma para evitar desfasamiento
+    # Mantener juntos el Consolidado y los recuadros de firma
     elements.append(KeepTogether(consolidado_elements))
 
     # Callback para dibujar la hoja membretada en cada página

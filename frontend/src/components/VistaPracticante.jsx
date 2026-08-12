@@ -405,14 +405,14 @@ export default function VistaPracticante({ user }) {
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
                 <span className="text-xs font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[#3484A5]" />
-                  <span>Resumen de Informes Semanales</span>
+                  <span>Resumen de Informes de 4 Semanas</span>
                 </span>
                 <span className="text-xs font-mono text-slate-400">OTI</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-slate-50 dark:bg-zinc-850 rounded-lg border border-slate-200 dark:border-zinc-800 text-center">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Semanas Concluidas</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Bloques Concluidos</span>
                   <span className="text-2xl font-bold text-[#3484A5] font-mono">{semanasInfo.semanas.length}</span>
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-zinc-850 rounded-lg border border-slate-200 dark:border-zinc-800 text-center">
@@ -426,7 +426,7 @@ export default function VistaPracticante({ user }) {
               <div className="p-3 bg-slate-50 dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800 text-xs font-mono text-slate-600 dark:text-zinc-400">
                 <span>Estado Actual: </span>
                 <b className="text-slate-900 dark:text-white">
-                  {horasAcumuladas >= horasMeta ? 'META CONCLUIDA (LISTO PARA INFORME CONSOLIDADO)' : 'EN CURSO (REGISTRO DÍA A DÍA)'}
+                  {horasAcumuladas >= horasMeta ? 'META CONCLUIDA' : 'EN CURSO (REGISTRO DÍA A DÍA)'}
                 </b>
               </div>
             </div>
@@ -436,23 +436,23 @@ export default function VistaPracticante({ user }) {
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xs overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950">
               <h2 className="text-xs font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
-                Informes Semanales Firmados por la Jefatura
+                Informes de 4 Semanas Firmados por el Ingeniero Responsable
               </h2>
               <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                Consulte y descargue sus informes PDF oficiales firmados digitalmente para impresión o trámite. (Vista de lectura).
+                Consulte y descargue sus informes PDF oficiales de 4 semanas firmados digitalmente para impresión o trámite. (Vista de lectura).
               </p>
             </div>
 
             {semanasInfo.semanas.length === 0 ? (
               <div className="p-10 text-center text-xs text-slate-400 font-mono">
-                No hay semanas concluidas registradas hasta la fecha.
+                No hay meses concluidos registrados hasta la fecha.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs font-mono border-collapse">
                   <thead>
                     <tr className="bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 border-b border-slate-200 dark:border-zinc-700 text-[11px]">
-                      <th className="py-3 px-5 font-bold">Semana / Rango</th>
+                      <th className="py-3 px-5 font-bold">Mes / Rango</th>
                       <th className="py-3 px-5 font-bold text-center">Horas Acumuladas</th>
                       <th className="py-3 px-5 font-bold text-center">Estado de Firma</th>
                       <th className="py-3 px-5 font-bold text-right">Documento PDF</th>
@@ -462,10 +462,10 @@ export default function VistaPracticante({ user }) {
                     {semanasInfo.semanas.map((sem, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-zinc-800/40 transition-colors">
                         <td className="py-3 px-5 font-semibold">
-                          Semana {sem.numero_semana} ({sem.rango_str})
+                          {sem.nombre_mes || `Mes ${sem.numero_mes || sem.numero_semana}`} ({sem.rango_str})
                         </td>
                         <td className="py-3 px-5 text-center font-bold text-[#3484A5]">
-                          {sem.horas_semana} hrs
+                          {sem.horas_mes || sem.horas_semana} hrs
                         </td>
                         <td className="py-3 px-5 text-center">
                           {sem.firmado ? (

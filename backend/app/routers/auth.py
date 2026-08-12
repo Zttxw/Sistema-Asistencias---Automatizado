@@ -57,10 +57,12 @@ def logout(payload: RefreshTokenPayload, db: Session = Depends(get_db)):
     return {"message": "Sesión cerrada correctamente"}
 
 
+from app.schemas.auth import LoginPayload, RefreshTokenPayload, TokenResponse, UserMeResponse, CambiarPasswordPayload, PerfilFirmantePayload
+
 @router.get("/me", response_model=UserMeResponse)
 def get_me(user: Usuario = Depends(get_current_user)):
     """
-    Retorna la información del usuario autenticado actual, su rol y sus permisos.
+    Retorna la información del usuario autenticado actual, su rol, permisos y perfil de firma.
     """
     permisos = []
     if user.rol and user.rol.permisos:
@@ -72,8 +74,35 @@ def get_me(user: Usuario = Depends(get_current_user)):
         rol=user.rol.nombre if user.rol else "Sin Rol",
         empleado_id=user.empleado_id,
         activo=user.activo,
-        permisos=permisos
+        permisos=permisos,
+        nombre_firmante=user.nombre_firmante,
+        cargo_firmante=user.cargo_firmante,
+        colegiatura_firmante=user.colegiatura_firmante,
+        institucion_firmante=user.institucion_firmante
     )
+
+
+@router.put("/perfil", response_model=UserMeResponse)
+def actualizar_perfil_firmante(
+    payload: PerfilFirmantePayload,
+    user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Permite al usuario (Jefe de Oficina / Admin) configurar sus credenciales y perfil de firma para los informes PDF.
+    """
+    if payload.nombre_firmante is not None:
+        user.nombre_firmante = payload.nombre_firmante.strip()
+    if payload.cargo_firmante is not None:
+        user.cargo_firmante = payload.cargo_firmante.strip()
+    if payload.colegiatura_firmante is not None:
+        user.colegiatura_firmante = payload.colegiatura_firmante.strip()
+    if payload.institucion_firmante is not None:
+        user.institucion_firmante = payload.institucion_firmante.strip()
+
+    db.commit()
+    db.refresh(user)
+    return get_me(user=user)
 
 
 @router.post("/cambiar-password")

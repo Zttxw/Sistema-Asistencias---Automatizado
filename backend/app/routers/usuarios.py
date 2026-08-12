@@ -18,6 +18,10 @@ def _map_usuario_response(u) -> UsuarioResponse:
         empleado_id=u.empleado_id,
         empleado_nombre=u.empleado.nombre if u.empleado else None,
         activo=u.activo,
+        nombre_firmante=u.nombre_firmante,
+        cargo_firmante=u.cargo_firmante,
+        colegiatura_firmante=u.colegiatura_firmante,
+        institucion_firmante=u.institucion_firmante,
         creado_en=u.creado_en
     )
 

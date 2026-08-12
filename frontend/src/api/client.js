@@ -1,6 +1,26 @@
 import axios from 'axios';
 
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8010';
+const getDynamicApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    const envUrl = import.meta.env.VITE_API_URL;
+
+    if (envUrl) {
+      try {
+        const parsed = new URL(envUrl);
+        const port = (parsed.port === '8082') ? '8010' : (parsed.port || '8010');
+        return `${protocol}//${hostname}:${port}`;
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return `${protocol}//${hostname}:8010`;
+  }
+  return import.meta.env.VITE_API_URL || 'http://localhost:8010';
+};
+
+const apiBaseUrl = getDynamicApiBaseUrl();
 
 const client = axios.create({
   baseURL: apiBaseUrl,

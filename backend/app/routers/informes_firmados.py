@@ -68,12 +68,13 @@ def descargar_mi_informe_pdf(
 
     if not fecha_inicio or not fecha_fin:
         semanas_info = crud.crud_informe_firmado.get_semanas_completadas_empleado(db, emp.id)
-        cons = semanas_info.get("consolidado")
-        if cons:
-            fecha_inicio = cons["semana_inicio"]
-            fecha_fin = cons["semana_fin"]
-            if cons.get("firmado") and cons.get("informe_firmado_id"):
-                informe = crud.crud_informe_firmado.get_informe_firmado_by_id(db, cons["informe_firmado_id"])
+        lista_bloques = semanas_info.get("semanas", [])
+        if lista_bloques:
+            ultimo = lista_bloques[-1]
+            fecha_inicio = ultimo["semana_inicio"]
+            fecha_fin = ultimo["semana_fin"]
+            if ultimo.get("firmado") and ultimo.get("informe_firmado_id"):
+                informe = crud.crud_informe_firmado.get_informe_firmado_by_id(db, ultimo["informe_firmado_id"])
                 if informe and os.path.exists(informe.archivo_path):
                     return FileResponse(
                         path=informe.archivo_path,
@@ -87,7 +88,7 @@ def descargar_mi_informe_pdf(
                     )
         else:
             hoy = date.today()
-            fecha_inicio = date(hoy.year, 1, 1)
+            fecha_inicio = hoy - timedelta(days=27)
             fecha_fin = hoy
 
     pdf_bytes = crud.crud_informe.generar_pdf_informe_semanal_practicante(

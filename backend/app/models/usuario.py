@@ -12,6 +12,13 @@ class Usuario(Base):
     rol_id = Column(Integer, ForeignKey("roles.id"), nullable=False, index=True)
     empleado_id = Column(Integer, ForeignKey("empleados.id"), nullable=True, index=True)
     activo = Column(Boolean, default=True, nullable=False)
+    
+    # Campos de Firma Digital y Credenciales Profesionales del Firmante
+    nombre_firmante = Column(String(150), nullable=True)
+    cargo_firmante = Column(String(150), nullable=True)
+    colegiatura_firmante = Column(String(100), nullable=True)
+    institucion_firmante = Column(String(150), nullable=True)
+
     creado_en = Column(DateTime, default=func.now(), nullable=False)
 
     rol = relationship("Rol", back_populates="usuarios")

@@ -16,16 +16,21 @@ class AsistenciaCreatePayload(BaseModel):
 
 class AsistenciaManualPayload(BaseModel):
     empleado_id: int
-    tipo: str = Field(..., example="entrada")
+    tipo: Optional[str] = Field("entrada", example="entrada")
     timestamp: Optional[datetime] = None
+    fecha: Optional[date] = None
+    hora_entrada: Optional[str] = None  # HH:MM
+    hora_salida: Optional[str] = None   # HH:MM
     motivo: Optional[str] = Field(None, example="Olvidó el celular")
 
     @field_validator('tipo')
     @classmethod
-    def validar_tipo(cls, v: str) -> str:
+    def validar_tipo(cls, v: Optional[str]) -> Optional[str]:
+        if not v:
+            return "entrada"
         tipo_clean = v.strip().lower()
-        if tipo_clean not in ["entrada", "salida"]:
-            raise ValueError("El campo 'tipo' debe ser 'entrada' o 'salida'")
+        if tipo_clean not in ["entrada", "salida", "completo"]:
+            raise ValueError("El campo 'tipo' debe ser 'entrada', 'salida' o 'completo'")
         return tipo_clean
 
 
@@ -45,12 +50,24 @@ class AsistenciaResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AsistenciaEdicionPayload(BaseModel):
+    hora_entrada: Optional[str] = None  # HH:MM o HH:MM:SS
+    hora_salida: Optional[str] = None   # HH:MM o HH:MM:SS
+    motivo: Optional[str] = None
+
+
 class AsistenciaReporteItem(BaseModel):
+    id: Optional[int] = None
+    empleado_id: Optional[int] = None
     empleado: str
     departamento: Optional[str] = None
     fecha: str
-    hora_entrada: str
+    hora_entrada: Optional[str] = None
     hora_salida: Optional[str] = None
+    horas_computables: Optional[float] = 0.0
     origen_entrada: Optional[str] = None
     origen_salida: Optional[str] = None
     motivo: Optional[str] = None
+    agente_id: Optional[str] = None
+    esta_firmado: Optional[bool] = False
+

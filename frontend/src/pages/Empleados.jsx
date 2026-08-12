@@ -264,35 +264,7 @@ export default function Empleados() {
     }
   };
 
-  const handleGenerarConsolidadoPdf = async () => {
-    if (!selectedEmpleado) return;
-    setGeneratingPdf(true);
-    setError(null);
-    try {
-      const response = await client.get(`/api/empleados/${selectedEmpleado.id}/informe_pdf`, {
-        params: { _t: Date.now() },
-        responseType: 'blob'
-      });
 
-      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      const nombreArchivo = `informe_CONSOLIDADO_${selectedEmpleado.nombre.replace(/\s+/g, '_')}.pdf`;
-      link.setAttribute('download', nombreArchivo);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      setSuccess(`Informe PDF Consolidado descargado correctamente: ${nombreArchivo}`);
-      setIsReporteModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.detail || 'Error al generar el informe PDF consolidado.');
-    } finally {
-      setGeneratingPdf(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -568,20 +540,7 @@ export default function Empleados() {
             Seleccione el rango de fechas para generar el informe semanal de asistencias del practicante.
           </p>
 
-          <div className="p-3.5 bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-xl flex items-center justify-between shadow-xs">
-            <div>
-              <p className="text-xs font-bold text-white uppercase tracking-wide">Informe Consolidado Completo</p>
-              <p className="text-[11px] text-blue-200/90">Descarga todas las semanas concluidas registradas en 1 solo PDF</p>
-            </div>
-            <button
-              type="button"
-              onClick={handleGenerarConsolidadoPdf}
-              disabled={generatingPdf}
-              className="px-3 py-1.5 bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 shrink-0"
-            >
-              Descargar 1 PDF
-            </button>
-          </div>
+
 
           <div className="p-3 bg-gray-50 dark:bg-zinc-950 border border-gray-100 dark:border-zinc-800 rounded-lg flex items-center justify-between text-xs">
             <span className="text-gray-600 dark:text-zinc-400 font-medium">Meta de horas configurada:</span>

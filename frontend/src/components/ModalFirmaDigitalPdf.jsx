@@ -102,31 +102,6 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
     }
   };
 
-  const handleDescargarConsolidadoLimpio = async () => {
-    try {
-      const empSel = empleados.find((e) => e.id === parseInt(empId, 10));
-      const nomLimpio = empSel ? empSel.nombre.replace(/\s+/g, '_') : 'Practicante';
-
-      const res = await client.get(`/api/empleados/${empId}/informe_pdf`, {
-        params: consolidado 
-          ? { fecha_inicio: consolidado.semana_inicio, fecha_fin: consolidado.semana_fin, _t: Date.now() } 
-          : { _t: Date.now() },
-        responseType: 'blob',
-      });
-
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `informe_CONSOLIDADO_${nomLimpio}_1_a_${consolidado?.total_semanas || 'N'}_semanas.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      setError('No se pudo descargar el informe PDF consolidado.');
-    }
-  };
-
   const handleSubirPdfFirmado = async (semana, file) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
@@ -148,42 +123,11 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setExito(`¡Informe de la Semana ${semana.numero_semana} guardado exitosamente con la Firma Digital del Ingeniero!`);
+      setExito(`¡Informe del Mes ${semana.numero_mes || semana.numero_semana} (4 semanas) guardado exitosamente con la Firma Digital del Ingeniero!`);
       cargarSemanasCompletadas(empId);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.detail || 'Error al subir el informe PDF firmado.');
-    } finally {
-      setSubiendoId(null);
-    }
-  };
-
-  const handleSubirConsolidadoFirmado = async (file) => {
-    if (!file || !consolidado) return;
-    if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
-      setError('El archivo seleccionado debe ser un documento PDF (*.pdf).');
-      return;
-    }
-
-    setSubiendoId('consolidado');
-    setError(null);
-    setExito(null);
-
-    const formData = new FormData();
-    formData.append('semana_inicio', consolidado.semana_inicio);
-    formData.append('semana_fin', consolidado.semana_fin);
-    formData.append('archivo', file);
-
-    try {
-      await client.post(`/api/informes-firmados/empleados/${empId}/subir`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      setExito(`¡Informe CONSOLIDADO (Semanas 1 a ${consolidado.total_semanas}) guardado exitosamente con la Firma Digital del Ingeniero!`);
-      cargarSemanasCompletadas(empId);
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.detail || 'Error al subir el informe PDF consolidado firmado.');
     } finally {
       setSubiendoId(null);
     }
@@ -209,10 +153,10 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Gestión de Informes Semanales & Firma Digital">
+    <Modal isOpen={isOpen} onClose={onClose} title="Gestión de Informes Mensuales (4 Semanas) & Firma Digital">
       <div className="space-y-5 text-gray-900 dark:text-zinc-100 font-sans">
         <p className="text-xs text-gray-500 dark:text-zinc-400">
-          Descargue el informe consolidado completo (1 a N semanas en 1 PDF) o informes individuales. Fírmelo con su software de Firma Digital y súbalo para que quede archivado oficialmente.
+          Descargue el informe PDF del mes (4 semanas). Fírmelo digitalmente y súbalo para que quede archivado oficialmente con 1 sola firma del Ingeniero Responsable.
         </p>
 
         <AlertMessage message={error} onClose={() => setError(null)} />
@@ -239,67 +183,11 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
           </select>
         </div>
 
-        {/* BANDERAZO PRINCIPAL: CONSOLIDADO EN 1 SOLO PDF */}
-        {consolidado && (
-          <div className="p-4 bg-slate-900 dark:bg-black text-white rounded-xl border border-slate-800 shadow-xs space-y-3 font-sans">
-            <div className="flex items-center justify-between">
-              <h4 className="font-bold text-xs uppercase font-mono tracking-wider text-white">
-                Informe Consolidado Total (Semanas 1 a {consolidado.total_semanas})
-              </h4>
-              {consolidado.firmado ? (
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  [FIRMADO]
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                  [PENDIENTE]
-                </span>
-              )}
-            </div>
-
-            <p className="text-[11px] text-slate-400 font-mono">
-              Rango: <b>{consolidado.rango_str}</b> • Horas Totales: <b>{consolidado.total_horas} hrs</b>
-            </p>
-
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-              <button
-                onClick={handleDescargarConsolidadoLimpio}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-700"
-              >
-                <Download className="w-3.5 h-3.5 text-sky-400" />
-                <span>1. Descargar Consolidado (1 PDF)</span>
-              </button>
-
-              {consolidado.firmado ? (
-                <button
-                  onClick={() => handleDescargarPdfFirmado(consolidado.informe_firmado_id, 'CONSOLIDADO')}
-                  className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Ver Consolidado Firmado</span>
-                </button>
-              ) : (
-                <label className="px-3 py-1.5 bg-white text-slate-900 hover:bg-slate-100 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-200">
-                  <Upload className="w-3.5 h-3.5 text-slate-700" />
-                  <span>{subiendoId === 'consolidado' ? 'Guardando...' : '2. Subir Consolidado Firmado'}</span>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    disabled={subiendoId === 'consolidado'}
-                    className="hidden"
-                    onChange={(e) => handleSubirConsolidadoFirmado(e.target.files[0])}
-                  />
-                </label>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Lista de Semanas Concluidas */}
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-gray-500 dark:text-zinc-400">
-              Desglose de Semanas Concluidas ({semanas.length})
+              Desglose de Meses Concluidos ({semanas.length})
             </h3>
             <button
               onClick={() => cargarSemanasCompletadas(empId)}
@@ -310,10 +198,10 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-xs text-gray-400 font-mono">Cargando semanas completadas...</div>
+            <div className="p-8 text-center text-xs text-gray-400 font-mono">Cargando meses completados...</div>
           ) : semanas.length === 0 ? (
             <div className="p-6 bg-gray-50 dark:bg-zinc-900/40 rounded-lg text-center text-xs text-gray-500 dark:text-zinc-400 font-mono border border-dashed border-gray-200 dark:border-zinc-800">
-              No hay semanas completadas pasadas aún para este practicante.
+              No hay meses completados pasados aún para este practicante.
             </div>
           ) : (
             <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
@@ -325,10 +213,10 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-bold text-xs text-gray-900 dark:text-white font-mono">
-                        Semana {semana.numero_semana} ({semana.rango_str})
+                        {semana.nombre_mes || `Mes ${semana.numero_mes || semana.numero_semana}`} ({semana.rango_str})
                       </h4>
                       <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono">
-                        Horas en semana: <b>{semana.horas_semana} hrs</b>
+                        Horas del mes: <b>{semana.horas_mes || semana.horas_semana} hrs</b>
                       </p>
                     </div>
 

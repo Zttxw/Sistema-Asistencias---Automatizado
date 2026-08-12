@@ -20,9 +20,9 @@ MESES_ESPANOL = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
 
 def get_meses_completados_empleado(db: Session, empleado_id: int) -> dict:
     """
-    Retorna la lista de meses COMPLETADOS del practicante (1 a N meses).
-    Cada mes representa el período oficial para su respectiva Firma Digital (1 firma por mes).
-    Aplica la regla: solo meses concluidos (ultimo_dia_mes < primer_dia_mes_actual).
+    Retorna la lista de bloques de 4 SEMANAS del practicante (Bloque 1: Sem 1-4, Bloque 2: Sem 5-8, etc.).
+    Cada bloque de 4 semanas representa el período oficial para su respetiva Firma Digital (1 sola firma por bloque).
+    Aplica la regla de bloques concluidos o en progreso según sus asistencias.
     """
     registros = db.query(Asistencia).filter(
         Asistencia.empleado_id == empleado_id,
@@ -33,102 +33,73 @@ def get_meses_completados_empleado(db: Session, empleado_id: int) -> dict:
         return {"meses": [], "semanas": [], "consolidado": None}
 
     hoy = date.today()
-    primer_dia_mes_actual = hoy.replace(day=1)
-
-    meses_dict = {}
-    for reg in registros:
-        # Clave por mes calendario (año, mes)
-        clave = (reg.fecha.year, reg.fecha.month)
-        
-        primer_dia = date(reg.fecha.year, reg.fecha.month, 1)
-        if reg.fecha.month == 12:
-            ultimo_dia = date(reg.fecha.year, 12, 31)
-        else:
-            ultimo_dia = date(reg.fecha.year, reg.fecha.month + 1, 1) - timedelta(days=1)
-
-        # REGLA DE NEGOCIO: Solo mostrar meses concluidos (antes de este mes en curso)
-        if ultimo_dia >= primer_dia_mes_actual:
-            continue
-
-        if clave not in meses_dict:
-            meses_dict[clave] = {
-                "primer_dia": primer_dia,
-                "ultimo_dia": ultimo_dia,
-                "horas": 0.0
-            }
-
-        # REGLA INSTITUCIONAL: Lunes a Viernes (0 a 4), máx 6.0 hrs/día
-        if reg.fecha.weekday() < 5 and reg.hora_entrada and reg.hora_salida:
-            dt_ent = reg.hora_entrada if isinstance(reg.hora_entrada, datetime) else datetime.combine(reg.fecha, reg.hora_entrada)
-            dt_sal = reg.hora_salida if isinstance(reg.hora_salida, datetime) else datetime.combine(reg.fecha, reg.hora_salida)
-            if dt_sal < dt_ent:
-                dt_sal += timedelta(days=1)
-            segundos = (dt_sal - dt_ent).total_seconds()
-            horas_dia = min(6.0, round(segundos / 3600.0, 1))
-            meses_dict[clave]["horas"] += horas_dia
-
-    if not meses_dict:
-        return {"meses": [], "semanas": [], "consolidado": None}
+    min_fecha = min(r.fecha for r in registros)
+    max_fecha = max(r.fecha for r in registros)
+    primer_lunes = min_fecha - timedelta(days=min_fecha.weekday())
 
     firmados_db = db.query(InformeFirmado).filter(InformeFirmado.empleado_id == empleado_id).all()
 
-    meses_ordenados = sorted(meses_dict.keys(), key=lambda x: (x[0], x[1]))
-    resultado_meses = []
-    total_horas_acumuladas = 0.0
+    resultado_bloques = []
+    num_bloque = 1
 
-    for num_mes, (anio, mes) in enumerate(meses_ordenados, start=1):
-        info_m = meses_dict[(anio, mes)]
-        p_dia = info_m["primer_dia"]
-        u_dia = info_m["ultimo_dia"]
-        horas = round(info_m["horas"], 1)
-        total_horas_acumuladas += horas
+    curr_lunes = primer_lunes
+    while curr_lunes <= max_fecha or curr_lunes <= hoy:
+        p_dia = curr_lunes
+        u_dia = p_dia + timedelta(days=27)  # 4 semanas (28 días: Lunes semana 1 a Domingo semana 4)
 
-        nombre_mes_str = f"Mes {num_mes} ({MESES_ESPANOL[mes - 1]} {anio})"
-        rango_str = f"{p_dia.strftime('%d/%m/%Y')} – {u_dia.strftime('%d/%m/%Y')}"
+        # Si el bloque ni siquiera ha comenzado en relación a hoy, salir
+        if p_dia > hoy:
+            break
+
+        regs_bloque = [r for r in registros if p_dia <= r.fecha <= u_dia]
+        horas_bloque = 0.0
+        for reg in regs_bloque:
+            if reg.fecha.weekday() < 5 and reg.hora_entrada and reg.hora_salida:
+                dt_ent = reg.hora_entrada if isinstance(reg.hora_entrada, datetime) else datetime.combine(reg.fecha, reg.hora_entrada)
+                dt_sal = reg.hora_salida if isinstance(reg.hora_salida, datetime) else datetime.combine(reg.fecha, reg.hora_salida)
+                if dt_sal < dt_ent:
+                    dt_sal += timedelta(days=1)
+                segundos = (dt_sal - dt_ent).total_seconds()
+                horas_dia = min(6.0, round(segundos / 3600.0, 1))
+                horas_bloque += horas_dia
 
         informe_existente = None
         for f in firmados_db:
-            if f.semana_inicio <= p_dia and f.semana_fin >= u_dia:
+            if f.semana_inicio <= u_dia and f.semana_fin >= p_dia:
                 informe_existente = f
                 break
 
-        item_mes = {
-            "numero_mes": num_mes,
-            "nombre_mes": nombre_mes_str,
+        sem_inicio_num = 4 * (num_bloque - 1) + 1
+        sem_fin_num = 4 * num_bloque
+        nombre_bloque_str = f"Mes {num_bloque} (Semanas {sem_inicio_num} a {sem_fin_num})"
+        rango_str = f"{p_dia.strftime('%d/%m/%Y')} – {u_dia.strftime('%d/%m/%Y')}"
+
+        item_bloque = {
+            "numero_mes": num_bloque,
+            "nombre_mes": nombre_bloque_str,
             "fecha_inicio": p_dia,
             "fecha_fin": u_dia,
             "rango_str": rango_str,
-            "horas_mes": horas,
+            "horas_mes": round(horas_bloque, 1),
             "firmado": informe_existente is not None,
             "informe_firmado_id": informe_existente.id if informe_existente else None,
             "fecha_firma": informe_existente.created_at if informe_existente else None,
             "nombre_archivo": informe_existente.nombre_archivo if informe_existente else None,
-            # Alias de compatibilidad
+            # Alias de compatibilidad para el frontend
             "semana_inicio": p_dia,
             "semana_fin": u_dia,
-            "numero_semana": num_mes,
-            "horas_semana": horas,
+            "numero_semana": num_bloque,
+            "horas_semana": round(horas_bloque, 1),
         }
-        resultado_meses.append(item_mes)
+        resultado_bloques.append(item_bloque)
 
-    # Consolidado informativo global
-    primer_dia_global = meses_dict[meses_ordenados[0]]["primer_dia"]
-    ultimo_dia_global = meses_dict[meses_ordenados[-1]]["ultimo_dia"]
-
-    consolidado_info = {
-        "semana_inicio": primer_dia_global,
-        "semana_fin": ultimo_dia_global,
-        "rango_str": f"{primer_dia_global.strftime('%d/%m/%Y')} – {ultimo_dia_global.strftime('%d/%m/%Y')}",
-        "total_semanas": len(resultado_meses),
-        "total_horas": round(total_horas_acumuladas, 1),
-        "firmado": False,
-        "informe_firmado_id": None
-    }
+        curr_lunes += timedelta(weeks=4)
+        num_bloque += 1
 
     return {
-        "meses": resultado_meses,
-        "semanas": resultado_meses,
-        "consolidado": consolidado_info
+        "meses": resultado_bloques,
+        "semanas": resultado_bloques,
+        "consolidado": None
     }
 
 

@@ -3,12 +3,56 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.asistencia import AsistenciaCreatePayload, AsistenciaManualPayload, AsistenciaResponse, AsistenciaReporteItem
+from app.schemas.asistencia import AsistenciaCreatePayload, AsistenciaManualPayload, AsistenciaResponse, AsistenciaReporteItem, AsistenciaEdicionPayload
 from app.models.usuario import Usuario
 from app import crud
 from app.core.deps import require_permission, require_any_permission, get_current_user
 
 router = APIRouter(tags=["asistencias"])
+
+
+@router.get("/api/asistencias/practicante/{empleado_id}", response_model=List[AsistenciaReporteItem], dependencies=[Depends(require_any_permission(["asistencias.ver", "asistencias.ver_propia"]))])
+def obtener_asistencias_practicante(
+    empleado_id: int,
+    user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna la tabla completa de registros de asistencia de un practicante específico.
+    """
+    user_permisos = [p.codigo for p in user.rol.permisos] if user.rol and user.rol.permisos else []
+    tiene_acceso_total = (user.rol and user.rol.nombre in ["Admin", "Jefe de Oficina"]) or ("asistencias.ver" in user_permisos)
+
+    if not tiene_acceso_total:
+        if not user.empleado_id or user.empleado_id != empleado_id:
+            raise HTTPException(status_code=403, detail="No tiene permisos para consultar la asistencia de este practicante.")
+
+    return crud.crud_asistencia.get_historial_diario_empleado(db, empleado_id)
+
+
+@router.put("/api/asistencias/{asistencia_id}", dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
+def editar_asistencia_manual(
+    asistencia_id: int,
+    payload: AsistenciaEdicionPayload,
+    db: Session = Depends(get_db)
+):
+    """
+    Permite al administrador modificar manualmente las horas de entrada/salida y motivo de un registro de asistencia.
+    Verifica que el período de la asistencia no haya sido firmado previamente por la Jefatura.
+    """
+    return crud.crud_asistencia.update_asistencia_manual(db, asistencia_id, payload)
+
+
+@router.delete("/api/asistencias/{asistencia_id}", dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
+def eliminar_asistencia_manual(
+    asistencia_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Permite al administrador eliminar manualmente un registro de asistencia.
+    Verifica que el período de la asistencia no haya sido firmado previamente por la Jefatura.
+    """
+    return crud.crud_asistencia.delete_asistencia_manual(db, asistencia_id)
 
 
 @router.post("/api/asistencia", response_model=AsistenciaResponse)

@@ -124,7 +124,11 @@ def create_usuario(db: Session, user_in: UsuarioCreate) -> Usuario:
         password_hash=hashed_pw,
         rol_id=user_in.rol_id,
         empleado_id=user_in.empleado_id,
-        activo=user_in.activo
+        activo=user_in.activo,
+        nombre_firmante=user_in.nombre_firmante,
+        cargo_firmante=user_in.cargo_firmante,
+        colegiatura_firmante=user_in.colegiatura_firmante,
+        institucion_firmante=user_in.institucion_firmante
     )
     db.add(db_user)
     db.commit()
@@ -161,6 +165,15 @@ def update_usuario(db: Session, db_user: Usuario, user_in: UsuarioUpdate) -> Usu
 
     if user_in.activo is not None:
         db_user.activo = user_in.activo
+
+    if user_in.nombre_firmante is not None:
+        db_user.nombre_firmante = user_in.nombre_firmante
+    if user_in.cargo_firmante is not None:
+        db_user.cargo_firmante = user_in.cargo_firmante
+    if user_in.colegiatura_firmante is not None:
+        db_user.colegiatura_firmante = user_in.colegiatura_firmante
+    if user_in.institucion_firmante is not None:
+        db_user.institucion_firmante = user_in.institucion_firmante
 
     db.commit()
     db.refresh(db_user)

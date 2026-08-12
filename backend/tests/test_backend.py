@@ -135,10 +135,11 @@ class TestBackendAPI(unittest.TestCase):
         }).json()
 
         # 2. Registrar Asistencia Manual Entrada
+        from datetime import datetime
         res_manual = self.client.post("/api/asistencia/manual", headers=self.admin_headers, json={
             "empleado_id": emp["id"],
             "tipo": "entrada",
-            "timestamp": "2026-08-02T08:00:00",
+            "timestamp": datetime.now().isoformat(),
             "motivo": "Celular descargado"
         })
         self.assertEqual(res_manual.status_code, 200)
@@ -208,7 +209,7 @@ class TestBackendAPI(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.headers["content-type"], "application/pdf")
         self.assertIn("Content-Disposition", res.headers)
-        self.assertIn("informe_Practicante_Test_24H_2026-11-16_2026-11-22.pdf", res.headers["Content-Disposition"])
+        self.assertIn("informe_asistencia_Practicante_Test_24H_2026-11-16_2026-11-22.pdf", res.headers["Content-Disposition"])
         self.assertTrue(len(res.content) > 1000)
 
         # 4. Confirmar directamente el cálculo de horas semanales = 24.0 horas exactas
@@ -242,7 +243,7 @@ class TestBackendAPI(unittest.TestCase):
     def test_bloqueo_rol_empleado_informes(self):
         # 1. Crear usuario con rol Empleado (sin permiso asistencias.exportar)
         db = TestingSessionLocal()
-        rol_emp = db.query(Rol).filter(Rol.nombre == "Empleado").first()
+        rol_emp = db.query(Rol).filter((Rol.nombre == "Practicante") | (Rol.nombre == "Empleado")).first()
         db.close()
 
         self.client.post("/api/usuarios", headers=self.admin_headers, json={

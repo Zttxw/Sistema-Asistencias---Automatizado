@@ -42,7 +42,7 @@ def crear_empleado(empleado_in: EmpleadoCreate, db: Session = Depends(get_db)):
     return crud.crud_empleado.create_empleado(db, empleado_in)
 
 
-@router.get("/{empleado_id}/informe_pdf")
+@router.get("/{empleado_id}/informe_pdf", dependencies=[Depends(require_permission("asistencias.exportar"))])
 def descargar_informe_pdf_empleado(
     empleado_id: int,
     fecha_inicio: Optional[date] = Query(None),
@@ -64,13 +64,14 @@ def descargar_informe_pdf_empleado(
 
     if not fecha_inicio or not fecha_fin:
         semanas_info = crud.crud_informe_firmado.get_semanas_completadas_empleado(db, empleado_id)
-        cons = semanas_info.get("consolidado")
-        if cons:
-            fecha_inicio = cons["semana_inicio"]
-            fecha_fin = cons["semana_fin"]
+        lista_bloques = semanas_info.get("semanas", [])
+        if lista_bloques:
+            ultimo = lista_bloques[-1]
+            fecha_inicio = ultimo["semana_inicio"]
+            fecha_fin = ultimo["semana_fin"]
         else:
             hoy = date.today()
-            fecha_inicio = date(hoy.year, 1, 1)
+            fecha_inicio = hoy - timedelta(days=27)
             fecha_fin = hoy
 
     pdf_bytes = crud.crud_informe.generar_pdf_informe_semanal_practicante(
@@ -82,7 +83,7 @@ def descargar_informe_pdf_empleado(
     )
 
     nombre_limpio = emp.nombre.replace(" ", "_")
-    filename = f"informe_CONSOLIDADO_{nombre_limpio}_{fecha_inicio}_{fecha_fin}.pdf"
+    filename = f"informe_asistencia_{nombre_limpio}_{fecha_inicio}_{fecha_fin}.pdf"
 
     return Response(
         content=pdf_bytes,
