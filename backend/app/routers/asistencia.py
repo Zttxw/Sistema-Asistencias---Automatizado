@@ -232,3 +232,24 @@ async def importar_asistencias_excel(
     return res
 
 
+@router.delete("/api/asistencias/migracion/purgar", dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
+def purgar_asistencias_migracion(
+    empleado_id: Optional[int] = Query(None, description="ID del practicante a purgar (opcional)"),
+    fecha_inicio: Optional[date] = Query(None, description="Fecha de inicio para purgar (YYYY-MM-DD)"),
+    fecha_fin: Optional[date] = Query(None, description="Fecha de fin para purgar (YYYY-MM-DD)"),
+    db: Session = Depends(get_db)
+):
+    """
+    Elimina masivamente únicamente las asistencias registradas a través de migración Excel/CSV.
+    Protege 100% los registros capturados automáticamente por el Agente de red ARP y los informes firmados.
+    """
+    from app.crud.crud_migracion import purgar_asistencias_migradas
+    try:
+        res = purgar_asistencias_migradas(db, empleado_id, fecha_inicio, fecha_fin)
+        return res
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al purgar asistencias migradas: {str(e)}")
+
+

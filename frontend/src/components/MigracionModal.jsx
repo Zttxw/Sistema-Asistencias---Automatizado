@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Upload, FileSpreadsheet, FileText, AlertTriangle, CheckCircle2, XCircle, Calendar, Info } from 'lucide-react';
+import { Download, Upload, FileSpreadsheet, FileText, AlertTriangle, CheckCircle2, XCircle, Calendar, Info, Trash2 } from 'lucide-react';
 import Modal from './Modal';
 import client from '../api/client';
 
@@ -10,9 +10,11 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
   const [fechaLimite, setFechaLimite] = useState(fechaDefecto);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [purging, setPurging] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   const [error, setError] = useState(null);
   const [resultReport, setResultReport] = useState(null);
+  const [purgeSuccess, setPurgeSuccess] = useState(null);
 
   const handleDescargarPlantilla = async (formato = 'excel') => {
     setDownloadingTemplate(true);
@@ -88,9 +90,31 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handlePurgar = async () => {
+    if (!window.confirm('¿Está seguro de eliminar TODOS los registros de asistencias importados por migración (Excel/CSV)?\n\nEsta acción NO eliminará las asistencias capturadas automáticamente por el agente de red.')) {
+      return;
+    }
+    setPurging(true);
+    setError(null);
+    setResultReport(null);
+    setPurgeSuccess(null);
+
+    try {
+      const res = await client.delete('/api/asistencias/migracion/purgar');
+      setPurgeSuccess(res.data.message || 'Registros de migración eliminados correctamente.');
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.detail || 'Error al purgar los registros de migración.');
+    } finally {
+      setPurging(false);
+    }
+  };
+
   const handleClose = () => {
     setSelectedFile(null);
     setResultReport(null);
+    setPurgeSuccess(null);
     setError(null);
     onClose();
   };
@@ -234,22 +258,43 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
             </div>
           )}
 
-          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
+          {/* Éxito al purgar */}
+          {purgeSuccess && (
+            <div className="p-3 bg-emerald-50 dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-900/60 rounded-lg text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span>{purgeSuccess}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-zinc-800">
             <button
               type="button"
-              onClick={handleClose}
-              className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+              onClick={handlePurgar}
+              disabled={purging || uploading}
+              className="flex items-center space-x-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-300 border border-red-200 dark:border-red-900/60 text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              title="Eliminar únicamente asistencias históricas cargadas por Excel sin afectar registros del agente de red"
             >
-              Cerrar
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{purging ? 'Eliminando Migraciones...' : 'Limpiar Migraciones'}</span>
             </button>
-            <button
-              type="submit"
-              disabled={uploading || !selectedFile}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-xs font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs"
-            >
-              <Upload className="w-4 h-4" />
-              <span>{uploading ? 'Procesando Archivo...' : 'Importar Asistencias'}</span>
-            </button>
+
+            <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="submit"
+                disabled={uploading || purging || !selectedFile}
+                className="flex items-center space-x-2 px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-xs font-medium rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{uploading ? 'Procesando Archivo...' : 'Importar Asistencias'}</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

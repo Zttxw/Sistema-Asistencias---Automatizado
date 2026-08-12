@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.empleado import Empleado
 from app.models.usuario import Usuario
 from app.crud.crud_asistencia import get_asistencias_empleado_por_rango
+from app.utils.holidays import obtener_nombre_feriado
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -245,10 +246,15 @@ def generar_pdf_informe_semanal_practicante(
 
                 reg = regs_by_date.get(dia_fecha)
 
-                # REGLA INSTITUCIONAL: Los fines de semana (Sábado/Domingo) siempre computan 0.0 hrs
+                # REGLA INSTITUCIONAL: Los fines de semana (Sábado/Domingo) y feriados computan 0.0 hrs
                 es_fin_de_semana = dia_fecha.weekday() >= 5
+                nombre_feriado = obtener_nombre_feriado(dia_fecha)
 
-                if reg and reg.hora_entrada and reg.hora_salida and not es_fin_de_semana:
+                if nombre_feriado:
+                    h_ent = "FERIADO"
+                    h_sal = nombre_feriado
+                    horas_str = "0.0"
+                elif reg and reg.hora_entrada and reg.hora_salida and not es_fin_de_semana:
                     h_ent = reg.hora_entrada.strftime("%H:%M")
                     h_sal = reg.hora_salida.strftime("%H:%M")
 

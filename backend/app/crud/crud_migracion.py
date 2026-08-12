@@ -97,36 +97,66 @@ def _normalize_dni(val: Any) -> str:
     return val_str.strip()
 
 
-FERIADOS_FIJOS = {
-    (1, 1): "Año Nuevo",
-    (5, 1): "Día del Trabajo",
-    (6, 7): "Batalla de Arica y Día de la Bandera",
-    (6, 29): "San Pedro y San Pablo",
-    (7, 23): "Día de la Fuerza Aérea del Perú",
-    (7, 28): "Fiestas Patrias",
-    (7, 29): "Fiestas Patrias",
-    (8, 6): "Batalla de Junín",
-    (8, 30): "Santa Rosa de Lima",
-    (10, 8): "Combate de Angamos",
-    (11, 1): "Día de Todos los Santos",
-    (12, 8): "Inmaculada Concepción",
-    (12, 9): "Batalla de Ayacucho",
-    (12, 25): "Navidad"
-}
-
-FERIADOS_VARIABLES = {
-    date(2026, 4, 2): "Jueves Santo",
-    date(2026, 4, 3): "Viernes Santo",
-    date(2025, 4, 17): "Jueves Santo",
-    date(2025, 4, 18): "Viernes Santo",
-}
+from app.utils.holidays import obtener_nombre_feriado, FERIADOS_FIJOS, FERIADOS_VARIABLES
 
 
-def obtener_nombre_feriado(dt: date) -> str:
-    if dt in FERIADOS_VARIABLES:
-        return FERIADOS_VARIABLES[dt]
-    key = (dt.month, dt.day)
-    return FERIADOS_FIJOS.get(key)
+def purgar_asistencias_migradas(
+    db: Session,
+    empleado_id: Optional[int] = None,
+    fecha_inicio: Optional[date] = None,
+    fecha_fin: Optional[date] = None
+) -> Dict[str, Any]:
+    """
+    Elimina únicamente los registros de asistencia cuyo origen sea 'migracion' o agente 'MIGRACION_ADMIN'.
+    Protege los registros generados por el agente de red ARP u otros métodos ('automatico', 'manual').
+    Verifica además que el período no haya sido firmado previamente por Jefatura.
+    """
+    from app.models.informe_firmado import InformeFirmado
+
+    query = db.query(Asistencia).filter(
+        (Asistencia.origen_entrada == "migracion") | (Asistencia.agente_id == "MIGRACION_ADMIN")
+    )
+
+    if empleado_id:
+        query = query.filter(Asistencia.empleado_id == empleado_id)
+
+    if fecha_inicio:
+        query = query.filter(Asistencia.fecha >= fecha_inicio)
+
+    if fecha_fin:
+        query = query.filter(Asistencia.fecha <= fecha_fin)
+
+    asistencias_a_borrar = query.all()
+    if not asistencias_a_borrar:
+        return {
+            "ok": True,
+            "eliminados": 0,
+            "message": "No se encontraron registros de migración para eliminar en el criterio seleccionado."
+        }
+
+    # Verificar si alguna asistencia pertenece a un período firmado por la Jefatura
+    for asis in asistencias_a_borrar:
+        informe = db.query(InformeFirmado).filter(
+            InformeFirmado.empleado_id == asis.empleado_id,
+            InformeFirmado.semana_inicio <= asis.fecha,
+            InformeFirmado.semana_fin >= asis.fecha,
+            InformeFirmado.firmado == True
+        ).first()
+        if informe:
+            raise ValueError(
+                f"No se puede purgar la asistencia del día {asis.fecha} porque pertenece a un informe mensual ya firmado."
+            )
+
+    count = len(asistencias_a_borrar)
+    for asis in asistencias_a_borrar:
+        db.delete(asis)
+
+    db.commit()
+    return {
+        "ok": True,
+        "eliminados": count,
+        "message": f"Se eliminaron exitosamente {count} registros de migración."
+    }
 
 
 def _parse_date(val: Any) -> date:
