@@ -9,15 +9,15 @@ const getDynamicApiBaseUrl = () => {
     if (envUrl) {
       try {
         const parsed = new URL(envUrl);
-        const port = (parsed.port === '8082') ? '8010' : (parsed.port || '8010');
+        const port = parsed.port || '8082';
         return `${protocol}//${hostname}:${port}`;
       } catch (e) {
         // Fallback
       }
     }
-    return `${protocol}//${hostname}:8010`;
+    return `${protocol}//${hostname}:8082`;
   }
-  return import.meta.env.VITE_API_URL || 'http://localhost:8010';
+  return import.meta.env.VITE_API_URL || 'http://localhost:8082';
 };
 
 const apiBaseUrl = getDynamicApiBaseUrl();

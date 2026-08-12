@@ -46,13 +46,16 @@ def get_empleado_by_email(db: Session, email: str) -> Optional[Empleado]:
     if not email:
         return None
     email_clean = email.strip().lower()
-    emp = db.query(Empleado).filter(Empleado.email.ilike(email_clean)).first()
+    from app.models.usuario import Usuario
+    user = db.query(Usuario).filter(Usuario.email.ilike(email_clean)).first()
+    if user and user.empleado_id:
+        emp = get_empleado_by_id(db, user.empleado_id)
+        if emp:
+            return emp
+
+    username = email_clean.split('@')[0]
+    emp = db.query(Empleado).filter(Empleado.nombre.ilike(f"%{username}%")).first()
     if not emp:
-        # Intentar coincidencia por prefijo del correo o nombre similar
-        username = email_clean.split('@')[0]
-        emp = db.query(Empleado).filter(Empleado.nombre.ilike(f"%{username}%")).first()
-    if not emp:
-        # Retornar el primer empleado como fallback si hay empleados registrados
         emp = db.query(Empleado).filter(Empleado.activo == True).first()
     if emp:
         emp.horas_acumuladas = calcular_horas_acumuladas_empleado(db, emp.id)

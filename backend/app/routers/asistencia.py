@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -81,14 +81,21 @@ def marcar_asistencia_propia(
     Permite al usuario autenticado (Practicante/Empleado) registrar su propia entrada o salida del día
     en caso de no portar su teléfono móvil o si el agente ARP no detectó su MAC.
     """
-    if not user.empleado_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Su cuenta de usuario no tiene un perfil de Practicante vinculado."
-        )
+    empleado_id_marcar = user.empleado_id
+    if not empleado_id_marcar:
+        emp = user.empleado
+        if not emp and user.email:
+            emp = crud.crud_empleado.get_empleado_by_email(db, user.email)
+        if emp:
+            empleado_id_marcar = emp.id
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Su cuenta de usuario no tiene un perfil de Practicante vinculado ni empleados registrados."
+            )
 
     payload = AsistenciaManualPayload(
-        empleado_id=user.empleado_id,
+        empleado_id=empleado_id_marcar,
         tipo=tipo,
         timestamp=datetime.now(),
         motivo="Marcación web propia (Sin dispositivo móvil)"
