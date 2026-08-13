@@ -75,11 +75,7 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
     formData.append('fecha_limite', fechaLimite);
 
     try {
-      const res = await client.post('/api/asistencias/migracion/importar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const res = await client.post('/api/asistencias/migracion/importar', formData);
       setResultReport(res.data);
       if (onSuccess) onSuccess();
     } catch (err) {
