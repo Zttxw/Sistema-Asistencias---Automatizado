@@ -1,7 +1,7 @@
 import io
 import csv
 from datetime import datetime, date, time as time_type
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -160,10 +160,10 @@ def purgar_asistencias_migradas(
 
 
 def _parse_date(val: Any) -> date:
-    if isinstance(val, date):
-        return val
     if isinstance(val, datetime):
         return val.date()
+    if isinstance(val, date):
+        return val
     val_str = str(val).strip()
     if " " in val_str:
         val_str = val_str.split(" ")[0]
