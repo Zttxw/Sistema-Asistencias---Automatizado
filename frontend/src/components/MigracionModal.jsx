@@ -64,6 +64,9 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
       return detail.map((item) => {
         if (typeof item === 'string') return item;
         if (item && typeof item === 'object') {
+          if (item.loc && item.loc.includes('file')) {
+            return 'Por favor vuelva a seleccionar el archivo Excel (.xlsx) o CSV (.csv).';
+          }
           return item.msg || item.message || JSON.stringify(item);
         }
         return String(item);
@@ -93,7 +96,11 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
     }
 
     try {
-      const res = await client.post('/api/asistencias/migracion/importar', formData);
+      const res = await client.post('/api/asistencias/migracion/importar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setResultReport(res.data);
       if (onSuccess) onSuccess();
     } catch (err) {

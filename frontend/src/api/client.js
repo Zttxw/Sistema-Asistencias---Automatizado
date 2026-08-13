@@ -24,9 +24,6 @@ const apiBaseUrl = getDynamicApiBaseUrl();
 
 const client = axios.create({
   baseURL: apiBaseUrl,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Interceptor de peticiones: Adjuntar Bearer Token si existe en localStorage
