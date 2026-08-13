@@ -165,12 +165,17 @@ def _parse_date(val: Any) -> date:
     if isinstance(val, datetime):
         return val.date()
     val_str = str(val).strip()
+    if " " in val_str:
+        val_str = val_str.split(" ")[0]
+    if "T" in val_str:
+        val_str = val_str.split("T")[0]
+
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
         try:
             return datetime.strptime(val_str, fmt).date()
         except ValueError:
             pass
-    raise ValueError(f"Formato de fecha inválido '{val_str}'. Use YYYY-MM-DD.")
+    raise ValueError(f"Formato de fecha inválido '{val}'. Use YYYY-MM-DD o DD/MM/YYYY.")
 
 
 def _parse_time(val: Any) -> time_type:
@@ -179,12 +184,17 @@ def _parse_time(val: Any) -> time_type:
     if isinstance(val, datetime):
         return val.time()
     val_str = str(val).strip()
+    if " " in val_str and ":" in val_str.split(" ")[-1]:
+        val_str = val_str.split(" ")[-1]
+    elif "T" in val_str:
+        val_str = val_str.split("T")[-1]
+
     for fmt in ("%H:%M", "%H:%M:%S", "%I:%M %p"):
         try:
             return datetime.strptime(val_str, fmt).time()
         except ValueError:
             pass
-    raise ValueError(f"Formato de hora inválido '{val_str}'. Use HH:MM (ej. 08:30).")
+    raise ValueError(f"Formato de hora inválido '{val}'. Use HH:MM (ej. 08:30).")
 
 
 def _extraer_filas_desde_csv(file_bytes: bytes) -> List[Tuple[int, List[Any]]]:

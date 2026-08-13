@@ -224,12 +224,16 @@ async def importar_asistencias_excel(
             detail="Formato de archivo no soportado. Debe ser un archivo Excel (.xlsx, .xls) o CSV (.csv)."
         )
 
-    file_content = await file.read()
-    res = procesar_migracion_archivo(db, file_content, filename, fecha_limite)
-    if not res.get("ok", True):
-        raise HTTPException(status_code=400, detail=res.get("error", "Error procesando el archivo de migración."))
-
-    return res
+    try:
+        file_content = await file.read()
+        res = procesar_migracion_archivo(db, file_content, filename, fecha_limite)
+        if not res.get("ok", True):
+            raise HTTPException(status_code=400, detail=res.get("error", "Error procesando el archivo de migración."))
+        return res
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error procesando el archivo de migración: {str(e)}")
 
 
 @router.delete("/api/asistencias/migracion/purgar", dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
