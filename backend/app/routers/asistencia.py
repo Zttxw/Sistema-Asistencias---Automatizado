@@ -210,13 +210,13 @@ def descargar_plantilla_migracion(formato: str = "excel"):
 @router.post("/api/asistencias/migracion/importar", dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
 async def importar_asistencias_excel(
     file: UploadFile = File(...),
-    fecha_limite: date = Form(...),
+    fecha_limite: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """
     Procesa la carga masiva de asistencias históricas desde un archivo Excel (.xlsx / .xls) o CSV (.csv).
     """
-    from app.crud.crud_migracion import procesar_migracion_archivo
+    from app.crud.crud_migracion import procesar_migracion_archivo, _parse_date
     filename = file.filename or "migracion.xlsx"
     if not filename.lower().endswith(('.xlsx', '.xls', '.csv')):
         raise HTTPException(
@@ -225,8 +225,13 @@ async def importar_asistencias_excel(
         )
 
     try:
+        if fecha_limite and str(fecha_limite).strip():
+            fecha_limite_dt = _parse_date(fecha_limite)
+        else:
+            fecha_limite_dt = date(2099, 12, 31)
+
         file_content = await file.read()
-        res = procesar_migracion_archivo(db, file_content, filename, fecha_limite)
+        res = procesar_migracion_archivo(db, file_content, filename, fecha_limite_dt)
         if not res.get("ok", True):
             raise HTTPException(status_code=400, detail=res.get("error", "Error procesando el archivo de migración."))
         return res

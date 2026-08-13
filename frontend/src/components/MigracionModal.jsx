@@ -55,14 +55,30 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const formatApiErrorMessage = (err, defaultMsg = 'Error en la operación.') => {
+    if (!err) return defaultMsg;
+    const detail = err.response?.data?.detail;
+    if (!detail) return err.message || defaultMsg;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      return detail.map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') {
+          return item.msg || item.message || JSON.stringify(item);
+        }
+        return String(item);
+      }).join('; ');
+    }
+    if (typeof detail === 'object') {
+      return JSON.stringify(detail);
+    }
+    return String(detail);
+  };
+
   const handleImportar = async (e) => {
     e.preventDefault();
     if (!selectedFile) {
       setError('Debe seleccionar un archivo Excel o CSV para importar.');
-      return;
-    }
-    if (!fechaLimite) {
-      setError('Debe seleccionar una fecha límite máxima.');
       return;
     }
 
@@ -72,7 +88,9 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
 
     const formData = new FormData();
     formData.append('file', selectedFile);
-    formData.append('fecha_limite', fechaLimite);
+    if (fechaLimite) {
+      formData.append('fecha_limite', fechaLimite);
+    }
 
     try {
       const res = await client.post('/api/asistencias/migracion/importar', formData);
@@ -80,7 +98,7 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
       if (onSuccess) onSuccess();
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.detail || 'Error al procesar el archivo de migración.');
+      setError(formatApiErrorMessage(err, 'Error al procesar el archivo de migración.'));
     } finally {
       setUploading(false);
     }
@@ -101,7 +119,7 @@ export default function MigracionModal({ isOpen, onClose, onSuccess }) {
       if (onSuccess) onSuccess();
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.detail || 'Error al purgar los registros de migración.');
+      setError(formatApiErrorMessage(err, 'Error al purgar los registros de migración.'));
     } finally {
       setPurging(false);
     }
