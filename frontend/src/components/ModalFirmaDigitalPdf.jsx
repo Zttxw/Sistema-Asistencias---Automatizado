@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Upload, CheckCircle2, Clock, FileText, AlertCircle, RefreshCw, Layers, Sparkles } from 'lucide-react';
+import { Download, Upload, CheckCircle2, Clock, FileText, AlertCircle, RefreshCw, Layers, Sparkles, ShieldCheck } from 'lucide-react';
 import Modal from './Modal';
 import client from '../api/client';
 import AlertMessage from './AlertMessage';
+import { useFirmaPeru } from '../hooks/useFirmaPeru';
 
 export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }) {
   const [empId, setEmpId] = useState('');
@@ -152,11 +153,32 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
     }
   };
 
+  const { iniciarFirmaDigital, loading: firmaLoading } = useFirmaPeru();
+
+  const handleFirmarDigitalmente = (semana) => {
+    if (!empId) return;
+    setError(null);
+    setExito(null);
+
+    iniciarFirmaDigital({
+      empleadoId: parseInt(empId, 10),
+      semanaInicio: semana.semana_inicio,
+      semanaFin: semana.semana_fin,
+      onSuccess: () => {
+        setExito(`¡Informe del Mes ${semana.numero_mes || semana.numero_semana} firmado digitalmente con Firma Perú de manera oficial!`);
+        cargarSemanasCompletadas(empId);
+      },
+      onError: (errMsj) => {
+        setError(errMsj || 'No se pudo completar la firma digital con Firma Perú.');
+      },
+    });
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Gestión de Informes Mensuales (4 Semanas) & Firma Digital">
       <div className="space-y-5 text-gray-900 dark:text-zinc-100 font-sans">
         <p className="text-xs text-gray-500 dark:text-zinc-400">
-          Descargue el informe PDF del mes (4 semanas). Fírmelo digitalmente y súbalo para que quede archivado oficialmente con 1 sola firma del Ingeniero Responsable.
+          Descargue el informe PDF del mes (4 semanas). Fírmelo digitalmente con Firma Perú o súbalo manualmente para que quede archivado oficialmente.
         </p>
 
         <AlertMessage message={error} onClose={() => setError(null)} />
@@ -261,17 +283,28 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
                         </button>
                       </div>
                     ) : (
-                      <label className="px-2.5 py-1 bg-primary text-white dark:bg-white dark:text-black text-xs font-bold rounded-md hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>{subiendoId === semana.numero_semana ? 'Guardando...' : 'Subir Firmado'}</span>
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          disabled={subiendoId === semana.numero_semana}
-                          className="hidden"
-                          onChange={(e) => handleSubirPdfFirmado(semana, e.target.files[0])}
-                        />
-                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleFirmarDigitalmente(semana)}
+                          disabled={firmaLoading}
+                          className="px-2.5 py-1 bg-sky-600 text-white text-xs font-bold rounded-md hover:bg-sky-700 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>{firmaLoading ? 'Abriendo Firma Perú...' : 'Firma Perú'}</span>
+                        </button>
+
+                        <label className="px-2.5 py-1 bg-primary text-white dark:bg-white dark:text-black text-xs font-bold rounded-md hover:bg-primary/90 dark:hover:bg-zinc-200 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{subiendoId === semana.numero_semana ? 'Guardando...' : 'Subir Manual'}</span>
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            disabled={subiendoId === semana.numero_semana}
+                            className="hidden"
+                            onChange={(e) => handleSubirPdfFirmado(semana, e.target.files[0])}
+                          />
+                        </label>
+                      </div>
                     )}
                   </div>
                 </div>

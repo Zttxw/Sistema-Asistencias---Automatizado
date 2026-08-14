@@ -10,6 +10,7 @@ from app import crud
 from app.core.deps import require_permission, get_current_user
 from app.models.usuario import Usuario
 from app.schemas.informe_firmado import SemanaDisponibleItem, InformeFirmadoResponse, SemanasCompletadasResponse
+from app.utils.pdf_validation import validar_firma_digital_pdf
 
 router = APIRouter(prefix="/api/informes-firmados", tags=["informes-firmados"])
 
@@ -154,6 +155,11 @@ async def subir_informe_pdf_firmado(
     if len(content_bytes) == 0:
         raise HTTPException(status_code=400, detail="El archivo PDF subido está vacío.")
 
+    # Validar firma digital criptográfica (Hallazgo #1 de auditoría)
+    es_valido, msj_val = validar_firma_digital_pdf(content_bytes)
+    if not es_valido:
+        raise HTTPException(status_code=400, detail=f"Validación de Firma Digital fallida: {msj_val}")
+
     informe_firmado = crud.crud_informe_firmado.guardar_pdf_firmado(
         db=db,
         empleado_id=empleado_id,
@@ -177,11 +183,18 @@ def descargar_pdf_firmado(
 ):
     """
     Descarga o visualiza el archivo PDF que fue previamente firmado digitalmente y guardado en el servidor.
-    Cualquier usuario autenticado puede visualizar o descargar sus informes firmados.
+    Verifica autorización: Administradores/Ingenieros pueden ver cualquier informe; Practicantes solo sus propios informes.
     """
     informe = crud.crud_informe_firmado.get_informe_firmado_by_id(db, informe_id)
     if not informe:
         raise HTTPException(status_code=404, detail="Informe firmado no encontrado.")
+
+    # Hallazgo #2 de auditoría: Verificación de Permisos
+    es_admin_o_firmante = current_user.rol and current_user.rol.nombre in ["Administrador", "Ingeniero", "Jefatura", "Superusuario"]
+    es_propietario = current_user.empleado_id == informe.empleado_id or (current_user.empleado and current_user.empleado.id == informe.empleado_id)
+
+    if not (es_admin_o_firmante or es_propietario):
+        raise HTTPException(status_code=403, detail="No cuenta con autorización para descargar el informe firmado de otro usuario.")
 
     if not os.path.exists(informe.archivo_path):
         raise HTTPException(status_code=404, detail="El archivo físico del informe firmado no se encuentra en el servidor.")

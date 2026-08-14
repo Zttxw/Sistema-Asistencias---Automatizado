@@ -45,6 +45,8 @@ asistencias.xlsx
 *.xlsx
 mysql_data/
 **/mysql_data/
+storage/
+**/storage/
 
 # Agente build & embed binaries
 agente/build/

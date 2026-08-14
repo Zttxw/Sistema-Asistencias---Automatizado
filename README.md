@@ -87,6 +87,18 @@ El sistema implementa seguridad mediante **Bearer JWT Access Tokens (expiración
 - **`POST /api/asistencia/manual`**: Requiere `asistencias.registrar_manual`.
 - **`GET /api/asistencias/export`**: Exportar reporte a Excel (`.xlsx`). Requiere `asistencias.exportar`.
 
+### 5. Integración Firma Perú (`/api/firmaperu`)
+- **`POST /api/firmaperu/preparar-firma`**: Genera un token efímero (`param_token`, TTL 10 min) y el PDF preliminar del practicante. Requiere rol autorizado (`Administrador`, `Ingeniero`, `Jefatura`).
+- **`POST /api/firmaperu/param`**: Consumido por el Firmador Java en PC del Ingeniero. Retorna configuración PAdES codificada en Base64 y cambia el estado del token a `emitido`.
+- **`GET /api/firmaperu/documento/{token}`**: Consumido por el Firmador Java para descargar el PDF preliminar.
+- **`POST /api/firmaperu/subir-firmado/{token}`**: Consumido por el Firmador Java. Exige estado `emitido` y valida la firma digital PAdES/PKCS#7 usando `pyHanko`.
+
+> ⚠️ **Configuración para Producción (CAs Oficiales RENIEC/PCM)**:
+> Por defecto el sistema funciona en **Modo Desarrollo** (valida la integridad del hash `/ByteRange` pero advierte que no hay cadena de confianza oficial). Para validar la cadena de certificados oficial en producción (DNIe / RENIEC / SGTD), se debe configurar en `.env`:
+> ```env
+> FIRMAPERU_TRUST_ROOTS_PATH=/ruta/a/bundle_ca_oficiales.pem
+> ```
+
 ---
 
 ## Ejemplos de Peticiones `curl` con JWT Header

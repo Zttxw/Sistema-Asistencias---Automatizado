@@ -14,6 +14,7 @@ import {
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
 import ModalPerfilFirmante from '../components/ModalPerfilFirmante';
+import { useFirmaPeru } from '../hooks/useFirmaPeru';
 
 export default function InformesSemanales() {
   const [empleados, setEmpleados] = useState([]);
@@ -197,6 +198,27 @@ export default function InformesSemanales() {
       console.error(err);
       setError('No se pudo descargar el archivo PDF firmado.');
     }
+  };
+
+  const { iniciarFirmaDigital, loading: firmaLoading } = useFirmaPeru();
+
+  const handleFirmarDigitalmente = (semana) => {
+    if (!empSeleccionado) return;
+    setError(null);
+    setExito(null);
+
+    iniciarFirmaDigital({
+      empleadoId: parseInt(empSeleccionado, 10),
+      semanaInicio: semana.semana_inicio,
+      semanaFin: semana.semana_fin,
+      onSuccess: () => {
+        setExito(`¡Informe del Mes ${semana.numero_mes || semana.numero_semana} firmado digitalmente con Firma Perú de manera oficial!`);
+        cargarSemanas(empSeleccionado);
+      },
+      onError: (errMsj) => {
+        setError(errMsj || 'No se pudo completar la firma digital con Firma Perú.');
+      },
+    });
   };
 
   const empActual = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
@@ -489,6 +511,18 @@ export default function InformesSemanales() {
                         <Download className="w-3.5 h-3.5 text-[#3484A5]" />
                       </button>
 
+                      {/* Botón de Firma Perú (Firma Digital Automática) */}
+                      {!semana.firmado && (
+                        <button
+                          onClick={() => handleFirmarDigitalmente(semana)}
+                          disabled={firmaLoading}
+                          className="px-3 py-1.5 bg-gradient-to-r from-sky-600 to-indigo-700 hover:from-sky-500 hover:to-indigo-600 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-sky-200" />
+                          <span>{firmaLoading ? 'Abriendo Firma Perú...' : 'Firmar con Firma Perú'}</span>
+                        </button>
+                      )}
+
                       {semana.firmado ? (
                         <div className="flex items-center gap-1.5">
                           <button
@@ -512,7 +546,7 @@ export default function InformesSemanales() {
                       ) : (
                         <label className="px-3 py-1.5 bg-slate-900 text-white dark:bg-white dark:text-black text-xs font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-zinc-200 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs">
                           <Upload className="w-3.5 h-3.5" />
-                          <span>{subiendoId === (semana.numero_mes || semana.numero_semana) ? 'Guardando...' : 'Subir Firmado'}</span>
+                          <span>{subiendoId === (semana.numero_mes || semana.numero_semana) ? 'Guardando...' : 'Subir Manual'}</span>
                           <input
                             type="file"
                             accept=".pdf"

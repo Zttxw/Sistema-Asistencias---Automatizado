@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>Sistema de Asistencias - OTI</title>
+    <!-- jQuery y Cliente Firma Perú -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://firmaperu.gob.pe/firmaperu/js/firmaperu.min.js" onerror="console.warn('Script de Firma Perú no disponible externamente. Se utilizará cargador o modo fallback.')"></script>
+    <script>
+      // Fallback helper si el servidor no tiene acceso a internet
+      window.jqFirmaPeru = window.jQuery;
+    </script>
   </head>
   <body>
     <div id="root"></div>
