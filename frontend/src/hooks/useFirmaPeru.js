@@ -19,12 +19,10 @@ export function useFirmaPeru() {
 
       const { param_token, document_extension } = res.data;
 
-      // 2. Determinar la URL base dinámica del servidor backend FastAPI (ej. http://10.0.50.30:8080)
-      const protocol = window.location.protocol;
-      const hostname = window.location.hostname;
-      // Usar puerto 8080 si estamos en desarrollo local o la URL del backend
-      const backendPort = import.meta.env.VITE_API_PORT || '8080';
-      const baseUrl = `${protocol}//${hostname}:${backendPort}`;
+      // 2. Determinar la URL base pública del servidor accesible en la red por el Firmador Java
+      let baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+      if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+      if (baseUrl.endsWith('/api')) baseUrl = baseUrl.slice(0, -4);
 
       // 3. Armar los parámetros iniciales requeridos por Firma Perú
       const paramsObj = {

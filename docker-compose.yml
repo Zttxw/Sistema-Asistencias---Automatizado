@@ -47,6 +47,7 @@ services:
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?Error: define MYSQL_PASSWORD en .env}"
       AGENTE_HTTP_URL: "${AGENTE_HTTP_URL:-http://192.168.0.104:5050}"
       AGENTE_SECRET_TOKEN: "${AGENTE_SECRET_TOKEN:?Error: define AGENTE_SECRET_TOKEN en .env}"
+      PUBLIC_URL: "${PUBLIC_URL:-http://${SERVER_HOST:-localhost}:8080}"
     depends_on:
       db:
         condition: service_healthy
@@ -58,7 +59,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://${SERVER_HOST:-10.0.30.50}:8082}
+        VITE_API_URL: ${VITE_API_URL:-http://${SERVER_HOST:-localhost}:8080}
     container_name: asistencias_frontend
     restart: always
     logging:

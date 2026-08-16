@@ -311,6 +311,27 @@ class TestFirmaPeruIntegration(unittest.TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertIn("No autorizado para preparar firmas", res.json()["detail"])
 
+    def test_preparar_firma_jefe_de_oficina_permitido_200(self):
+        db = TestingSessionLocal()
+        rol_jefe = db.query(Rol).filter(Rol.nombre == "Jefe de Oficina").first()
+        user_jefe = Usuario(email="jefe_oficina@sistema.com", password_hash="hash", rol_id=rol_jefe.id, activo=True)
+        db.add(user_jefe)
+        db.commit()
+        db.refresh(user_jefe)
+        user_jefe_id = user_jefe.id
+        db.close()
+
+        token_jefe = create_access_token(data={"sub": str(user_jefe_id)})
+        headers_jefe = {"Authorization": f"Bearer {token_jefe}"}
+
+        res = self.client.post(
+            "/api/firmaperu/preparar-firma",
+            headers=headers_jefe,
+            json={"empleado_id": self.empleado_a_id, "semana_inicio": "2026-11-02", "semana_fin": "2026-11-29"}
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("param_token", res.json())
+
     def test_subir_firmado_token_pendiente_rechazado_400(self):
         res_prep = self.client.post(
             "/api/firmaperu/preparar-firma",

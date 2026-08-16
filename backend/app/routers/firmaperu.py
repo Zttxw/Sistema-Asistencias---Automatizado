@@ -44,7 +44,10 @@ def preparar_firma_digital(
     4. Emite un param_token opaco efímero (TTL 10 min) y lo registra en DB.
     5. Devuelve param_token al frontend para iniciar Firma Perú.
     """
-    es_admin_o_firmante = current_user.rol and current_user.rol.nombre in ["Administrador", "Ingeniero", "Jefatura", "Superusuario", "Admin"]
+    es_admin_o_firmante = current_user.rol and (
+        current_user.rol.nombre in ["Administrador", "Ingeniero", "Jefatura", "Jefe de Oficina", "Superusuario", "Admin"]
+        or any(p.codigo in ["asistencias.exportar", "roles.gestionar"] for p in (current_user.rol.permisos or []))
+    )
     if not es_admin_o_firmante:
         raise HTTPException(status_code=403, detail="No autorizado para preparar firmas de informes de practicantes.")
 
@@ -91,6 +94,25 @@ def preparar_firma_digital(
     }
 
 
+def obtener_base_url_publica(request: Request) -> str:
+    """
+    Resuelve la URL base pública accesible en la red local (ej. http://10.0.50.30:8080).
+    1. Si PUBLIC_URL está definido en .env, usa ese valor explícito.
+    2. De lo contrario, deriva la URL desde las cabeceras de proxy de Nginx (Host + X-Forwarded-Proto).
+    3. Fallback a request.base_url.
+    """
+    from app.config import settings
+    if settings.PUBLIC_URL:
+        return settings.PUBLIC_URL.rstrip("/")
+    
+    forwarded_proto = request.headers.get("x-forwarded-proto", "http")
+    host_header = request.headers.get("host")
+    if host_header:
+        return f"{forwarded_proto}://{host_header}".rstrip("/")
+
+    return str(request.base_url).rstrip("/")
+
+
 @router.post("/param")
 async def obtener_parametros_firma(
     request: Request,
@@ -120,7 +142,7 @@ async def obtener_parametros_firma(
     ftoken.estado = "emitido"
     db.commit()
 
-    base_url = str(request.base_url).rstrip("/")
+    base_url = obtener_base_url_publica(request)
 
     # Estructura oficial de parámetros de Firma Perú (PAdES)
     params_dict = {

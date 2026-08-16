@@ -177,6 +177,8 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Gestión de Informes Mensuales (4 Semanas) & Firma Digital">
       <div className="space-y-5 text-gray-900 dark:text-zinc-100 font-sans">
+        {/* Contenedor obligatorio para inyección de iframe de firmaperu.min.js */}
+        <div id="addComponent" style={{ display: 'none' }} />
         <p className="text-xs text-gray-500 dark:text-zinc-400">
           Descargue el informe PDF del mes (4 semanas). Fírmelo digitalmente con Firma Perú o súbalo manualmente para que quede archivado oficialmente.
         </p>

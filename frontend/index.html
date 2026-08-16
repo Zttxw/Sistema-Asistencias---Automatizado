@@ -7,7 +7,7 @@
     <title>Sistema de Asistencias - OTI</title>
     <!-- jQuery y Cliente Firma Perú -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://firmaperu.gob.pe/firmaperu/js/firmaperu.min.js" onerror="console.warn('Script de Firma Perú no disponible externamente. Se utilizará cargador o modo fallback.')"></script>
+    <script src="https://apps.firmaperu.gob.pe/web/clienteweb/firmaperu.min.js" onerror="console.warn('Script de Firma Perú no disponible externamente.')"></script>
     <script>
       // Fallback helper si el servidor no tiene acceso a internet
       window.jqFirmaPeru = window.jQuery;
@@ -15,6 +15,8 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Contenedor HTML obligatorio requerido por firmaperu.min.js para inyectar iframe -->
+    <div id="addComponent" style="display:none;"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -190,7 +190,10 @@ def descargar_pdf_firmado(
         raise HTTPException(status_code=404, detail="Informe firmado no encontrado.")
 
     # Hallazgo #2 de auditoría: Verificación de Permisos
-    es_admin_o_firmante = current_user.rol and current_user.rol.nombre in ["Administrador", "Ingeniero", "Jefatura", "Superusuario"]
+    es_admin_o_firmante = current_user.rol and (
+        current_user.rol.nombre in ["Administrador", "Ingeniero", "Jefatura", "Jefe de Oficina", "Superusuario", "Admin"]
+        or any(p.codigo in ["asistencias.exportar", "roles.gestionar"] for p in (current_user.rol.permisos or []))
+    )
     es_propietario = current_user.empleado_id == informe.empleado_id or (current_user.empleado and current_user.empleado.id == informe.empleado_id)
 
     if not (es_admin_o_firmante or es_propietario):

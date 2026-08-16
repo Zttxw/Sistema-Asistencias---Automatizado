@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # PENDIENTE: Ruta al archivo .pem/.crt con los certificados raíz oficiales de RENIEC/PCM para producción
     FIRMAPERU_TRUST_ROOTS_PATH: Optional[str] = None
 
+    # URL base pública del servidor accesible desde la red local (ej. http://10.0.50.30:8080)
+    PUBLIC_URL: Optional[str] = None
+
     @property
     def DATABASE_URL(self) -> str:
         return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_SERVER}:{self.MYSQL_PORT}/{self.MYSQL_DB}"
