@@ -4,7 +4,7 @@ import AlertMessage from '../components/AlertMessage';
 import Modal from '../components/Modal';
 import Loader from '../components/Loader';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, Pencil, UserX, UserCheck, Shield, KeyRound, RefreshCw, Users, ShieldCheck, Check } from 'lucide-react';
+import { UserPlus, Pencil, UserX, UserCheck, Shield, KeyRound, RefreshCw, Users, ShieldCheck, Check, Eye, EyeOff } from 'lucide-react';
 
 export default function Usuarios() {
   const { hasPermission } = useAuth();
@@ -27,6 +27,8 @@ export default function Usuarios() {
   const [isCreateRolModalOpen, setIsCreateRolModalOpen] = useState(false);
 
   // Form states
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -436,15 +438,24 @@ export default function Usuarios() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
               Contraseña Inicial *
             </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="••••••••"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary"
-            />
+            <div className="relative">
+              <input
+                type={showCreatePassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="••••••••"
+                className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCreatePassword(!showCreatePassword)}
+                className="absolute right-3 top-2.5 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 cursor-pointer"
+              >
+                {showCreatePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div>
@@ -523,13 +534,22 @@ export default function Usuarios() {
             <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
               Nueva Contraseña (dejar en blanco para mantener la actual)
             </label>
-            <input
-              type="password"
-              value={editFormData.password}
-              onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
-              placeholder="••••••••"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary"
-            />
+            <div className="relative">
+              <input
+                type={showEditPassword ? 'text' : 'password'}
+                value={editFormData.password}
+                onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                placeholder="••••••••"
+                className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary"
+              />
+              <button
+                type="button"
+                onClick={() => setShowEditPassword(!showEditPassword)}
+                className="absolute right-3 top-2.5 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 cursor-pointer"
+              >
+                {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div>
