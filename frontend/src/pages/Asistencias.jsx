@@ -10,8 +10,10 @@ import DashboardGrafico from '../components/DashboardGrafico';
 import VistaPresenciaDia from '../components/VistaPresenciaDia';
 import VistaPracticante from '../components/VistaPracticante';
 import MigracionModal from '../components/MigracionModal';
+import ModalAuditoriaAsistencias from '../components/ModalAuditoriaAsistencias';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, RefreshCw, PlusCircle, Edit3, FileSpreadsheet, Lock, Trash2, User, Clock, CheckCircle2 } from 'lucide-react';
+import { Calendar, RefreshCw, PlusCircle, Edit3, FileSpreadsheet, Lock, Trash2, User, Clock, CheckCircle2, ShieldAlert } from 'lucide-react';
+
 
 export default function Asistencias() {
   const { user } = useAuth();
@@ -55,7 +57,9 @@ export default function Asistencias() {
   // Modal para Registro Manual y Migración Excel
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isMigracionModalOpen, setIsMigracionModalOpen] = useState(false);
+  const [isAuditoriaModalOpen, setIsAuditoriaModalOpen] = useState(false);
   const [empleadosActivos, setEmpleadosActivos] = useState([]);
+
   const [modoCreacionManual, setModoCreacionManual] = useState('fecha_especifica'); // 'rapido' | 'fecha_especifica'
   const [manualForm, setManualForm] = useState({
     empleado_id: '',
@@ -220,6 +224,17 @@ export default function Asistencias() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
+          {user?.rol === 'Admin' && (
+            <button
+              onClick={() => setIsAuditoriaModalOpen(true)}
+              className="flex items-center space-x-2 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition-colors shadow-2xs cursor-pointer"
+              title="Ver trazabilidad de quién modificó asistencias (Solo Administrador)"
+            >
+              <ShieldAlert className="w-4 h-4" />
+              <span>Historial de Auditoría</span>
+            </button>
+          )}
+
           <RequierePermiso codigo="asistencias.registrar_manual">
             <button
               onClick={() => setIsMigracionModalOpen(true)}
@@ -238,6 +253,7 @@ export default function Asistencias() {
           </RequierePermiso>
         </div>
       </div>
+
 
       <AlertMessage message={error} onClose={() => setError(null)} />
 
@@ -583,6 +599,12 @@ export default function Asistencias() {
         onClose={() => setIsMigracionModalOpen(false)}
         onSuccess={() => fetchAsistencias()}
       />
+      {/* Modal Auditoría para Administrador */}
+      <ModalAuditoriaAsistencias
+        isOpen={isAuditoriaModalOpen}
+        onClose={() => setIsAuditoriaModalOpen(false)}
+      />
     </div>
   );
 }
+

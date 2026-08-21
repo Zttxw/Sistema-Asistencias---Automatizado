@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.asistencia import AsistenciaCreatePayload, AsistenciaManualPayload, AsistenciaResponse, AsistenciaReporteItem, AsistenciaEdicionPayload
 from app.models.usuario import Usuario
+import app.schemas.auditoria
 from app import crud
+
 from app.core.deps import require_permission, require_any_permission, get_current_user
 
 router = APIRouter(tags=["asistencias"])
@@ -34,25 +36,27 @@ def obtener_asistencias_practicante(
 def editar_asistencia_manual(
     asistencia_id: int,
     payload: AsistenciaEdicionPayload,
+    current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Permite al administrador modificar manualmente las horas de entrada/salida y motivo de un registro de asistencia.
     Verifica que el período de la asistencia no haya sido firmado previamente por la Jefatura.
     """
-    return crud.crud_asistencia.update_asistencia_manual(db, asistencia_id, payload)
+    return crud.crud_asistencia.update_asistencia_manual(db, asistencia_id, payload, current_user=current_user)
 
 
 @router.delete("/api/asistencias/{asistencia_id}", dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
 def eliminar_asistencia_manual(
     asistencia_id: int,
+    current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Permite al administrador eliminar manualmente un registro de asistencia.
     Verifica que el período de la asistencia no haya sido firmado previamente por la Jefatura.
     """
-    return crud.crud_asistencia.delete_asistencia_manual(db, asistencia_id)
+    return crud.crud_asistencia.delete_asistencia_manual(db, asistencia_id, current_user=current_user)
 
 
 @router.post("/api/asistencia", response_model=AsistenciaResponse)
@@ -64,11 +68,16 @@ def registrar_asistencia(payload: AsistenciaCreatePayload, db: Session = Depends
 
 
 @router.post("/api/asistencia/manual", response_model=AsistenciaResponse, dependencies=[Depends(require_permission("asistencias.registrar_manual"))])
-def registrar_asistencia_manual(payload: AsistenciaManualPayload, db: Session = Depends(get_db)):
+def registrar_asistencia_manual(
+    payload: AsistenciaManualPayload,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
     Registra manualmente la entrada o salida de un empleado. Requiere permiso 'asistencias.registrar_manual'.
     """
-    return crud.crud_asistencia.registrar_asistencia_manual(db, payload)
+    return crud.crud_asistencia.registrar_asistencia_manual(db, payload, current_user=current_user)
+
 
 
 @router.post("/api/asistencia/marcar_propia", response_model=AsistenciaResponse)
@@ -260,5 +269,37 @@ def purgar_asistencias_migracion(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al purgar asistencias migradas: {str(e)}")
+
+
+@router.get("/api/asistencias/auditoria", response_model=List[app.schemas.auditoria.AuditoriaAsistenciaItem])
+def obtener_auditoria_asistencias(
+    skip: int = 0,
+    limit: int = 200,
+    fecha_inicio: Optional[date] = Query(None),
+    fecha_fin: Optional[date] = Query(None),
+    empleado_id: Optional[int] = Query(None),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna el registro de auditoría de modificaciones de asistencias.
+    Restringido únicamente a usuarios con rol Admin.
+    """
+    if not current_user.rol or current_user.rol.nombre != "Admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: El historial de auditoría es exclusivo para Administradores."
+        )
+
+    from app.crud.crud_auditoria import get_auditorias_asistencia
+    return get_auditorias_asistencia(
+        db=db,
+        skip=skip,
+        limit=limit,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+        empleado_id=empleado_id
+    )
+
 
 

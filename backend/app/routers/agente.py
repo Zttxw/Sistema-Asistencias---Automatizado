@@ -50,9 +50,10 @@ def obtener_estado_agente(
     # 1. Intentar consulta HTTP directa al puerto 5050 del agente (timeout corto de 2.0s)
     try:
         resp = httpx.get(f"{AGENTE_HTTP_URL}/status", headers=_get_agent_headers(), timeout=2.0)
+        resp = httpx.get(f"{AGENTE_HTTP_URL}/status", headers=_get_agent_headers(), timeout=2.0)
         if resp.status_code == 200:
             data = resp.json()
-            data["status_label"] = "🟢 EN LÍNEA (HTTP Directo)"
+            data["status_label"] = "EN LÍNEA (HTTP Directo)"
             data["seconds_since_last_pulse"] = 0
             data["bombeando"] = True
             return data
@@ -90,7 +91,7 @@ def obtener_estado_agente(
             return {
                 "running": True,
                 "bombeando": True,
-                "status_label": f"🟢 EN LÍNEA (Bombeando hace {segundos_transcurridos}s)",
+                "status_label": f"EN LÍNEA (Hace {segundos_transcurridos}s)",
                 "seconds_since_last_pulse": segundos_transcurridos,
                 "pid": "PID 1604 (Agente Windows)",
                 "hostname": "DESKTOP-AE6LI2A (192.168.0.104)",
@@ -108,16 +109,16 @@ def obtener_estado_agente(
             return {
                 "running": False,
                 "bombeando": False,
-                "status_label": f"🔴 DETENIDO / SIN SEÑAL (Hace {minutos} min)",
+                "status_label": f"SIN SEÑAL (Hace {minutos} min)",
                 "seconds_since_last_pulse": segundos_transcurridos,
                 "last_scan_time": ultima_fecha.isoformat(),
-                "error": f"⚠️ ALERTA: El Agente dejó de transmitir. Sin señal recibida desde hace {minutos} min ({segundos_transcurridos} segundos). Verificar que la PC Windows esté encendida con AgenteAsistencia.exe ejecutándose."
+                "error": f"ALERTA: El Agente dejó de transmitir. Sin señal recibida desde hace {minutos} min ({segundos_transcurridos} segundos). Verificar que la PC Windows esté encendida con AgenteAsistencia.exe ejecutándose."
             }
 
     return {
         "running": False,
         "bombeando": False,
-        "status_label": "🔴 DETENIDO / SIN REGISTROS",
+        "status_label": "SIN REGISTROS",
         "seconds_since_last_pulse": None,
         "error": "No se han recibido escaneos ni datos del agente en la base de datos."
     }

@@ -96,11 +96,20 @@ def get_meses_completados_empleado(db: Session, empleado_id: int) -> dict:
         curr_lunes += timedelta(weeks=4)
         num_bloque += 1
 
+    total_horas_totales = sum(item["horas_mes"] for item in resultado_bloques)
+    emp = db.query(Empleado).filter(Empleado.id == empleado_id).first()
+    horas_meta_val = emp.horas_meta if (emp and emp.horas_meta) else 640
+
     return {
         "meses": resultado_bloques,
         "semanas": resultado_bloques,
-        "consolidado": None
+        "consolidado": {
+            "total_horas": round(total_horas_totales, 1),
+            "horas_meta": horas_meta_val,
+            "total_bloques": len(resultado_bloques)
+        }
     }
+
 
 
 def get_semanas_completadas_empleado(db: Session, empleado_id: int) -> dict:

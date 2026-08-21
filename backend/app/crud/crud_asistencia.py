@@ -8,6 +8,8 @@ from fastapi import HTTPException, status
 from app.models.empleado import Empleado
 from app.models.asistencia import Asistencia
 from app.models.informe_firmado import InformeFirmado
+from app.models.usuario import Usuario
+from app.crud.crud_auditoria import crear_registro_auditoria
 from app.schemas.asistencia import AsistenciaCreatePayload, AsistenciaManualPayload, AsistenciaReporteItem, AsistenciaEdicionPayload
 
 
@@ -70,7 +72,7 @@ def registrar_deteccion_asistencia(db: Session, payload: AsistenciaCreatePayload
     return asistencia
 
 
-def registrar_asistencia_manual(db: Session, payload: AsistenciaManualPayload) -> Asistencia:
+def registrar_asistencia_manual(db: Session, payload: AsistenciaManualPayload, current_user: Optional[Usuario] = None) -> Asistencia:
     empleado = db.query(Empleado).filter(
         Empleado.id == payload.empleado_id,
         Empleado.activo == True
@@ -152,10 +154,12 @@ def registrar_asistencia_manual(db: Session, payload: AsistenciaManualPayload) -
 
         if payload.tipo == "entrada":
             if asistencia and asistencia.hora_entrada:
-                asistencia.hora_entrada = dt
-                asistencia.origen_entrada = "manual"
-                if payload.motivo:
-                    asistencia.motivo = payload.motivo
+                h_ent_str = asistencia.hora_entrada.strftime("%H:%M")
+                origen_str = "Agente de Red Wi-Fi" if asistencia.origen_entrada == "automatico" else "Marcación Web"
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Su ingreso del día de hoy ya fue registrado a las {h_ent_str} hrs (Vía {origen_str})."
+                )
             else:
                 asistencia = Asistencia(
                     empleado_id=empleado.id,
@@ -169,7 +173,15 @@ def registrar_asistencia_manual(db: Session, payload: AsistenciaManualPayload) -
                 )
                 db.add(asistencia)
         else:
-            if not asistencia:
+            # tipo == "salida"
+            if asistencia and asistencia.hora_salida:
+                h_sal_str = asistencia.hora_salida.strftime("%H:%M")
+                origen_str = "Agente de Red Wi-Fi" if asistencia.origen_salida == "automatico" else "Marcación Web"
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Su salida del día de hoy ya fue registrada a las {h_sal_str} hrs (Vía {origen_str})."
+                )
+            elif not asistencia:
                 asistencia = Asistencia(
                     empleado_id=empleado.id,
                     fecha=fecha_objetivo,
@@ -186,6 +198,23 @@ def registrar_asistencia_manual(db: Session, payload: AsistenciaManualPayload) -
                 asistencia.origen_salida = "manual"
                 if payload.motivo:
                     asistencia.motivo = payload.motivo
+
+    db.flush()
+    h_ent_str = asistencia.hora_entrada.strftime("%H:%M:%S") if asistencia.hora_entrada else "Sin marca"
+    h_sal_str = asistencia.hora_salida.strftime("%H:%M:%S") if asistencia.hora_salida else "Sin marca"
+    val_nuevos = f"Entrada: {h_ent_str}, Salida: {h_sal_str}"
+
+    crear_registro_auditoria(
+        db=db,
+        asistencia_id=asistencia.id,
+        empleado_id=empleado.id,
+        fecha_asistencia=fecha_objetivo,
+        accion="CREACION_MANUAL",
+        usuario=current_user,
+        valores_anteriores="Sin registro previo",
+        valores_nuevos=val_nuevos,
+        motivo=payload.motivo
+    )
 
     db.commit()
     db.refresh(asistencia)
@@ -209,13 +238,17 @@ def check_asistencia_bloqueada_por_firma(db: Session, empleado_id: int, fecha_as
         )
 
 
-def update_asistencia_manual(db: Session, asistencia_id: int, payload: AsistenciaEdicionPayload) -> Asistencia:
+def update_asistencia_manual(db: Session, asistencia_id: int, payload: AsistenciaEdicionPayload, current_user: Optional[Usuario] = None) -> Asistencia:
     asistencia = db.query(Asistencia).filter(Asistencia.id == asistencia_id).first()
     if not asistencia:
         raise HTTPException(status_code=404, detail="Registro de asistencia no encontrado.")
 
     # 1. Verificar bloqueo de firma
     check_asistencia_bloqueada_por_firma(db, asistencia.empleado_id, asistencia.fecha)
+
+    h_ent_ant = asistencia.hora_entrada.strftime("%H:%M:%S") if asistencia.hora_entrada else "Sin marca"
+    h_sal_ant = asistencia.hora_salida.strftime("%H:%M:%S") if asistencia.hora_salida else "Sin marca"
+    val_ant = f"Entrada: {h_ent_ant}, Salida: {h_sal_ant}"
 
     # 2. Actualizar hora_entrada
     if payload.hora_entrada is not None:
@@ -253,12 +286,28 @@ def update_asistencia_manual(db: Session, asistencia_id: int, payload: Asistenci
     if payload.motivo is not None:
         asistencia.motivo = payload.motivo
 
+    h_ent_nuev = asistencia.hora_entrada.strftime("%H:%M:%S") if asistencia.hora_entrada else "Sin marca"
+    h_sal_nuev = asistencia.hora_salida.strftime("%H:%M:%S") if asistencia.hora_salida else "Sin marca"
+    val_nuev = f"Entrada: {h_ent_nuev}, Salida: {h_sal_nuev}"
+
+    crear_registro_auditoria(
+        db=db,
+        asistencia_id=asistencia.id,
+        empleado_id=asistencia.empleado_id,
+        fecha_asistencia=asistencia.fecha,
+        accion="EDICION",
+        usuario=current_user,
+        valores_anteriores=val_ant,
+        valores_nuevos=val_nuev,
+        motivo=payload.motivo or asistencia.motivo
+    )
+
     db.commit()
     db.refresh(asistencia)
     return asistencia
 
 
-def delete_asistencia_manual(db: Session, asistencia_id: int):
+def delete_asistencia_manual(db: Session, asistencia_id: int, current_user: Optional[Usuario] = None):
     asistencia = db.query(Asistencia).filter(Asistencia.id == asistencia_id).first()
     if not asistencia:
         raise HTTPException(status_code=404, detail="Registro de asistencia no encontrado.")
@@ -266,9 +315,26 @@ def delete_asistencia_manual(db: Session, asistencia_id: int):
     # Verificar bloqueo de firma
     check_asistencia_bloqueada_por_firma(db, asistencia.empleado_id, asistencia.fecha)
 
+    h_ent_ant = asistencia.hora_entrada.strftime("%H:%M:%S") if asistencia.hora_entrada else "Sin marca"
+    h_sal_ant = asistencia.hora_salida.strftime("%H:%M:%S") if asistencia.hora_salida else "Sin marca"
+    val_ant = f"Entrada: {h_ent_ant}, Salida: {h_sal_ant}"
+
+    crear_registro_auditoria(
+        db=db,
+        asistencia_id=asistencia.id,
+        empleado_id=asistencia.empleado_id,
+        fecha_asistencia=asistencia.fecha,
+        accion="ELIMINACION",
+        usuario=current_user,
+        valores_anteriores=val_ant,
+        valores_nuevos="Registro Eliminado",
+        motivo=asistencia.motivo or "Eliminación manual por usuario"
+    )
+
     db.delete(asistencia)
     db.commit()
     return {"ok": True, "message": "Asistencia eliminada correctamente."}
+
 
 
 def get_asistencias_por_fecha(db: Session, fecha_consulta: date) -> List[AsistenciaReporteItem]:

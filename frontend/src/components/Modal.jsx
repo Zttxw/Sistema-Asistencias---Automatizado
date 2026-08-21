@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-export default function Modal({ isOpen, onClose, title, children, closeOnBackdrop = false }) {
+export default function Modal({ isOpen, onClose, title, children, closeOnBackdrop = false, maxWidth = 'max-w-lg' }) {
   if (!isOpen) return null;
 
   const handleBackdropClick = (e) => {
@@ -16,9 +16,10 @@ export default function Modal({ isOpen, onClose, title, children, closeOnBackdro
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white dark:bg-black border border-gray-100 dark:border-zinc-800 rounded-xl w-full max-w-lg shadow-xl overflow-hidden my-8"
+        className={`bg-white dark:bg-black border border-gray-100 dark:border-zinc-800 rounded-xl w-full ${maxWidth} shadow-xl overflow-hidden my-8`}
         onClick={(e) => e.stopPropagation()}
       >
+
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-zinc-800">
           <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
           <button
