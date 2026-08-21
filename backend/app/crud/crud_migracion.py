@@ -8,6 +8,9 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy.orm import Session
 from app.models.empleado import Empleado
 from app.models.asistencia import Asistencia
+from app.models.usuario import Usuario
+from app.crud.crud_auditoria import crear_registro_auditoria
+
 
 
 def generar_plantilla_excel() -> bytes:
@@ -104,7 +107,8 @@ def purgar_asistencias_migradas(
     db: Session,
     empleado_id: Optional[int] = None,
     fecha_inicio: Optional[date] = None,
-    fecha_fin: Optional[date] = None
+    fecha_fin: Optional[date] = None,
+    usuario: Optional[Usuario] = None
 ) -> Dict[str, Any]:
     """
     Elimina únicamente los registros de asistencia cuyo origen sea 'migracion' o agente 'MIGRACION_ADMIN'.
@@ -149,6 +153,19 @@ def purgar_asistencias_migradas(
 
     count = len(asistencias_a_borrar)
     for asis in asistencias_a_borrar:
+        h_ent_ant = asis.hora_entrada.strftime("%H:%M:%S") if asis.hora_entrada else "Sin marca"
+        h_sal_ant = asis.hora_salida.strftime("%H:%M:%S") if asis.hora_salida else "Sin marca"
+        crear_registro_auditoria(
+            db=db,
+            empleado_id=asis.empleado_id,
+            fecha_asistencia=asis.fecha,
+            accion="ELIMINACION_MIGRACION",
+            usuario=usuario,
+            asistencia_id=asis.id,
+            valores_anteriores=f"Entrada: {h_ent_ant}, Salida: {h_sal_ant}",
+            valores_nuevos="Registro Purgado",
+            motivo="Purga masiva de migración Excel"
+        )
         db.delete(asis)
 
     db.commit()
@@ -249,7 +266,7 @@ def _extraer_filas_desde_excel(file_bytes: bytes) -> List[Tuple[int, List[Any]]]
     return filas
 
 
-def procesar_migracion_archivo(db: Session, file_bytes: bytes, filename: str, fecha_limite: date) -> Dict[str, Any]:
+def procesar_migracion_archivo(db: Session, file_bytes: bytes, filename: str, fecha_limite: date, usuario: Optional[Usuario] = None) -> Dict[str, Any]:
     """
     Procesa un archivo Excel (.xlsx / .xls) o CSV (.csv) de migración masiva e inserta/actualiza las asistencias históricas.
     """
@@ -365,7 +382,12 @@ def procesar_migracion_archivo(db: Session, file_bytes: bytes, filename: str, fe
             Asistencia.fecha == fecha_rec
         ).first()
 
+        val_ant = "Sin registro previo"
         if asistencia:
+            h_ent_ant = asistencia.hora_entrada.strftime("%H:%M:%S") if asistencia.hora_entrada else "Sin marca"
+            h_sal_ant = asistencia.hora_salida.strftime("%H:%M:%S") if asistencia.hora_salida else "Sin marca"
+            val_ant = f"Entrada: {h_ent_ant}, Salida: {h_sal_ant}"
+
             asistencia.hora_entrada = dt_entrada
             if dt_salida:
                 asistencia.hora_salida = dt_salida
@@ -388,6 +410,24 @@ def procesar_migracion_archivo(db: Session, file_bytes: bytes, filename: str, fe
             db.add(asistencia)
             filas_creadas += 1
 
+        db.flush()
+
+        h_ent_nuev = dt_entrada.strftime("%H:%M:%S") if dt_entrada else "Sin marca"
+        h_sal_nuev = dt_salida.strftime("%H:%M:%S") if dt_salida else "Sin marca"
+        val_nuev = f"Entrada: {h_ent_nuev}, Salida: {h_sal_nuev}"
+
+        crear_registro_auditoria(
+            db=db,
+            empleado_id=empleado.id,
+            fecha_asistencia=fecha_rec,
+            accion="MIGRACION_EXCEL",
+            usuario=usuario,
+            asistencia_id=asistencia.id,
+            valores_anteriores=val_ant,
+            valores_nuevos=val_nuev,
+            motivo=f"Migración masiva desde archivo ({filename})"
+        )
+
         filas_procesadas += 1
 
     try:
@@ -405,6 +445,7 @@ def procesar_migracion_archivo(db: Session, file_bytes: bytes, filename: str, fe
         "total_errores": len(errores),
         "errores": errores
     }
+
 
 
 def procesar_migracion_excel(db: Session, file_bytes: bytes, fecha_limite: date, filename: str = "migracion.xlsx") -> Dict[str, Any]:

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
 import Modal from '../components/Modal';
+import ModalViewerPdf from '../components/ModalViewerPdf';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Pencil, UserX, RefreshCw, History, FileText } from 'lucide-react';
 
@@ -12,12 +13,21 @@ export default function Empleados() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Visor PDF Modal State
+  const [viewerPdfState, setViewerPdfState] = useState({
+    isOpen: false,
+    pdfUrl: '',
+    title: '',
+    filename: '',
+  });
+
   // Modales
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
   const [isReporteModalOpen, setIsReporteModalOpen] = useState(false);
+
 
   // Historial MAC State
   const [historialMac, setHistorialMac] = useState([]);
@@ -245,17 +255,16 @@ export default function Empleados() {
       });
 
       const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
       const nombreArchivo = `informe_${selectedEmpleado.nombre.replace(/\s+/g, '_')}_${fechaInicio}_${fechaFin}.pdf`;
-      link.setAttribute('download', nombreArchivo);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      setSuccess(`Informe PDF descargado correctamente: ${nombreArchivo}`);
+      
       setIsReporteModalOpen(false);
+      setViewerPdfState({
+        isOpen: true,
+        pdfUrl: url,
+        title: `Vista Previa del Informe — ${selectedEmpleado.nombre} (${fechaInicio} al ${fechaFin})`,
+        filename: nombreArchivo,
+      });
+
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.detail || 'Error al generar el informe PDF.');
@@ -653,6 +662,15 @@ export default function Empleados() {
           </div>
         </div>
       </Modal>
+
+      <ModalViewerPdf
+        isOpen={viewerPdfState.isOpen}
+        onClose={() => setViewerPdfState((prev) => ({ ...prev, isOpen: false }))}
+        pdfUrl={viewerPdfState.pdfUrl}
+        title={viewerPdfState.title}
+        filename={viewerPdfState.filename}
+      />
     </div>
   );
 }
+

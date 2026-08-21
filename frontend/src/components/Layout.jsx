@@ -69,20 +69,20 @@ export default function Layout() {
                   {/* Sub-módulos sangrados en el menú lateral izquierdo bajo Asistencias */}
                   {isAsistencias && location.pathname === '/' && (
                     <div className="pl-4 space-y-1 pt-1 border-l-2 border-white/30 dark:border-zinc-800 ml-5">
-                      <NavLink
-                        to="/?tab=marcar"
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                          currentTab === 'marcar' || !['dashboard', 'dia', 'tabla', 'registros', 'avance'].includes(currentTab)
-                            ? 'bg-white/25 text-white font-bold dark:bg-zinc-800 dark:text-white'
-                            : 'text-white/80 hover:text-white hover:bg-white/10 dark:text-zinc-400 dark:hover:text-white'
-                        }`}
-                      >
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>1. Marcar Asistencia</span>
-                      </NavLink>
-
                       {!esAdminOJefe ? (
                         <>
+                          <NavLink
+                            to="/?tab=marcar"
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                              currentTab === 'marcar' || !['registros', 'avance'].includes(currentTab)
+                                ? 'bg-white/25 text-white font-bold dark:bg-zinc-800 dark:text-white'
+                                : 'text-white/80 hover:text-white hover:bg-white/10 dark:text-zinc-400 dark:hover:text-white'
+                            }`}
+                          >
+                            <Zap className="w-3.5 h-3.5" />
+                            <span>1. Marcar Mi Asistencia</span>
+                          </NavLink>
+
                           <NavLink
                             to="/?tab=registros"
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
@@ -112,13 +112,13 @@ export default function Layout() {
                           <NavLink
                             to="/?tab=dashboard"
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                              currentTab === 'dashboard'
+                              currentTab === 'dashboard' || !['dia', 'tabla'].includes(currentTab)
                                 ? 'bg-white/25 text-white font-bold dark:bg-zinc-800 dark:text-white'
                                 : 'text-white/80 hover:text-white hover:bg-white/10 dark:text-zinc-400 dark:hover:text-white'
                             }`}
                           >
                             <LayoutDashboard className="w-3.5 h-3.5" />
-                            <span>2. Dashboard & Rankings</span>
+                            <span>1. Dashboard & Rankings</span>
                           </NavLink>
 
                           <NavLink
@@ -130,7 +130,7 @@ export default function Layout() {
                             }`}
                           >
                             <Radio className="w-3.5 h-3.5" />
-                            <span>3. Presencia del Día</span>
+                            <span>2. Presencia del Día</span>
                           </NavLink>
 
                           <NavLink
@@ -142,10 +142,11 @@ export default function Layout() {
                             }`}
                           >
                             <Table className="w-3.5 h-3.5" />
-                            <span>4. Tabla de Registros</span>
+                            <span>3. Tabla de Registros</span>
                           </NavLink>
                         </>
                       )}
+
                     </div>
                   )}
                 </div>

@@ -62,6 +62,8 @@ NOTAS_INTERNAS_VM.md
 instaladores/
 **/instaladores/
 *.exe
-*.msi
+# Storage files
+backend/storage/
+**/storage/
 
 

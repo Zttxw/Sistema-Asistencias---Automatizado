@@ -9,12 +9,14 @@ import {
   FileText,
   Search,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  Eye
 } from 'lucide-react';
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
 import ModalPerfilFirmante from '../components/ModalPerfilFirmante';
 import { useFirmaPeru } from '../hooks/useFirmaPeru';
+import ModalViewerPdf from '../components/ModalViewerPdf';
 
 export default function InformesSemanales() {
   const [empleados, setEmpleados] = useState([]);
@@ -25,6 +27,15 @@ export default function InformesSemanales() {
   const [subiendoId, setSubiendoId] = useState(null);
   const [error, setError] = useState(null);
   const [exito, setExito] = useState(null);
+
+  // Visor PDF Modal State
+  const [viewerPdfState, setViewerPdfState] = useState({
+    isOpen: false,
+    pdfUrl: '',
+    title: '',
+    filename: '',
+    onDownload: null,
+  });
 
   // Perfil del Usuario Firmante Autenticado
   const [currentUser, setCurrentUser] = useState(null);
@@ -38,7 +49,8 @@ export default function InformesSemanales() {
   const fetchEmpleados = async () => {
     try {
       const res = await client.get('/api/empleados/');
-      const activos = res.data.filter((e) => e.activo !== false);
+      const lista = Array.isArray(res.data) ? res.data : [];
+      const activos = lista.filter((e) => e && e.activo !== false);
       setEmpleados(activos);
 
       const resMe = await client.get('/api/auth/me');
@@ -124,11 +136,12 @@ export default function InformesSemanales() {
     }
   }, [empSeleccionado]);
 
-  // Descargar PDF preliminar de un bloque de 4 semanas
+  // Previsualizar / Descargar PDF en el visor interno para evitar bloqueos del navegador
   const handleDescargarLimpio = async (semana) => {
     try {
       const empObj = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
       const nomLimpio = empObj ? empObj.nombre.replace(/\s+/g, '_') : 'Practicante';
+      const filename = `informe_mes_${semana.numero_mes || semana.numero_semana}_${nomLimpio}_${semana.semana_inicio}_al_${semana.semana_fin}.pdf`;
 
       const res = await client.get(`/api/empleados/${empSeleccionado}/informe_pdf`, {
         params: { fecha_inicio: semana.semana_inicio, fecha_fin: semana.semana_fin, _t: Date.now() },
@@ -136,19 +149,59 @@ export default function InformesSemanales() {
       });
 
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `informe_mes_${semana.numero_mes || semana.numero_semana}_${nomLimpio}_${semana.semana_inicio}_al_${semana.semana_fin}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      
+      setViewerPdfState({
+        isOpen: true,
+        pdfUrl: url,
+        title: `Vista Previa del Informe — Mes ${semana.numero_mes || semana.numero_semana} (${semana.rango_str})`,
+        filename,
+        onDownload: () => {
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', filename);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }
+      });
     } catch (err) {
       console.error(err);
-      setError('Error al generar el documento PDF preliminar del mes (4 semanas).');
+      setError('Error al generar el documento PDF preliminar.');
     }
   };
 
-  // Subir el PDF firmado del Mes (4 semanas)
+
+  // Previsualizar PDF firmado guardado en el visor modal
+  const handleVerFirmado = async (informeId, rangoStr) => {
+    try {
+      const res = await client.get(`/api/informes-firmados/${informeId}/descargar`, {
+        responseType: 'blob',
+      });
+
+      const filename = `PDF_FIRMADO_${rangoStr || 'informe'}.pdf`;
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+
+      setViewerPdfState({
+        isOpen: true,
+        pdfUrl: url,
+        title: `Previsualización de PDF Firmado Digitalmente (${rangoStr})`,
+        filename,
+        onDownload: () => {
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', filename);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo abrir la previsualización del archivo PDF firmado.');
+    }
+  };
+
+  // Subir el PDF firmado del Mes (4 semanas) y abrir previsualización
   const handleSubirPdfFirmado = async (semana, file) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
@@ -166,12 +219,17 @@ export default function InformesSemanales() {
     formData.append('archivo', file);
 
     try {
-      await client.post(`/api/informes-firmados/empleados/${empSeleccionado}/subir`, formData, {
+      const uploadRes = await client.post(`/api/informes-firmados/empleados/${empSeleccionado}/subir`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setExito(`Informe del Mes ${semana.numero_mes || semana.numero_semana} (4 semanas) firmado por el Ingeniero y archivado correctamente.`);
+      setExito(`¡Informe del Mes ${semana.numero_mes || semana.numero_semana} (4 semanas) firmado por el Ingeniero y archivado correctamente!`);
       cargarSemanas(empSeleccionado);
+
+      // Previsualizar automáticamente el PDF recién subido
+      if (uploadRes.data && uploadRes.data.id) {
+        handleVerFirmado(uploadRes.data.id, semana.rango_str);
+      }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.detail || 'Error al subir el PDF firmado.');
@@ -221,9 +279,11 @@ export default function InformesSemanales() {
     });
   };
 
-  const empActual = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
-  const firmadasCount = semanas.filter((s) => s.firmado).length;
-  const pendientesCount = semanas.filter((s) => !s.firmado).length;
+  const safeEmpleados = Array.isArray(empleados) ? empleados : [];
+  const safeSemanas = Array.isArray(semanas) ? semanas : [];
+  const empActual = safeEmpleados.find((e) => e && e.id === parseInt(empSeleccionado, 10));
+  const firmadasCount = safeSemanas.filter((s) => s && s.firmado).length;
+  const pendientesCount = safeSemanas.filter((s) => s && !s.firmado).length;
   const infoConsolidado = consolidado || armarConsolidadoFallback(semanas);
 
   // Cálculos de horas
@@ -234,7 +294,8 @@ export default function InformesSemanales() {
 
   // Filtrado de semanas
   const semanasFiltradas = useMemo(() => {
-    return semanas.filter((s) => {
+    const safeList = Array.isArray(semanas) ? semanas : [];
+    return safeList.filter((s) => {
       if (filtroEstado === 'pendientes' && s.firmado) return false;
       if (filtroEstado === 'firmadas' && !s.firmado) return false;
 
@@ -492,49 +553,28 @@ export default function InformesSemanales() {
                     {/* Acciones */}
                     <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
                       {semana.firmado ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          FIRMADO
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          PENDIENTE
-                        </span>
-                      )}
-
-                      <button
-                        onClick={() => handleDescargarLimpio(semana)}
-                        className="p-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                        title="Descargar PDF preliminar de este mes"
-                      >
-                        <Download className="w-3.5 h-3.5 text-[#3484A5]" />
-                      </button>
-
-                      {/* Botón de Firma Perú (Firma Digital Automática) */}
-                      {!semana.firmado && (
-                        <button
-                          onClick={() => handleFirmarDigitalmente(semana)}
-                          disabled={firmaLoading}
-                          className="px-3 py-1.5 bg-gradient-to-r from-sky-600 to-indigo-700 hover:from-sky-500 hover:to-indigo-600 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5 text-sky-200" />
-                          <span>{firmaLoading ? 'Abriendo Firma Perú...' : 'Firmar con Firma Perú'}</span>
-                        </button>
-                      )}
-
-                      {semana.firmado ? (
                         <div className="flex items-center gap-1.5">
+                          {/* Estado Firmado */}
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/60">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Firmado</span>
+                          </span>
+
+                          {/* El Ojito para previsualizar el PDF firmado */}
                           <button
-                            onClick={() => handleDescargarFirmado(semana.informe_firmado_id, semana.rango_str)}
-                            className="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                            onClick={() => handleVerFirmado(semana.informe_firmado_id, semana.rango_str)}
+                            className="p-1.5 text-[#3484A5] bg-[#3484A5]/10 hover:bg-[#3484A5]/20 dark:bg-sky-950/50 dark:text-sky-300 dark:hover:bg-sky-900/60 rounded-lg transition-colors cursor-pointer border border-[#3484A5]/30"
+                            title="Ver / Previsualizar PDF firmado (Ojito)"
                           >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>Ver Firmado</span>
+                            <Eye className="w-4 h-4" />
                           </button>
 
-                          <label className="px-2.5 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 text-xs font-medium rounded-lg cursor-pointer transition-colors">
-                            <span>Reemplazar</span>
+                          {/* Reemplazar archivo firmado (opcional) */}
+                          <label
+                            className="p-1.5 text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer transition-colors border border-slate-200 dark:border-zinc-800"
+                            title="Reemplazar informe PDF firmado"
+                          >
+                            <Upload className="w-4 h-4" />
                             <input
                               type="file"
                               accept=".pdf"
@@ -544,17 +584,41 @@ export default function InformesSemanales() {
                           </label>
                         </div>
                       ) : (
-                        <label className="px-3 py-1.5 bg-slate-900 text-white dark:bg-white dark:text-black text-xs font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-zinc-200 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs">
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>{subiendoId === (semana.numero_mes || semana.numero_semana) ? 'Guardando...' : 'Subir Manual'}</span>
-                          <input
-                            type="file"
-                            accept=".pdf"
-                            disabled={subiendoId === (semana.numero_mes || semana.numero_semana)}
-                            className="hidden"
-                            onChange={(e) => handleSubirPdfFirmado(semana, e.target.files[0])}
-                          />
-                        </label>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Botón de Firma Perú (Firma Digital Automática) */}
+                          <button
+                            onClick={() => handleFirmarDigitalmente(semana)}
+                            disabled={firmaLoading}
+                            className="px-3 py-1.5 bg-gradient-to-r from-sky-600 to-indigo-700 hover:from-sky-500 hover:to-indigo-600 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5 text-sky-200" />
+                            <span>{firmaLoading ? 'Abriendo Firma Perú...' : 'Firmar con Firma Perú'}</span>
+                          </button>
+
+                          {/* Botón Descargar / Previsualizar PDF */}
+                          <button
+                            onClick={() => handleDescargarLimpio(semana)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#3484A5]/40 hover:bg-[#3484A5]/10 text-[#3484A5] dark:text-sky-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                            title="Previsualizar PDF en pantalla completa para revisar o guardar"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Ver / Previsualizar PDF</span>
+                          </button>
+
+                          {/* Botón Principal: Subir Firmado / Manual */}
+                          <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#3484A5] hover:bg-[#2b6f8b] text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>{subiendoId === (semana.numero_mes || semana.numero_semana) ? 'Guardando...' : 'Subir Firmado'}</span>
+                            <input
+                              type="file"
+                              accept=".pdf"
+                              disabled={subiendoId === (semana.numero_mes || semana.numero_semana)}
+                              className="hidden"
+                              onChange={(e) => handleSubirPdfFirmado(semana, e.target.files[0])}
+                            />
+                          </label>
+                        </div>
+                      )}
                       )}
                     </div>
                   </div>
@@ -570,6 +634,15 @@ export default function InformesSemanales() {
         onClose={() => setIsPerfilModalOpen(false)}
         currentUser={currentUser}
         onProfileUpdated={(updatedUser) => setCurrentUser(updatedUser)}
+      />
+
+      <ModalViewerPdf
+        isOpen={viewerPdfState.isOpen}
+        onClose={() => setViewerPdfState((prev) => ({ ...prev, isOpen: false }))}
+        pdfUrl={viewerPdfState.pdfUrl}
+        title={viewerPdfState.title}
+        filename={viewerPdfState.filename}
+        onDownload={viewerPdfState.onDownload}
       />
     </div>
   );

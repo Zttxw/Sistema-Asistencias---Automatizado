@@ -61,14 +61,14 @@ def generar_pdf_informe_semanal_practicante(
 
     styles = getSampleStyleSheet()
 
-    # Estilos de título y texto optimizados para 2 hojas ejecutivas y holgadas
+    # Estilos de título y texto ejecutivos con colores institucionales (#3484A5, #2CA792, #F0C84F)
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Heading1'],
         fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=15,
-        textColor=colors.HexColor("#0F2942"),  # Azul Marino Institucional
+        fontSize=11,
+        leading=14,
+        textColor=colors.HexColor("#3484A5"),  # Azul OTI
         alignment=1,  # Centrado
         spaceAfter=2
     )
@@ -77,20 +77,20 @@ def generar_pdf_informe_semanal_practicante(
         'DocSubtitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=8.5,
-        leading=10.5,
-        textColor=colors.HexColor("#475569"),
+        fontSize=8,
+        leading=10,
+        textColor=colors.HexColor("#2CA792"),  # Verde Esmeralda OTI
         alignment=1,  # Centrado
-        spaceAfter=8
+        spaceAfter=10
     )
 
     meta_label_left = ParagraphStyle(
         'MetaLabelLeft',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=8.5,
-        leading=11.5,
-        textColor=colors.HexColor("#0F172A"),
+        fontSize=8,
+        leading=11,
+        textColor=colors.black,
         alignment=0  # Izquierda
     )
 
@@ -98,9 +98,9 @@ def generar_pdf_informe_semanal_practicante(
         'MetaLabelRightVal',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=8.5,
-        leading=11.5,
-        textColor=colors.HexColor("#0F172A"),
+        fontSize=8,
+        leading=11,
+        textColor=colors.black,
         alignment=2  # Derecha
     )
 
@@ -110,9 +110,9 @@ def generar_pdf_informe_semanal_practicante(
         fontName='Helvetica-Bold',
         fontSize=8.5,
         leading=11,
-        textColor=colors.HexColor("#0F2942"),
-        spaceBefore=4,
-        spaceAfter=2
+        textColor=colors.HexColor("#3484A5"),  # Azul OTI
+        spaceBefore=6,
+        spaceAfter=3
     )
 
     consolidado_title_style = ParagraphStyle(
@@ -121,9 +121,9 @@ def generar_pdf_informe_semanal_practicante(
         fontName='Helvetica-Bold',
         fontSize=8.5,
         leading=11,
-        textColor=colors.HexColor("#0F2942"),
-        spaceBefore=6,
-        spaceAfter=3
+        textColor=colors.HexColor("#2CA792"),  # Verde Esmeralda OTI
+        spaceBefore=8,
+        spaceAfter=4
     )
 
     signer_name_style = ParagraphStyle(
@@ -132,7 +132,7 @@ def generar_pdf_informe_semanal_practicante(
         fontName='Helvetica-Bold',
         fontSize=8.5,
         leading=10.5,
-        textColor=colors.HexColor("#0F2942"),
+        textColor=colors.HexColor("#3484A5"),  # Azul OTI
         alignment=1
     )
 
@@ -142,7 +142,7 @@ def generar_pdf_informe_semanal_practicante(
         fontName='Helvetica',
         fontSize=7.5,
         leading=9,
-        textColor=colors.HexColor("#334155"),
+        textColor=colors.HexColor("#2CA792"),  # Verde OTI
         alignment=1
     )
 
@@ -180,12 +180,12 @@ def generar_pdf_informe_semanal_practicante(
     t_meta = Table(meta_data, colWidths=[296, 236])
     t_meta.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
-        ('BOX', (0, 0), (-1, -1), 0.6, colors.HexColor("#CBD5E1")),
-        ('INNERGRID', (0, 0), (-1, -1), 0.4, colors.HexColor("#E2E8F0")),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('LEFTPADDING', (0, 0), (-1, -1), 7),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 7),
+        ('BOX', (0, 0), (-1, -1), 0.8, colors.black),        # Marco exterior negro bien definido
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.black),  # Rejilla interior negra
+        ('TOPPADDING', (0, 0), (-1, -1), 3.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     elements.append(t_meta)
@@ -239,8 +239,9 @@ def generar_pdf_informe_semanal_practicante(
             # Tabla de días de la semana: 4 Columnas Limpias y Equilibradas (Ancho Total: 532 pt = 180 + 110 + 110 + 132)
             table_data = [["Día / Fecha", "Hora Entrada", "Hora Salida", "Horas Computadas"]]
             total_semana_horas = 0.0
+            filas_feriados_indices = []
 
-            for dia_fecha in dias_semana:
+            for row_idx, dia_fecha in enumerate(dias_semana, start=1):
                 nom_dia = DIAS_ESPANOL[dia_fecha.weekday()]
                 fecha_str = f"{nom_dia} {dia_fecha.strftime('%d/%m/%Y')}"
 
@@ -254,6 +255,7 @@ def generar_pdf_informe_semanal_practicante(
                     h_ent = "FERIADO"
                     h_sal = nombre_feriado
                     horas_str = "0.0"
+                    filas_feriados_indices.append(row_idx)
                 elif reg and reg.hora_entrada and reg.hora_salida and not es_fin_de_semana:
                     h_ent = reg.hora_entrada.strftime("%H:%M")
                     h_sal = reg.hora_salida.strftime("%H:%M")
@@ -307,36 +309,45 @@ def generar_pdf_informe_semanal_practicante(
             t_semana = Table(table_data, colWidths=[180, 110, 110, 132])
 
             ts = [
-                # Encabezado estilo Corte Superior de Justicia (Azul Marino Institucional)
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0F2942")),
+                # Encabezado con Azul OTI (#3484A5) y marco negro bien definido
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3484A5")),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 7.5),
+                ('FONTSIZE', (0, 0), (-1, 0), 8),
                 ('ALIGN', (0, 0), (0, 0), 'LEFT'),
                 ('ALIGN', (1, 0), (3, 0), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 2.5),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
-                ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor("#F8FAFC")]),
+                ('TOPPADDING', (0, 0), (-1, 0), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+                
+                # Marco exterior y rejilla interior en color NEGRO bien definidos
+                ('BOX', (0, 0), (-1, -1), 0.8, colors.black),
+                ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor("#FAFAFA")]),
                 
                 # Alineación de datos
                 ('ALIGN', (0, 1), (0, -2), 'LEFT'),
                 ('ALIGN', (1, 1), (2, -2), 'CENTER'),
                 ('ALIGN', (3, 1), (3, -2), 'RIGHT'),
                 ('FONTSIZE', (0, 1), (-1, -2), 7.5),
+                ('TEXTCOLOR', (0, 1), (-1, -2), colors.black),
 
-                # Fila final Total Semanal (Azul Institucional sutil)
+                # Fila final Total Semanal (Verde Esmeralda OTI #2CA792 suave)
                 ('SPAN', (0, -1), (2, -1)),
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, -1), (-1, -1), 7.5),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#EBF3F8")),
-                ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor("#0F2942")),
+                ('FONTSIZE', (0, -1), (-1, -1), 8),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#E6F7F4")),
+                ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor("#1A5C50")),
                 ('ALIGN', (0, -1), (0, -1), 'RIGHT'),
                 ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
                 ('RIGHTPADDING', (0, -1), (0, -1), 8),
                 ('RIGHTPADDING', (3, -1), (3, -1), 8),
             ]
+
+            # Destacar feriados con tono Dorado OTI (#F0C84F / #FEF9C3)
+            for f_idx in filas_feriados_indices:
+                ts.append(('BACKGROUND', (0, f_idx), (-1, f_idx), colors.HexColor("#FEF9C3")))
+
             t_semana.setStyle(TableStyle(ts))
             
             # Envolver cada semana en KeepTogether
@@ -355,53 +366,91 @@ def generar_pdf_informe_semanal_practicante(
 
     total_consolidado_horas = round(total_consolidado_horas, 1)
 
-    # 4. Sección Consolidado Final (Ancho Total: 532 pt = 340 + 192) y Signaturas en Hoja 2
+    # 4. Sección Consolidado Final (Ancho Total: 532 pt = 352 + 180) y Signaturas en Hoja 2
     consolidado_elements = []
 
-    meta_alcanzada = empleado.horas_meta is not None and total_consolidado_horas >= float(empleado.horas_meta)
-    
-    if meta_alcanzada:
-        cons_titulo = "<b>RESUMEN MENSUAL - 4 SEMANAS (META COMPLETADA)</b>"
-    else:
-        cons_titulo = "<b>RESUMEN MENSUAL (4 SEMANAS) Y FIRMA DEL INGENIERO RESPONSABLE</b>"
+    # Calcular avance histórico acumulado por el practicante hasta la fecha de fin del presente informe
+    from app.models.asistencia import Asistencia
+    asistencias_historicas = db.query(Asistencia).filter(
+        Asistencia.empleado_id == empleado.id,
+        Asistencia.fecha <= fecha_fin,
+        Asistencia.hora_entrada != None,
+        Asistencia.hora_salida != None
+    ).all()
 
-    consolidado_elements.append(Paragraph(cons_titulo, consolidado_title_style))
+    total_historico_horas = 0.0
+    for reg in asistencias_historicas:
+        if reg.fecha.weekday() < 5:
+            if not obtener_nombre_feriado(reg.fecha):
+                dt_ent = reg.hora_entrada if isinstance(reg.hora_entrada, datetime) else datetime.combine(reg.fecha, reg.hora_entrada)
+                dt_sal = reg.hora_salida if isinstance(reg.hora_salida, datetime) else datetime.combine(reg.fecha, reg.hora_salida)
+                if dt_sal < dt_ent:
+                    dt_sal += timedelta(days=1)
+                segundos = (dt_sal - dt_ent).total_seconds()
+                horas_dia = min(6.0, round(segundos / 3600.0, 1))
+                total_historico_horas += horas_dia
 
-    consolidado_rows = [
+    total_historico_horas = round(total_historico_horas, 1)
+
+    # Cabecera formal del consolidado
+    cons_header = [
+        Paragraph("<b>RESUMEN CONSOLIDADO DE CÓMPUTO Y AVANCE DE PRÁCTICAS</b>", ParagraphStyle('ConsHead', fontName='Helvetica-Bold', fontSize=8.5, textColor=colors.white, alignment=0)),
+        Paragraph("<b>CONTROL OFICIAL OTI</b>", ParagraphStyle('ConsSubHead', fontName='Helvetica-Bold', fontSize=8, textColor=colors.HexColor("#F0C84F"), alignment=2))
+    ]
+
+    summary_table_data = [
+        cons_header,
         [
-            Paragraph("<b>Total de horas acumuladas en el período:</b>", meta_label_left),
-            Paragraph(f"<b>{total_consolidado_horas:.1f} horas</b>", meta_label_right_val)
+            Paragraph("<b>Horas Computadas en el Período del Informe (4 Semanas):</b>", meta_label_left),
+            Paragraph(f"<b>{total_consolidado_horas:.1f} hrs</b>", meta_label_right_val)
         ]
     ]
 
     if empleado.horas_meta is not None:
-        restantes = max(0.0, round(float(empleado.horas_meta) - total_consolidado_horas, 1))
-        consolidado_rows.append([
-            Paragraph("<b>Meta total de horas requeridas:</b>", meta_label_left),
-            Paragraph(f"<b>{empleado.horas_meta} horas</b>", meta_label_right_val)
+        meta_val = float(empleado.horas_meta)
+        restantes = max(0.0, round(meta_val - total_historico_horas, 1))
+        
+        # Avance acumulado vs meta del convenio (e.g. 105.0 de 640 hrs)
+        summary_table_data.append([
+            Paragraph("<b>Avance Acumulado de Prácticas Pre-Profesionales:</b>", meta_label_left),
+            Paragraph(f"<b>{total_historico_horas:.1f} de {empleado.horas_meta} hrs</b>", meta_label_right_val)
         ])
         
-        estado_meta_str = "<b>META DE HORAS COMPLETADA</b>" if meta_alcanzada else f"<b>{restantes:.1f} horas restantes</b>"
-        consolidado_rows.append([
-            Paragraph("<b>Estado / Horas restantes:</b>", meta_label_left),
-            Paragraph(estado_meta_str, meta_label_right_val)
+        # Horas restantes para la conclusión del convenio
+        restantes_str = f"<b>{restantes:.1f} hrs pendientes</b>" if restantes > 0 else "<b>0.0 hrs (Convenio Concluido)</b>"
+
+        summary_table_data.append([
+            Paragraph("<b>Horas Restantes para Cumplimentación del Convenio:</b>", meta_label_left),
+            Paragraph(restantes_str, meta_label_right_val)
+        ])
+    else:
+        summary_table_data.append([
+            Paragraph("<b>Total Acumulado de Prácticas a la Fecha:</b>", meta_label_left),
+            Paragraph(f"<b>{total_historico_horas:.1f} hrs</b>", meta_label_right_val)
         ])
 
-    t_cons = Table(consolidado_rows, colWidths=[340, 192])
+    t_cons = Table(summary_table_data, colWidths=[352, 180])
     t_cons_style = [
-        ('BACKGROUND', (0, 0), (-1, -2), colors.HexColor("#F8FAFC")),
-        ('BOX', (0, 0), (-1, -1), 0.6, colors.HexColor("#CBD5E1")),
-        ('INNERGRID', (0, 0), (-1, -1), 0.4, colors.HexColor("#E2E8F0")),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('LEFTPADDING', (0, 0), (-1, -1), 7),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 7),
+        # Cabecera Azul Institucional OTI (#3484A5)
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3484A5")),
+        ('TOPPADDING', (0, 0), (-1, 0), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('LEFTPADDING', (0, 0), (-1, 0), 8),
+        ('RIGHTPADDING', (0, 0), (-1, 0), 8),
+
+        # Cuerpo de la tabla de resumen
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#F8FAFC")),
+        ('TOPPADDING', (0, 1), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+        ('LEFTPADDING', (0, 1), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 1), (-1, -1), 8),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+
+        # Marcos exteriores e interiores negros bien definidos
+        ('BOX', (0, 0), (-1, -1), 0.8, colors.black),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.black),
     ]
-    if len(consolidado_rows) > 1:
-        # Fila final de horas restantes destacada con tono Dorado/Ámbar institucional
-        t_cons_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#FEF3C7")))
-    
+
     t_cons.setStyle(TableStyle(t_cons_style))
     consolidado_elements.append(t_cons)
     # Espaciado amplio y holgado antes de la firma del Jefe (100 pt)

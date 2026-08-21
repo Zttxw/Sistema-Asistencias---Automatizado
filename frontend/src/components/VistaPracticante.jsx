@@ -16,6 +16,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import client from '../api/client';
 import AlertMessage from './AlertMessage';
+import ModalViewerPdf from './ModalViewerPdf';
 
 export default function VistaPracticante({ user }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,6 +25,15 @@ export default function VistaPracticante({ user }) {
   const [activeTab, setActiveTab] = useState(
     ['marcar', 'registros', 'avance'].includes(currentTabParam) ? currentTabParam : 'marcar'
   );
+
+  // Visor PDF Modal State
+  const [viewerPdfState, setViewerPdfState] = useState({
+    isOpen: false,
+    pdfUrl: '',
+    title: '',
+    filename: '',
+    onDownload: null,
+  });
 
   useEffect(() => {
     if (['marcar', 'registros', 'avance'].includes(currentTabParam)) {
@@ -49,7 +59,7 @@ export default function VistaPracticante({ user }) {
     try {
       // 1. Obtener mi historial diario de asistencias
       const resAsis = await client.get('/api/asistencias/mias');
-      setAsistencias(resAsis.data || []);
+      setAsistencias(Array.isArray(resAsis.data) ? resAsis.data : []);
 
       // 2. Obtener mis semanas completadas e informe consolidado
       const resSemanas = await client.get('/api/informes-firmados/mis-semanas-completadas');
@@ -75,8 +85,10 @@ export default function VistaPracticante({ user }) {
       await client.post('/api/asistencia/marcar_propia', null, {
         params: { tipo }
       });
-      setExito(`¡Marcación de ${tipo.toUpperCase()} registrada exitosamente!`);
-      fetchDatosPracticante();
+      const horaActual = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const tipoLabel = tipo === 'entrada' ? 'Ingreso' : 'Salida';
+      setExito(`Confirmación: ¡Su ${tipoLabel} ha sido registrado exitosamente a las ${horaActual} hrs!`);
+      await fetchDatosPracticante();
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.detail || `Error al registrar su ${tipo}.`);
@@ -85,22 +97,35 @@ export default function VistaPracticante({ user }) {
     }
   };
 
-  // Obtener estado de marcación de hoy
-  const hoyStr = new Date().toISOString().split('T')[0];
-  const asistenciaHoy = asistencias.find((a) => a.fecha === hoyStr || (a.fecha && a.fecha.includes(hoyStr)));
+  // Obtener estado de marcación de hoy en zona horaria local (sv-SE = YYYY-MM-DD)
+  const safeAsistencias = Array.isArray(asistencias) ? asistencias : [];
+  const hoyStr = new Date().toLocaleDateString('sv-SE');
+  const hoyEsPE = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  const asistenciaHoy = safeAsistencias.find((a) => {
+    if (!a || !a.fecha) return false;
+    return a.fecha.includes(hoyStr) || a.fecha.includes(hoyEsPE);
+  });
 
   const entradaHoy = asistenciaHoy?.hora_entrada || null;
   const salidaHoy = asistenciaHoy?.hora_salida || null;
+  const origenEntrada = asistenciaHoy?.origen_entrada === 'automatico' ? 'Agente de Red (Wi-Fi)' : 'Marcación Web';
+  const origenSalida = asistenciaHoy?.origen_salida === 'automatico' ? 'Agente de Red (Wi-Fi)' : 'Marcación Web';
 
   // Cómputos de Horas y Progreso Meta
   const consolidado = semanasInfo?.consolidado;
-  const horasMeta = 640; // Meta estándar de prácticas
-  const horasAcumuladas = consolidado?.total_horas || 0;
+  const horasMeta = user?.empleado?.horas_meta || consolidado?.horas_meta || 640;
+
+  const horasDeBloques = (semanasInfo?.semanas || []).reduce((sum, s) => sum + (s.horas_mes || s.horas_semana || 0), 0);
+  const horasDeAsistencias = (asistencias || []).reduce((sum, a) => sum + (a.horas_computables || 0), 0);
+
+  const horasAcumuladas = Math.round((consolidado?.total_horas || horasDeBloques || horasDeAsistencias || 0) * 10) / 10;
   const porcentajeHoras = Math.min(100, Math.round((horasAcumuladas / horasMeta) * 100));
   const horasRestantes = Math.max(0, Math.round((horasMeta - horasAcumuladas) * 10) / 10);
 
+
   // Filtrar tabla diaria
-  const asistenciasFiltradas = asistencias.filter((a) => {
+  const asistenciasFiltradas = safeAsistencias.filter((a) => {
     if (!busqueda.trim()) return true;
     const q = busqueda.toLowerCase();
     return (
@@ -124,17 +149,22 @@ export default function VistaPracticante({ user }) {
 
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const blobUrl = window.URL.createObjectURL(blob);
+      const docName = nombreArchivo || `informe_asistencia_${emp?.nombre ? emp.nombre.replace(/\s+/g, '_') : 'practicante'}_${fechaInicio || 'semanal'}.pdf`;
 
-      // Abrir en nueva pestaña para visualización e impresión
-      const pdfWin = window.open(blobUrl, '_blank');
-      if (!pdfWin) {
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = nombreArchivo || 'informe_asistencia.pdf';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }
+      setViewerPdfState({
+        isOpen: true,
+        pdfUrl: blobUrl,
+        title: `Previsualización de Documento PDF ${informeId ? 'Firmado' : ''}`,
+        filename: docName,
+        onDownload: () => {
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.setAttribute('download', docName);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }
+      });
     } catch (err) {
       console.error('Error al cargar PDF:', err);
       alert('No se pudo cargar el documento PDF. Verifique que existan asistencias registradas.');
@@ -165,12 +195,12 @@ export default function VistaPracticante({ user }) {
 
       <AlertMessage message={error} onClose={() => setError(null)} />
       {exito && (
-        <div className="p-4 bg-slate-900 text-slate-100 dark:bg-zinc-900 dark:text-zinc-100 rounded-lg text-xs font-medium border border-slate-800 flex items-center justify-between shadow-2xs">
+        <div className="p-4 bg-[#1A5C50] text-white rounded-lg text-xs font-semibold border border-emerald-700 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
             <span>{exito}</span>
           </div>
-          <button onClick={() => setExito(null)} className="font-bold text-slate-400 hover:text-white">✕</button>
+          <button onClick={() => setExito(null)} className="font-bold text-emerald-200 hover:text-white cursor-pointer">✕</button>
         </div>
       )}
 
@@ -200,15 +230,29 @@ export default function VistaPracticante({ user }) {
               <div className="space-y-2 bg-slate-50 dark:bg-zinc-950 p-4 rounded-lg border border-slate-200 dark:border-zinc-800 text-xs font-mono">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500 dark:text-zinc-400">Hora Entrada Registrada:</span>
-                  <span className={`font-bold ${entradaHoy ? 'text-[#3484A5]' : 'text-slate-400'}`}>
-                    {entradaHoy || 'Pendiente de marcado'}
-                  </span>
+                  <div className="text-right">
+                    <span className={`font-bold block ${entradaHoy ? 'text-[#3484A5]' : 'text-slate-400'}`}>
+                      {entradaHoy || 'Pendiente de marcado'}
+                    </span>
+                    {entradaHoy && (
+                      <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+                        ({origenEntrada})
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-zinc-800">
                   <span className="text-slate-500 dark:text-zinc-400">Hora Salida Registrada:</span>
-                  <span className={`font-bold ${salidaHoy ? 'text-[#3484A5]' : 'text-slate-400'}`}>
-                    {salidaHoy || 'Pendiente de marcado'}
-                  </span>
+                  <div className="text-right">
+                    <span className={`font-bold block ${salidaHoy ? 'text-[#3484A5]' : 'text-slate-400'}`}>
+                      {salidaHoy || 'Pendiente de marcado'}
+                    </span>
+                    {salidaHoy && (
+                      <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+                        ({origenSalida})
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -222,8 +266,13 @@ export default function VistaPracticante({ user }) {
                       ? 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border border-slate-200 dark:border-zinc-800 cursor-not-allowed'
                       : 'bg-[#3484A5] hover:bg-[#2b6f8b] text-white border border-[#2b6f8b]'
                   }`}
+                  title={entradaHoy ? `Ingreso ya registrado a las ${entradaHoy} hrs` : 'Registrar hora de ingreso'}
                 >
-                  {submittingMarcacion ? 'Registrando...' : entradaHoy ? 'Ingreso Registrado' : 'MARCAR INGRESO'}
+                  {submittingMarcacion
+                    ? 'Registrando...'
+                    : entradaHoy
+                    ? `Ingreso Registrado (${entradaHoy})`
+                    : 'MARCAR INGRESO'}
                 </button>
 
                 <button
@@ -234,11 +283,28 @@ export default function VistaPracticante({ user }) {
                       ? 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border border-slate-200 dark:border-zinc-800 cursor-not-allowed'
                       : 'bg-slate-800 dark:bg-zinc-700 hover:bg-slate-700 text-white border border-slate-700'
                   }`}
+                  title={salidaHoy ? `Salida ya registrada a las ${salidaHoy} hrs` : !entradaHoy ? 'Debe registrar su ingreso primero' : 'Registrar hora de salida'}
                 >
-                  {submittingMarcacion ? 'Registrando...' : salidaHoy ? 'Jornada Concluida' : 'MARCAR SALIDA'}
+                  {submittingMarcacion
+                    ? 'Registrando...'
+                    : salidaHoy
+                    ? `Salida Registrada (${salidaHoy})`
+                    : 'MARCAR SALIDA'}
                 </button>
               </div>
             </div>
+
+            {/* Aviso explicativo si ya fue detectado por el Agente o registrado */}
+            {entradaHoy && (
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 rounded-lg text-xs font-mono text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span>
+                  {salidaHoy
+                    ? `Jornada del día de hoy completada. Registros: Ingreso (${entradaHoy}) | Salida (${salidaHoy}).`
+                    : `Su ingreso del día de hoy ya fue registrado a las ${entradaHoy} hrs (${origenEntrada}). Solo puede registrar su marca de salida al finalizar su horario.`}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Tarjeta de Resumen Rápido de Horas */}
@@ -413,12 +479,12 @@ export default function VistaPracticante({ user }) {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-slate-50 dark:bg-zinc-850 rounded-lg border border-slate-200 dark:border-zinc-800 text-center">
                   <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Bloques Concluidos</span>
-                  <span className="text-2xl font-bold text-[#3484A5] font-mono">{semanasInfo.semanas.length}</span>
+                  <span className="text-2xl font-bold text-[#3484A5] font-mono">{(Array.isArray(semanasInfo?.semanas) ? semanasInfo.semanas : []).length}</span>
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-zinc-850 rounded-lg border border-slate-200 dark:border-zinc-800 text-center">
                   <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Informes Firmados</span>
                   <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {semanasInfo.semanas.filter((s) => s.firmado).length}
+                    {(Array.isArray(semanasInfo?.semanas) ? semanasInfo.semanas : []).filter((s) => s && s.firmado).length}
                   </span>
                 </div>
               </div>
@@ -499,6 +565,15 @@ export default function VistaPracticante({ user }) {
           </div>
         </div>
       )}
+
+      <ModalViewerPdf
+        isOpen={viewerPdfState.isOpen}
+        onClose={() => setViewerPdfState((prev) => ({ ...prev, isOpen: false }))}
+        pdfUrl={viewerPdfState.pdfUrl}
+        title={viewerPdfState.title}
+        filename={viewerPdfState.filename}
+        onDownload={viewerPdfState.onDownload}
+      />
     </div>
   );
 }

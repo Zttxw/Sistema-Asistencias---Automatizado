@@ -14,7 +14,7 @@ export default function VisitanteHome({ onOpenLogin }) {
     setError(null);
     try {
       const res = await client.get('/api/asistencias/hoy');
-      setAsistencias(res.data);
+      setAsistencias(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Error al cargar asistencias:', err);
       setError('No se pudieron cargar las asistencias del día.');
@@ -27,8 +27,9 @@ export default function VisitanteHome({ onOpenLogin }) {
     fetchAsistenciasHoy();
   }, []);
 
-  const presentesCount = asistencias.filter((a) => !a.hora_salida).length;
-  const completadosCount = asistencias.filter((a) => a.hora_salida).length;
+  const safeAsistencias = Array.isArray(asistencias) ? asistencias : [];
+  const presentesCount = safeAsistencias.filter((a) => a && !a.hora_salida).length;
+  const completadosCount = safeAsistencias.filter((a) => a && a.hora_salida).length;
 
   return (
     <div className="w-screen h-screen m-0 p-0 bg-gray-50 dark:bg-black flex flex-col lg:flex-row overflow-hidden text-gray-900 dark:text-white font-sans">
