@@ -136,8 +136,8 @@ export default function InformesSemanales() {
     }
   }, [empSeleccionado]);
 
-  // Previsualizar / Descargar PDF en el visor interno para evitar bloqueos del navegador
-  const handleDescargarLimpio = async (semana) => {
+  // Previsualizar PDF en el visor interno y permitir Firma Perú directo desde la vista previa
+  const handleDescargarLimpio = async (semana, autoTriggerFirma = false) => {
     try {
       const empObj = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
       const nomLimpio = empObj ? empObj.nombre.replace(/\s+/g, '_') : 'Practicante';
@@ -162,8 +162,14 @@ export default function InformesSemanales() {
           document.body.appendChild(link);
           link.click();
           link.remove();
-        }
+        },
+        onFirmaPeru: !semana.firmado ? () => handleFirmarDigitalmente(semana) : null,
+        firmaEstadoText: `Documento de ${empObj?.nombre || 'Practicante'} listo para firma digital oficial.`,
       });
+
+      if (autoTriggerFirma && !semana.firmado) {
+        handleFirmarDigitalmente(semana);
+      }
     } catch (err) {
       console.error(err);
       setError('Error al generar el documento PDF preliminar.');
@@ -585,9 +591,9 @@ export default function InformesSemanales() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 flex-wrap">
-                          {/* Botón de Firma Perú (Firma Digital Automática) */}
+                          {/* Botón de Firma Perú (Previsualiza y activa Firma Perú) */}
                           <button
-                            onClick={() => handleFirmarDigitalmente(semana)}
+                            onClick={() => handleDescargarLimpio(semana, true)}
                             disabled={firmaLoading}
                             className="px-3 py-1.5 bg-gradient-to-r from-sky-600 to-indigo-700 hover:from-sky-500 hover:to-indigo-600 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
                           >
@@ -597,7 +603,7 @@ export default function InformesSemanales() {
 
                           {/* Botón Descargar / Previsualizar PDF */}
                           <button
-                            onClick={() => handleDescargarLimpio(semana)}
+                            onClick={() => handleDescargarLimpio(semana, false)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#3484A5]/40 hover:bg-[#3484A5]/10 text-[#3484A5] dark:text-sky-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                             title="Previsualizar PDF en pantalla completa para revisar o guardar"
                           >
@@ -642,6 +648,9 @@ export default function InformesSemanales() {
         title={viewerPdfState.title}
         filename={viewerPdfState.filename}
         onDownload={viewerPdfState.onDownload}
+        onFirmaPeru={viewerPdfState.onFirmaPeru}
+        firmaLoading={firmaLoading}
+        firmaEstadoText={viewerPdfState.firmaEstadoText}
       />
     </div>
   );

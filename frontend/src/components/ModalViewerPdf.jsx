@@ -1,8 +1,18 @@
 import React from 'react';
 import Modal from './Modal';
-import { ExternalLink, Download } from 'lucide-react';
+import { ExternalLink, Download, ShieldCheck, Loader2 } from 'lucide-react';
 
-export default function ModalViewerPdf({ isOpen, onClose, pdfUrl, title, filename, onDownload }) {
+export default function ModalViewerPdf({
+  isOpen,
+  onClose,
+  pdfUrl,
+  title,
+  filename,
+  onDownload,
+  onFirmaPeru,
+  firmaLoading = false,
+  firmaEstadoText = '',
+}) {
   if (!isOpen || !pdfUrl) return null;
 
   // Sanitizar URL removiendo fragmentos en blob URLs que fallan en Chromium
@@ -20,8 +30,46 @@ export default function ModalViewerPdf({ isOpen, onClose, pdfUrl, title, filenam
       maxWidth="max-w-5xl"
     >
       <div className="space-y-3 font-sans">
+        {/* Banner Integrado de Firma Perú si está disponible la acción de firmar */}
+        {onFirmaPeru && (
+          <div className="p-3.5 bg-gradient-to-r from-sky-900/90 via-indigo-900/90 to-slate-900 text-white rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-sky-500/30 shadow-lg">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-sky-500/20 rounded-lg border border-sky-400/30">
+                <ShieldCheck className="w-6 h-6 text-sky-300 animate-pulse" />
+              </div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-sky-200 block">
+                  Firma Digital Oficial con Firma Perú
+                </span>
+                <span className="text-[11px] text-sky-100/80 block">
+                  {firmaEstadoText || 'Examine el informe PDF en la vista previa y proceda con su firma digital.'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onFirmaPeru}
+              disabled={firmaLoading}
+              className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-2 shadow-md cursor-pointer disabled:opacity-50"
+            >
+              {firmaLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Abriendo Firma Perú...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4 text-sky-100" />
+                  <span>Firmar Ahora con Firma Perú</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Visor PDF Nivel Navegador */}
-        <div className="relative w-full h-[76vh] rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-950 shadow-inner">
+        <div className="relative w-full h-[70vh] rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-950 shadow-inner">
           <object
             data={cleanPdfUrl}
             type="application/pdf"
@@ -35,7 +83,7 @@ export default function ModalViewerPdf({ isOpen, onClose, pdfUrl, title, filenam
           </object>
         </div>
 
-        {/* Botones de Acción */}
+        {/* Botones de Acción de Pie de Página */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 font-mono text-xs">
           <div className="flex items-center space-x-2">
             <button

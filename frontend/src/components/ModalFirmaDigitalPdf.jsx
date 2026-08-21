@@ -90,7 +90,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
     }
   }, [isOpen, empId]);
 
-  const handleDescargarPdfLimpio = async (semana) => {
+  const handleDescargarPdfLimpio = async (semana, autoTriggerFirma = false) => {
     try {
       const empSel = empleados.find((e) => e.id === parseInt(empId, 10));
       const nomLimpio = empSel ? empSel.nombre.replace(/\s+/g, '_') : 'Practicante';
@@ -115,8 +115,14 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
           document.body.appendChild(link);
           link.click();
           link.remove();
-        }
+        },
+        onFirmaPeru: !semana.firmado ? () => handleFirmarDigitalmente(semana) : null,
+        firmaEstadoText: `Documento de ${empSel?.nombre || 'Practicante'} listo para firma digital oficial.`,
       });
+
+      if (autoTriggerFirma && !semana.firmado) {
+        handleFirmarDigitalmente(semana);
+      }
     } catch (err) {
       console.error(err);
       setError('No se pudo abrir el informe PDF preliminar.');
@@ -348,7 +354,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
                     ) : (
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <button
-                          onClick={() => handleFirmarDigitalmente(semana)}
+                          onClick={() => handleDescargarPdfLimpio(semana, true)}
                           disabled={firmaLoading}
                           className="px-2.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
                         >
@@ -357,7 +363,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
                         </button>
 
                         <button
-                          onClick={() => handleDescargarPdfLimpio(semana)}
+                          onClick={() => handleDescargarPdfLimpio(semana, false)}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-[#3484A5]/40 hover:bg-[#3484A5]/10 text-[#3484A5] dark:text-sky-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                           title="Previsualizar PDF en pantalla completa para revisar o guardar"
                         >
@@ -393,6 +399,9 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
         title={viewerPdfState.title}
         filename={viewerPdfState.filename}
         onDownload={viewerPdfState.onDownload}
+        onFirmaPeru={viewerPdfState.onFirmaPeru}
+        firmaLoading={firmaLoading}
+        firmaEstadoText={viewerPdfState.firmaEstadoText}
       />
     </Modal>
   );
