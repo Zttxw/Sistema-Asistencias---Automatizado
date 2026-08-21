@@ -28,10 +28,13 @@ export default function VistaPresenciaDia({ asistencias = [], empleados = [], fe
     }
   };
 
+  const safeEmpleados = Array.isArray(empleados) ? empleados : [];
+  const safeAsistencias = Array.isArray(asistencias) ? asistencias : [];
+
   // Mapear el estado del día de TODOS los empleados
-  const listaDia = empleados.map((emp) => {
-    const asis = asistencias.find(
-      (a) => a.empleado.trim().toLowerCase() === emp.nombre.trim().toLowerCase()
+  const listaDia = safeEmpleados.map((emp) => {
+    const asis = safeAsistencias.find(
+      (a) => a && a.empleado && a.empleado.trim().toLowerCase() === (emp.nombre || '').trim().toLowerCase()
     );
 
     const enOficina = asis ? esEstaEnOficina(asis) : false;

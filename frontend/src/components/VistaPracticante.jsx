@@ -59,7 +59,7 @@ export default function VistaPracticante({ user }) {
     try {
       // 1. Obtener mi historial diario de asistencias
       const resAsis = await client.get('/api/asistencias/mias');
-      setAsistencias(resAsis.data || []);
+      setAsistencias(Array.isArray(resAsis.data) ? resAsis.data : []);
 
       // 2. Obtener mis semanas completadas e informe consolidado
       const resSemanas = await client.get('/api/informes-firmados/mis-semanas-completadas');
@@ -98,11 +98,12 @@ export default function VistaPracticante({ user }) {
   };
 
   // Obtener estado de marcación de hoy en zona horaria local (sv-SE = YYYY-MM-DD)
+  const safeAsistencias = Array.isArray(asistencias) ? asistencias : [];
   const hoyStr = new Date().toLocaleDateString('sv-SE');
   const hoyEsPE = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-  const asistenciaHoy = asistencias.find((a) => {
-    if (!a.fecha) return false;
+  const asistenciaHoy = safeAsistencias.find((a) => {
+    if (!a || !a.fecha) return false;
     return a.fecha.includes(hoyStr) || a.fecha.includes(hoyEsPE);
   });
 
@@ -124,7 +125,7 @@ export default function VistaPracticante({ user }) {
 
 
   // Filtrar tabla diaria
-  const asistenciasFiltradas = asistencias.filter((a) => {
+  const asistenciasFiltradas = safeAsistencias.filter((a) => {
     if (!busqueda.trim()) return true;
     const q = busqueda.toLowerCase();
     return (
@@ -478,12 +479,12 @@ export default function VistaPracticante({ user }) {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-slate-50 dark:bg-zinc-850 rounded-lg border border-slate-200 dark:border-zinc-800 text-center">
                   <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Bloques Concluidos</span>
-                  <span className="text-2xl font-bold text-[#3484A5] font-mono">{semanasInfo.semanas.length}</span>
+                  <span className="text-2xl font-bold text-[#3484A5] font-mono">{(Array.isArray(semanasInfo?.semanas) ? semanasInfo.semanas : []).length}</span>
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-zinc-850 rounded-lg border border-slate-200 dark:border-zinc-800 text-center">
                   <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Informes Firmados</span>
                   <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {semanasInfo.semanas.filter((s) => s.firmado).length}
+                    {(Array.isArray(semanasInfo?.semanas) ? semanasInfo.semanas : []).filter((s) => s && s.firmado).length}
                   </span>
                 </div>
               </div>

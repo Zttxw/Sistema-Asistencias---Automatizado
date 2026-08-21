@@ -64,10 +64,10 @@ export default function Usuarios() {
         client.get('/api/permisos'),
         client.get('/api/empleados').catch(() => ({ data: [] })),
       ]);
-      setUsuarios(resUsers.data);
-      setRoles(resRoles.data);
-      setPermisos(resPermisos.data);
-      setEmpleados(resEmp.data);
+      setUsuarios(Array.isArray(resUsers.data) ? resUsers.data : []);
+      setRoles(Array.isArray(resRoles.data) ? resRoles.data : []);
+      setPermisos(Array.isArray(resPermisos.data) ? resPermisos.data : []);
+      setEmpleados(Array.isArray(resEmp.data) ? resEmp.data : []);
     } catch (err) {
       console.error(err);
       setError('Error al cargar la información de usuarios y roles.');

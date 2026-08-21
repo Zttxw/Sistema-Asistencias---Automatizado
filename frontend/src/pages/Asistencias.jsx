@@ -78,14 +78,14 @@ export default function Asistencias() {
     setError(null);
     try {
       const resEmp = await client.get('/api/empleados').catch(() => ({ data: [] }));
-      setEmpleados(resEmp.data);
+      setEmpleados(Array.isArray(resEmp.data) ? resEmp.data : []);
 
       if (selectedEmpleadoId && selectedEmpleadoId !== 'TODOS') {
         const resAsis = await client.get(`/api/asistencias/practicante/${selectedEmpleadoId}`);
-        setAsistencias(resAsis.data);
+        setAsistencias(Array.isArray(resAsis.data) ? resAsis.data : []);
       } else {
         const resAsis = await client.get('/api/asistencias', { params: { fecha } });
-        setAsistencias(resAsis.data);
+        setAsistencias(Array.isArray(resAsis.data) ? resAsis.data : []);
       }
       setCurrentPage(1);
     } catch (err) {
@@ -146,7 +146,8 @@ export default function Asistencias() {
     });
     try {
       const res = await client.get('/api/empleados');
-      const activos = res.data.filter((e) => e.activo);
+      const lista = Array.isArray(res.data) ? res.data : [];
+      const activos = lista.filter((e) => e && e.activo);
       setEmpleadosActivos(activos);
       if (activos.length > 0) {
         setManualForm((prev) => ({ ...prev, empleado_id: activos[0].id }));

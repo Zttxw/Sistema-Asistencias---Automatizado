@@ -27,15 +27,18 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
     }
   };
 
+  const safeEmpleados = Array.isArray(empleados) ? empleados : [];
+  const safeAsistencias = Array.isArray(asistencias) ? asistencias : [];
+
   // 1. Métricas no redundantes
-  const totalEmpleados = empleados.length;
-  const presentesHoy = asistencias.filter(esEstaEnOficina);
+  const totalEmpleados = safeEmpleados.length;
+  const presentesHoy = safeAsistencias.filter(esEstaEnOficina);
   const pctPresencia = totalEmpleados > 0 ? Math.round((presentesHoy.length / totalEmpleados) * 100) : 0;
 
   // 2. Mapeo único por practicante
-  const empleadosData = empleados.map((emp) => {
-    const asisEmp = asistencias.find(
-      (a) => a.empleado && a.empleado.trim().toLowerCase() === emp.nombre.trim().toLowerCase()
+  const empleadosData = safeEmpleados.map((emp) => {
+    const asisEmp = safeAsistencias.find(
+      (a) => a && a.empleado && a.empleado.trim().toLowerCase() === (emp.nombre || '').trim().toLowerCase()
     );
     const enOficina = asisEmp ? esEstaEnOficina(asisEmp) : false;
     const meta = emp.horas_meta || 640;

@@ -48,7 +48,8 @@ export default function InformesSemanales() {
   const fetchEmpleados = async () => {
     try {
       const res = await client.get('/api/empleados/');
-      const activos = res.data.filter((e) => e.activo !== false);
+      const lista = Array.isArray(res.data) ? res.data : [];
+      const activos = lista.filter((e) => e && e.activo !== false);
       setEmpleados(activos);
 
       const resMe = await client.get('/api/auth/me');
@@ -236,9 +237,11 @@ export default function InformesSemanales() {
     }
   };
 
-  const empActual = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
-  const firmadasCount = semanas.filter((s) => s.firmado).length;
-  const pendientesCount = semanas.filter((s) => !s.firmado).length;
+  const safeEmpleados = Array.isArray(empleados) ? empleados : [];
+  const safeSemanas = Array.isArray(semanas) ? semanas : [];
+  const empActual = safeEmpleados.find((e) => e && e.id === parseInt(empSeleccionado, 10));
+  const firmadasCount = safeSemanas.filter((s) => s && s.firmado).length;
+  const pendientesCount = safeSemanas.filter((s) => s && !s.firmado).length;
   const infoConsolidado = consolidado || armarConsolidadoFallback(semanas);
 
   // Cálculos de horas
@@ -249,7 +252,8 @@ export default function InformesSemanales() {
 
   // Filtrado de semanas
   const semanasFiltradas = useMemo(() => {
-    return semanas.filter((s) => {
+    const safeList = Array.isArray(semanas) ? semanas : [];
+    return safeList.filter((s) => {
       if (filtroEstado === 'pendientes' && s.firmado) return false;
       if (filtroEstado === 'firmadas' && !s.firmado) return false;
 
