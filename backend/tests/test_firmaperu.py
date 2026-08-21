@@ -4,6 +4,7 @@ import io
 import json
 import base64
 import unittest
+import unittest.mock
 from datetime import date, datetime, timedelta, timezone
 
 from cryptography import x509
@@ -93,6 +94,9 @@ def generar_pdf_firmado_mock_pyhanko() -> bytes:
 class TestFirmaPeruIntegration(unittest.TestCase):
 
     def setUp(self):
+        self.patcher = unittest.mock.patch('app.routers.firmaperu.obtener_jwt_firmaperu', return_value='TEST_JWT_TOKEN_PCM_123')
+        self.mock_jwt = self.patcher.start()
+
         Base.metadata.create_all(bind=engine)
         db = TestingSessionLocal()
         try:
@@ -134,6 +138,7 @@ class TestFirmaPeruIntegration(unittest.TestCase):
         self.empleado_b_id = res_emp_b.json()["id"]
 
     def tearDown(self):
+        self.patcher.stop()
         Base.metadata.drop_all(bind=engine)
 
     def test_utilidad_pdf_validation_con_pyhanko(self):
@@ -427,6 +432,35 @@ class TestFirmaPeruIntegration(unittest.TestCase):
         res_desc = self.client.get(f"/api/informes-firmados/{inf_b_id}/descargar", headers=headers_a)
         self.assertEqual(res_desc.status_code, 403)
         self.assertIn("No cuenta con autorización para descargar el informe firmado de otro usuario", res_desc.json()["detail"])
+
+    def test_firmaperu_auth_servicio_carga_credenciales_y_jwt(self):
+        from app.services.firmaperu_auth import cargar_credenciales_firmaperu, obtener_jwt_firmaperu, _token_cache
+
+        # Reset cache for testing
+        _token_cache["token"] = None
+        _token_cache["expires_at"] = 0
+
+        c_id, c_sec, t_url = cargar_credenciales_firmaperu()
+        self.assertIsNotNone(c_id)
+        self.assertIsNotNone(c_sec)
+        self.assertIn("apps.firmaperu.gob.pe", t_url)
+
+        # Mock httpx Client context manager
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = '"JWT_TOKEN_DESDE_SERVICE_MOCK"'
+
+        mock_client = unittest.mock.MagicMock()
+        mock_client.__enter__.return_value = mock_client
+        mock_client.post.return_value = mock_response
+
+        with unittest.mock.patch("app.services.firmaperu_auth.httpx.Client", return_value=mock_client):
+            token = obtener_jwt_firmaperu()
+            self.assertEqual(token, "JWT_TOKEN_DESDE_SERVICE_MOCK")
+
+            # Test cache hit
+            token_cached = obtener_jwt_firmaperu()
+            self.assertEqual(token_cached, "JWT_TOKEN_DESDE_SERVICE_MOCK")
 
 
 if __name__ == "__main__":

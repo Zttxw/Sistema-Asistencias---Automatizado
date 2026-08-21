@@ -28,6 +28,8 @@ dist/
 *.env
 !.env.example
 !**/.env.example
+fwAuthorization.json
+**/fwAuthorization.json
 
 # Logs
 *.log

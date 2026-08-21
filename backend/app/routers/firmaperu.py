@@ -15,6 +15,7 @@ from app.core.deps import get_current_user
 from app.models.usuario import Usuario
 from app.models.firma_token import FirmaToken
 from app.utils.pdf_validation import validar_firma_digital_pdf
+from app.services.firmaperu_auth import obtener_jwt_firmaperu
 
 STORAGE_TMP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "storage", "tmp_firmas")
 
@@ -144,6 +145,16 @@ async def obtener_parametros_firma(
 
     base_url = obtener_base_url_publica(request)
 
+    # Obtener token JWT oficial de Firma Perú (PCM) con manejo de errores estricto
+    try:
+        jwt_token = obtener_jwt_firmaperu()
+    except Exception as e:
+        print(f"[FirmaPeru /param ERROR] No se pudo obtener el token JWT: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Error al obtener token de autorización con Firma Perú: {e}"
+        )
+
     # Estructura oficial de parámetros de Firma Perú (PAdES)
     params_dict = {
         "signatureFormat": "PAdES",
@@ -155,7 +166,7 @@ async def obtener_parametros_firma(
         "visiblePosition": True,
         "signatureReason": "Conformidad de informe mensual de prácticas pre-profesionales",
         "uploadDocumentSigned": f"{base_url}/api/firmaperu/subir-firmado/{ftoken.token}",
-        "token": ""  # PENDIENTE: Credenciales PCM/SGTD para ambiente de producción
+        "token": jwt_token
     }
 
     json_str = json.dumps(params_dict)

@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     # PENDIENTE: Ruta al archivo .pem/.crt con los certificados raíz oficiales de RENIEC/PCM para producción
     FIRMAPERU_TRUST_ROOTS_PATH: Optional[str] = None
 
+    # Configuración de Credenciales de Firma Perú (PCM / SGTD)
+    FIRMAPERU_CLIENT_ID: Optional[str] = None
+    FIRMAPERU_CLIENT_SECRET: Optional[str] = None
+    FIRMAPERU_TOKEN_URL: str = "https://apps.firmaperu.gob.pe/admin/api/security/generate-token"
+    FIRMAPERU_AUTH_FILE_PATH: Optional[str] = "fwAuthorization.json"
+
     # URL base pública del servidor accesible desde la red local (ej. http://10.0.50.30:8080)
     PUBLIC_URL: Optional[str] = None
 
