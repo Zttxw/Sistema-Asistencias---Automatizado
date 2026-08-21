@@ -543,11 +543,12 @@ export default function InformesSemanales() {
                           <button
                             onClick={() => handleDescargarLimpio(semana)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#3484A5]/40 hover:bg-[#3484A5]/10 text-[#3484A5] dark:text-sky-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                            title="Descargar PDF borrador directo a su computadora"
+                            title="Previsualizar PDF en pantalla completa para revisar o guardar"
                           >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Descargar PDF</span>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Ver / Previsualizar PDF</span>
                           </button>
+
 
                           {/* Botón Principal: Subir Firmado */}
                           <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#3484A5] hover:bg-[#2b6f8b] text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer">
