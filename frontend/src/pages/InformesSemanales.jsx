@@ -134,7 +134,7 @@ export default function InformesSemanales() {
     }
   }, [empSeleccionado]);
 
-  // Descargar directo el PDF preliminar sin abrir modal para mayor rapidez
+  // Previsualizar / Descargar PDF en el visor interno para evitar bloqueos del navegador
   const handleDescargarLimpio = async (semana) => {
     try {
       const empObj = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
@@ -147,18 +147,27 @@ export default function InformesSemanales() {
       });
 
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      
+      setViewerPdfState({
+        isOpen: true,
+        pdfUrl: url,
+        title: `Vista Previa del Informe — Mes ${semana.numero_mes || semana.numero_semana} (${semana.rango_str})`,
+        filename,
+        onDownload: () => {
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', filename);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }
+      });
     } catch (err) {
       console.error(err);
-      setError('Error al descargar el documento PDF preliminar.');
+      setError('Error al generar el documento PDF preliminar.');
     }
   };
+
 
   // Previsualizar PDF firmado guardado en el visor modal
   const handleVerFirmado = async (informeId, rangoStr) => {
