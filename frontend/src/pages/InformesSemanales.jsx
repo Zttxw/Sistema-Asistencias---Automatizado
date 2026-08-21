@@ -619,7 +619,6 @@ export default function InformesSemanales() {
                           </label>
                         </div>
                       )}
-                      )}
                     </div>
                   </div>
                 ))}
