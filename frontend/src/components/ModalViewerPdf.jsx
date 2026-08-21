@@ -12,17 +12,26 @@ export default function ModalViewerPdf({ isOpen, onClose, pdfUrl, title }) {
       maxWidth="max-w-5xl"
     >
       <div className="space-y-3">
-        {/* Visor Iframe Limpio e Ultra-Minimalista */}
+        {/* Visor PDF Embed/Object Nivel Navegador */}
         <div className="relative w-full h-[78vh] rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-950 shadow-inner">
-          <iframe
-            src={`${pdfUrl}#toolbar=1&navpanes=0`}
-            title="Previsualización de Documento PDF"
-            className="w-full h-full border-0"
-          />
+          <object
+            data={`${pdfUrl}#toolbar=1&navpanes=0`}
+            type="application/pdf"
+            className="w-full h-full rounded-xl"
+          >
+            <iframe
+              src={`${pdfUrl}#toolbar=1&navpanes=0`}
+              title="Previsualización de Documento PDF"
+              className="w-full h-full border-0"
+            />
+          </object>
         </div>
 
         {/* Botón de Cierre */}
-        <div className="flex items-center justify-end pt-1">
+        <div className="flex items-center justify-between pt-1 font-mono text-xs">
+          <span className="text-[11px] text-slate-400">
+            Impresión y guardado disponibles en la barra superior del visor.
+          </span>
           <button
             type="button"
             onClick={onClose}
