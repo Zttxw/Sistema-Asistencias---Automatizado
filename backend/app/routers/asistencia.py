@@ -220,7 +220,8 @@ def descargar_plantilla_migracion(formato: str = "excel"):
 async def importar_asistencias_excel(
     file: UploadFile = File(...),
     fecha_limite: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Procesa la carga masiva de asistencias históricas desde un archivo Excel (.xlsx / .xls) o CSV (.csv).
@@ -240,7 +241,7 @@ async def importar_asistencias_excel(
             fecha_limite_dt = date(2099, 12, 31)
 
         file_content = await file.read()
-        res = procesar_migracion_archivo(db, file_content, filename, fecha_limite_dt)
+        res = procesar_migracion_archivo(db, file_content, filename, fecha_limite_dt, usuario=current_user)
         if not res.get("ok", True):
             raise HTTPException(status_code=400, detail=res.get("error", "Error procesando el archivo de migración."))
         return res
@@ -255,7 +256,8 @@ def purgar_asistencias_migracion(
     empleado_id: Optional[int] = Query(None, description="ID del practicante a purgar (opcional)"),
     fecha_inicio: Optional[date] = Query(None, description="Fecha de inicio para purgar (YYYY-MM-DD)"),
     fecha_fin: Optional[date] = Query(None, description="Fecha de fin para purgar (YYYY-MM-DD)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Elimina masivamente únicamente las asistencias registradas a través de migración Excel/CSV.
@@ -263,7 +265,7 @@ def purgar_asistencias_migracion(
     """
     from app.crud.crud_migracion import purgar_asistencias_migradas
     try:
-        res = purgar_asistencias_migradas(db, empleado_id, fecha_inicio, fecha_fin)
+        res = purgar_asistencias_migradas(db, empleado_id, fecha_inicio, fecha_fin, usuario=current_user)
         return res
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
@@ -283,12 +285,12 @@ def obtener_auditoria_asistencias(
 ):
     """
     Retorna el registro de auditoría de modificaciones de asistencias.
-    Restringido únicamente a usuarios con rol Admin.
+    Restringido a Administradores y Jefes de Oficina.
     """
-    if not current_user.rol or current_user.rol.nombre != "Admin":
+    if not current_user.rol or current_user.rol.nombre not in ["Admin", "Jefe de Oficina"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acceso denegado: El historial de auditoría es exclusivo para Administradores."
+            detail="Acceso denegado: El historial de auditoría es exclusivo para Administradores y Jefes de Oficina."
         )
 
     from app.crud.crud_auditoria import get_auditorias_asistencia
@@ -300,6 +302,3 @@ def obtener_auditoria_asistencias(
         fecha_fin=fecha_fin,
         empleado_id=empleado_id
     )
-
-
-

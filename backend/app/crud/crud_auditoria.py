@@ -44,7 +44,8 @@ def get_auditorias_asistencia(
     fecha_fin: Optional[date] = None,
     empleado_id: Optional[int] = None
 ) -> List[AuditoriaAsistenciaItem]:
-    query = db.query(AuditoriaAsistencia).join(Empleado, AuditoriaAsistencia.empleado_id == Empleado.id)
+    query = db.query(AuditoriaAsistencia).outerjoin(Empleado, AuditoriaAsistencia.empleado_id == Empleado.id)
+
 
     if fecha_inicio:
         query = query.filter(AuditoriaAsistencia.fecha_asistencia >= fecha_inicio)
