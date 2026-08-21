@@ -93,7 +93,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
     try {
       const empSel = empleados.find((e) => e.id === parseInt(empId, 10));
       const nomLimpio = empSel ? empSel.nombre.replace(/\s+/g, '_') : 'Practicante';
-      const filename = `informe_semanal_${nomLimpio}_${semana.semana_inicio}_al_${semana.semana_fin}.pdf`;
+      const filename = `informe_mes_${semana.numero_mes || semana.numero_semana}_${nomLimpio}_${semana.semana_inicio}_al_${semana.semana_fin}.pdf`;
 
       const res = await client.get(`/api/empleados/${empId}/informe_pdf`, {
         params: { fecha_inicio: semana.semana_inicio, fecha_fin: semana.semana_fin, _t: Date.now() },
@@ -101,18 +101,27 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
       });
 
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+
+      setViewerPdfState({
+        isOpen: true,
+        pdfUrl: url,
+        title: `Vista Previa del Informe — Mes ${semana.numero_mes || semana.numero_semana} (${semana.rango_str})`,
+        filename,
+        onDownload: () => {
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', filename);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }
+      });
     } catch (err) {
       console.error(err);
-      setError('No se pudo descargar el informe PDF preliminar.');
+      setError('No se pudo abrir el informe PDF preliminar.');
     }
   };
+
 
   const handleDescargarPdfFirmado = async (informeId, semanaStr) => {
     try {
