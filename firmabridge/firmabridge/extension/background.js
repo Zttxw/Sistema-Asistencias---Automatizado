@@ -76,7 +76,10 @@ chrome.webNavigation.onBeforeNavigate.addListener(
     );
   },
   {
-    url: [{ urlContains: "FirmaPeruWeb.application" }]
+    url: [
+      { urlContains: "FirmaPeruWeb.application" },
+      { urlContains: "clickonce" }
+    ]
   }
 );
 

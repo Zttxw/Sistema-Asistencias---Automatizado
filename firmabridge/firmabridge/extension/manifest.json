@@ -9,7 +9,7 @@
     "webNavigation"
   ],
   "host_permissions": [
-    "https://resources.firmaperu.gob.pe/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"
