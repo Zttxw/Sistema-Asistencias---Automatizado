@@ -90,13 +90,19 @@ namespace FirmaBridge
                 {
                     try
                     {
+                        string workDir = Path.GetDirectoryName(jarPath);
+                        string libJar = Path.Combine(workDir, "firmaperulib-1.1.0.jar");
+                        string javaArgs = File.Exists(libJar)
+                            ? "-cp \"" + jarPath + ";" + libJar + "\" pe.gob.pcm.sgtd.firmaperu.clienteweb.main.Main " + port
+                            : "-jar \"" + jarPath + "\" " + port;
+
                         ProcessStartInfo psiJava = new ProcessStartInfo
                         {
                             FileName = javaExePath,
-                            Arguments = "-jar \"" + jarPath + "\" " + port,
+                            Arguments = javaArgs,
                             UseShellExecute = false,
                             CreateNoWindow = true,
-                            WorkingDirectory = Path.GetDirectoryName(jarPath)
+                            WorkingDirectory = workDir
                         };
                         Process.Start(psiJava);
                     }
