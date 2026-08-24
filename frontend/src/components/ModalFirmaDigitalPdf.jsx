@@ -67,7 +67,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
   };
 
   const cargarSemanasCompletadas = async (selectedId) => {
-    if (!selectedId) return;
+    if (!selectedId) return [];
     setLoading(true);
     setError(null);
     try {
@@ -76,9 +76,11 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
       const infoConsolidado = Array.isArray(res.data) ? armarConsolidadoFallback(listaSemanas) : (res.data.consolidado || armarConsolidadoFallback(listaSemanas));
       setSemanas(listaSemanas);
       setConsolidado(infoConsolidado);
+      return listaSemanas;
     } catch (err) {
       console.error(err);
       setError('Error al consultar las semanas completadas del practicante.');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -128,7 +130,6 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
       setError('No se pudo abrir el informe PDF preliminar.');
     }
   };
-
 
   const handleDescargarPdfFirmado = async (informeId, semanaStr) => {
     try {
@@ -181,7 +182,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
       });
 
       setExito(`¡Informe del Mes ${semana.numero_mes || semana.numero_semana} (4 semanas) guardado exitosamente con la Firma Digital del Ingeniero!`);
-      cargarSemanasCompletadas(empId);
+      const listaSemanas = await cargarSemanasCompletadas(empId);
 
       // Previsualizar automáticamente el informe firmado recién subido
       if (uploadRes.data && uploadRes.data.id) {
@@ -192,25 +193,6 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
       setError(err.response?.data?.detail || 'Error al subir el informe PDF firmado.');
     } finally {
       setSubiendoId(null);
-    }
-  };
-
-  const handleDescargarPdfFirmado = async (informeId, semanaStr) => {
-    try {
-      const res = await client.get(`/api/informes-firmados/${informeId}/descargar`, {
-        responseType: 'blob',
-      });
-
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `PDF_FIRMADO_${semanaStr}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      setError('No se pudo descargar el archivo PDF firmado.');
     }
   };
 
@@ -225,9 +207,14 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
       empleadoId: parseInt(empId, 10),
       semanaInicio: semana.semana_inicio,
       semanaFin: semana.semana_fin,
-      onSuccess: () => {
+      onSuccess: async () => {
         setExito(`¡Informe del Mes ${semana.numero_mes || semana.numero_semana} firmado digitalmente con Firma Perú de manera oficial!`);
-        cargarSemanasCompletadas(empId);
+        const listaActualizada = await cargarSemanasCompletadas(empId);
+        // Buscar el registro firmado para abrir la previsualización del PDF firmado inmediatamente
+        const semFirmada = listaActualizada.find((s) => s.semana_inicio === semana.semana_inicio);
+        if (semFirmada && semFirmada.informe_firmado_id) {
+          handleDescargarPdfFirmado(semFirmada.informe_firmado_id, semFirmada.rango_str || semFirmada.semana_inicio);
+        }
       },
       onError: (errMsj) => {
         setError(errMsj || 'No se pudo completar la firma digital con Firma Perú.');
@@ -354,7 +341,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
                     ) : (
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <button
-                          onClick={() => handleDescargarPdfLimpio(semana, true)}
+                          onClick={() => handleFirmarDigitalmente(semana)}
                           disabled={firmaLoading}
                           className="px-2.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
                         >
