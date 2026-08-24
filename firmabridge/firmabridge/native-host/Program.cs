@@ -72,46 +72,23 @@ namespace FirmaBridge
                     }
                 }
 
-                // 1. Lanzar ClickOnce vía ShellExecute (evitando la excepción UriFormatException de rundll32)
-                string url = ClickOnceUrlBase + "?port=" + port;
-                try
+                // 1. Verificar si el puerto ya está escuchando
+                if (IsPortListening(port, 300))
                 {
-                    ProcessStartInfo psi = new ProcessStartInfo
-                    {
-                        FileName = url,
-                        UseShellExecute = true
-                    };
-                    Process.Start(psi);
+                    SendResponse("launched", null);
+                    return;
                 }
-                catch
+
+                string javaExePath = (!string.IsNullOrEmpty(pcmJreBin) && File.Exists(Path.Combine(pcmJreBin, "java.exe")))
+                    ? Path.Combine(pcmJreBin, "java.exe")
+                    : "java.exe";
+
+                string jarPath = FindFirmadorJar();
+
+                // 2. Si se encuentra el JAR de Firma Perú localmente, lanzarlo directamente con Java
+                if (!string.IsNullOrEmpty(jarPath) && File.Exists(jarPath))
                 {
                     try
-                    {
-                        ProcessStartInfo psiCmd = new ProcessStartInfo
-                        {
-                            FileName = "cmd.exe",
-                            Arguments = "/c start \"\" \"" + url + "\"",
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-                        Process.Start(psiCmd);
-                    }
-                    catch { }
-                }
-
-                // 2. Verificar si el puerto local responde en los siguientes 1.5s.
-                // Si ClickOnce no inició la escucha (por falta de java en PATH global o bloqueo de rundll32),
-                // ejecutar el JAR de Firma Perú directamente con OpenJDK JRE.
-                bool portActive = IsPortListening(port, 1500);
-
-                if (!portActive)
-                {
-                    string javaExePath = (!string.IsNullOrEmpty(pcmJreBin) && File.Exists(Path.Combine(pcmJreBin, "java.exe")))
-                        ? Path.Combine(pcmJreBin, "java.exe")
-                        : "java.exe";
-
-                    string jarPath = FindFirmadorJar();
-                    if (!string.IsNullOrEmpty(jarPath) && (File.Exists(javaExePath) || !javaExePath.Contains(@"\")))
                     {
                         ProcessStartInfo psiJava = new ProcessStartInfo
                         {
@@ -123,6 +100,22 @@ namespace FirmaBridge
                         };
                         Process.Start(psiJava);
                     }
+                    catch { }
+                }
+                else
+                {
+                    // Fallback a ClickOnce solo si no existe el JAR local
+                    string url = ClickOnceUrlBase + "?port=" + port;
+                    try
+                    {
+                        ProcessStartInfo psi = new ProcessStartInfo
+                        {
+                            FileName = url,
+                            UseShellExecute = true
+                        };
+                        Process.Start(psi);
+                    }
+                    catch { }
                 }
 
                 SendResponse("launched", null);
@@ -201,6 +194,15 @@ namespace FirmaBridge
             try
             {
                 string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+                // 1. Buscar en %LOCALAPPDATA%\FirmaBridge\firmaperuclienteweb.jar
+                string fbJar = Path.Combine(localAppData, @"FirmaBridge\firmaperuclienteweb.jar");
+                if (File.Exists(fbJar))
+                {
+                    return fbJar;
+                }
+
+                // 2. Buscar en %LOCALAPPDATA%\Apps\2.0
                 string appsDir = Path.Combine(localAppData, @"Apps\2.0");
                 if (Directory.Exists(appsDir))
                 {
