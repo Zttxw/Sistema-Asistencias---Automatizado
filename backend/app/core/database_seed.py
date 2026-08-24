@@ -51,7 +51,6 @@ def seed_initial_data(db: Session):
     rol_jefe = db.query(Rol).filter(Rol.nombre == "Jefe de Oficina").first()
     permisos_jefe = [
         permisos_db["asistencias.ver"],
-        permisos_db["asistencias.registrar_manual"],
         permisos_db["asistencias.exportar"],
         permisos_db["empleados.ver"],
         permisos_db["empleados.crear"],

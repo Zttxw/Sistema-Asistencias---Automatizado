@@ -285,12 +285,12 @@ def obtener_auditoria_asistencias(
 ):
     """
     Retorna el registro de auditoría de modificaciones de asistencias.
-    Restringido a Administradores y Jefes de Oficina.
+    Restringido exclusivamente a Administradores.
     """
-    if not current_user.rol or current_user.rol.nombre not in ["Admin", "Jefe de Oficina"]:
+    if not current_user.rol or current_user.rol.nombre != "Admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acceso denegado: El historial de auditoría es exclusivo para Administradores y Jefes de Oficina."
+            detail="Acceso denegado: El historial de auditoría es exclusivo para Administradores."
         )
 
     from app.crud.crud_auditoria import get_auditorias_asistencia

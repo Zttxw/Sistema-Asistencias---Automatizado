@@ -225,34 +225,32 @@ export default function Asistencias() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
-          {(user?.rol === 'Admin' || user?.rol === 'Jefe de Oficina') && (
-            <button
-              onClick={() => setIsAuditoriaModalOpen(true)}
-              className="flex items-center space-x-2 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition-colors shadow-2xs cursor-pointer"
-              title="Ver trazabilidad de quién modificó asistencias"
-            >
-              <ShieldAlert className="w-4 h-4" />
-              <span>Historial de Auditoría</span>
-            </button>
+          {user?.rol === 'Admin' && (
+            <>
+              <button
+                onClick={() => setIsAuditoriaModalOpen(true)}
+                className="flex items-center space-x-2 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition-colors shadow-2xs cursor-pointer"
+                title="Ver trazabilidad de quién modificó asistencias"
+              >
+                <ShieldAlert className="w-4 h-4" />
+                <span>Historial de Auditoría</span>
+              </button>
+              <button
+                onClick={() => setIsMigracionModalOpen(true)}
+                className="flex items-center space-x-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors shadow-2xs cursor-pointer"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Migrar Asistencias (Excel / CSV)</span>
+              </button>
+              <button
+                onClick={openManualModal}
+                className="flex items-center space-x-2 px-3 py-2 bg-secondary text-white text-xs font-medium rounded-lg hover:bg-secondary/90 transition-colors shadow-2xs cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Registrar manual</span>
+              </button>
+            </>
           )}
-
-
-          <RequierePermiso codigo="asistencias.registrar_manual">
-            <button
-              onClick={() => setIsMigracionModalOpen(true)}
-              className="flex items-center space-x-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors shadow-2xs cursor-pointer"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Migrar Asistencias (Excel / CSV)</span>
-            </button>
-            <button
-              onClick={openManualModal}
-              className="flex items-center space-x-2 px-3 py-2 bg-secondary text-white text-xs font-medium rounded-lg hover:bg-secondary/90 transition-colors shadow-2xs cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Registrar manual</span>
-            </button>
-          </RequierePermiso>
         </div>
       </div>
 

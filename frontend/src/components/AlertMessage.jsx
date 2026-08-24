@@ -4,6 +4,17 @@ import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 export default function AlertMessage({ type = 'error', message, onClose }) {
   if (!message) return null;
 
+  let displayMessage = message;
+  if (typeof message === 'object') {
+    if (Array.isArray(message)) {
+      displayMessage = message
+        .map((item) => (typeof item === 'object' ? item.msg || JSON.stringify(item) : String(item)))
+        .join(', ');
+    } else {
+      displayMessage = message.msg || JSON.stringify(message);
+    }
+  }
+
   const isError = type === 'error';
 
   return (
@@ -20,7 +31,7 @@ export default function AlertMessage({ type = 'error', message, onClose }) {
         ) : (
           <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
         )}
-        <span>{message}</span>
+        <span>{displayMessage}</span>
       </div>
       {onClose && (
         <button

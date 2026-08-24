@@ -30,12 +30,19 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
   const safeEmpleados = Array.isArray(empleados) ? empleados : [];
   const safeAsistencias = Array.isArray(asistencias) ? asistencias : [];
 
-  // 1. Métricas no redundantes
+  // Métricas
   const totalEmpleados = safeEmpleados.length;
   const presentesHoy = safeAsistencias.filter(esEstaEnOficina);
   const pctPresencia = totalEmpleados > 0 ? Math.round((presentesHoy.length / totalEmpleados) * 100) : 0;
 
-  // 2. Mapeo único por practicante
+  // Obtener color institucional según el % acumulado (Semáforo Institucional)
+  const getBarColorClass = (pct) => {
+    if (pct >= 75) return 'bg-[#2CA792]'; // Verde Institucional
+    if (pct >= 35) return 'bg-[#3484A5]'; // Azul Institucional
+    return 'bg-[#F0C84F]';                // Dorado Institucional
+  };
+
+  // Mapeo por practicante
   const empleadosData = safeEmpleados.map((emp) => {
     const asisEmp = safeAsistencias.find(
       (a) => a && a.empleado && a.empleado.trim().toLowerCase() === (emp.nombre || '').trim().toLowerCase()
@@ -44,6 +51,7 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
     const meta = emp.horas_meta || 640;
     const horasReales = emp.horas_acumuladas !== undefined && emp.horas_acumuladas !== null ? emp.horas_acumuladas : 0;
     const pctMeta = Math.min(100, Math.round((horasReales / meta) * 100));
+    const barColorClass = getBarColorClass(pctMeta);
 
     return {
       id: emp.id,
@@ -53,17 +61,18 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
       horasReales,
       meta,
       pctMeta,
+      barColorClass,
     };
   });
 
-  // Ranking ordenado de mayor a menor horas reales acumuladas
+  // Ranking ordenado de mayor a menor horas acumuladas
   const ranking = [...empleadosData].sort((a, b) => b.horasReales - a.horasReales);
 
   // Totales consolidados
   const sumaHorasTotal = empleadosData.reduce((acc, curr) => acc + curr.horasReales, 0);
   const promedioHorasGlobal = empleadosData.length > 0 ? (sumaHorasTotal / empleadosData.length).toFixed(1) : '0.0';
 
-  // Agrupamiento no redundante por Departamento
+  // Agrupamiento por Departamento
   const deptosMap = {};
   empleadosData.forEach((emp) => {
     const d = emp.departamento || 'OTI';
@@ -76,7 +85,7 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
   const deptosList = Object.values(deptosMap);
   const maxHorasDepto = Math.max(...deptosList.map((d) => d.horas), 1);
 
-  // Filtro único por término de búsqueda
+  // Filtro de búsqueda
   const rankingFiltrado = ranking.filter(
     (emp) =>
       !searchTerm ||
@@ -87,7 +96,7 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
   return (
     <div className="space-y-6 text-gray-900 dark:text-zinc-100 font-sans">
       
-      {/* KPI BARS (3 DATOS ÚNICOS NO REDUNDANTES) */}
+      {/* KPI BARS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
         <div className="bg-white dark:bg-black p-4 rounded-xl border border-gray-100 dark:border-zinc-800 flex items-center justify-between">
           <div>
@@ -128,10 +137,10 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
         </div>
       </div>
 
-      {/* DOS GRÁFICOS COMPLEMENTARIOS NO REDUNDANTES */}
+      {/* GRÁFICOS COMPLEMENTARIOS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* GRÁFICO PRINCIPAL: HORAS ACUMULADAS Y PROGRESO POR PRACTICANTE */}
+        {/* GRÁFICO PRINCIPAL: HORAS ACUMULADAS POR PRACTICANTE */}
         <div className="lg:col-span-2 bg-white dark:bg-black p-5 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3 gap-3">
             <div>
@@ -139,50 +148,47 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
                 Avance de Horas Acumuladas por Practicante
               </h2>
               <p className="text-[11px] text-gray-400 font-mono mt-0.5">
-                Progreso real acumulado en base de datos frente a la meta (640 hrs).
+                Progreso acumulado frente a la meta (640 hrs).
               </p>
             </div>
 
-            {/* Buscador Integrado */}
             <input
               type="text"
-              placeholder="Filtrar practicante..."
+              placeholder="Buscar practicante..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-1 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#3484A5] font-mono w-full sm:w-48"
             />
           </div>
 
-          {/* Gráfico de Barras por Practicante */}
+          {/* Gráfico de Barras Simple con Semáforo Institucional */}
           <div className="space-y-3 font-mono text-xs max-h-[420px] overflow-y-auto pr-1">
             {rankingFiltrado.length === 0 ? (
-              <p className="text-gray-400 text-center py-6">No se encontraron registros.</p>
+              <p className="text-gray-400 text-center py-6">No se encontraron practicantes.</p>
             ) : (
               rankingFiltrado.map((emp, idx) => (
                 <div key={emp.id} className="p-3 bg-gray-50/50 dark:bg-zinc-950 rounded-lg border border-gray-100 dark:border-zinc-800 space-y-1.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span className="font-bold text-gray-400 w-6">#{idx + 1}</span>
+                      <span className="font-bold text-gray-400 text-[11px] w-6">#{idx + 1}</span>
                       <span className="font-semibold text-gray-900 dark:text-white">{emp.nombre}</span>
                       <span className="text-gray-400 text-[10px]">({emp.departamento})</span>
-                      {emp.enOficina ? (
+                      {emp.enOficina && (
                         <span className="text-[#2CA792] font-bold text-[10px] bg-[#2CA792]/10 px-1.5 py-0.5 rounded">
                           En Oficina
                         </span>
-                      ) : (
-                        <span className="text-gray-400 text-[10px]">Fuera</span>
                       )}
                     </div>
 
-                    <span className="font-bold text-[#3484A5]">
+                    <span className="font-bold text-gray-800 dark:text-zinc-200">
                       {emp.horasReales.toFixed(1)} / {emp.meta} hrs ({emp.pctMeta}%)
                     </span>
                   </div>
 
-                  {/* Barra Precisa de Progreso */}
-                  <div className="w-full bg-gray-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                  {/* Barra de Progreso Estilo Semáforo con Colores Institucionales */}
+                  <div className="w-full bg-gray-200 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden">
                     <div
-                      className="h-2 bg-[#3484A5] rounded-full transition-all duration-300"
+                      className={`h-2.5 rounded-full transition-all duration-300 ${emp.barColorClass}`}
                       style={{ width: `${emp.pctMeta}%` }}
                     ></div>
                   </div>
@@ -192,18 +198,18 @@ export default function DashboardGrafico({ asistencias = [], empleados = [] }) {
           </div>
         </div>
 
-        {/* GRÁFICO COMPLEMENTARIO: DISTRIBUCIÓN DE HORAS POR ÁREA */}
+        {/* GRÁFICO COMPLEMENTARIO: DISTRIBUCIÓN POR DEPARTAMENTO */}
         <div className="bg-white dark:bg-black p-5 rounded-xl border border-gray-100 dark:border-zinc-800 space-y-4 flex flex-col justify-between">
           <div className="border-b border-gray-100 dark:border-zinc-800 pb-3">
             <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-gray-900 dark:text-white">
               Distribución por Departamento
             </h2>
             <p className="text-[11px] text-gray-400 font-mono mt-0.5">
-              Horas totales aportadas por cada área.
+              Horas totales aportadas por área.
             </p>
           </div>
 
-          <div className="space-y-4 font-mono text-xs flex-1 overflow-y-auto max-h-[360px]">
+          <div className="space-y-4 font-mono text-xs flex-1 overflow-y-auto max-h-[380px]">
             {deptosList.map((d, idx) => {
               const pctDepto = Math.min(100, Math.round((d.horas / maxHorasDepto) * 100));
               return (

@@ -80,6 +80,7 @@ export default function CambiarPasswordModal({ isOpen, onClose }) {
               type="button"
               onClick={() => setShowActual(!showActual)}
               className="absolute right-3 top-2.5 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 cursor-pointer"
+              tabIndex="-1"
             >
               {showActual ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>

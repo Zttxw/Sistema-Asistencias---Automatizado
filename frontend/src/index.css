@@ -2,6 +2,16 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Disable native browser password reveal and clear icons */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 @font-face {
   font-family: 'Valve';
   src: url('/fonts/valve bd.otf') format('opentype');
@@ -52,72 +62,7 @@ body:where(.dark *) {
   color: #FFFFFF;
 }
 
-/* ==========================================
-   THEME TOGGLE SWITCH — Madflows Pixel Perfect
-   ========================================== */
-.toggle-switch-container {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-}
 
-.toggle-switch {
-  position: relative;
-  width: 60px;
-  height: 30px;
-}
-
-.switch-label {
-  position: absolute;
-  inset: 0;
-  background-color: #000000;
-  border-radius: 9999px;
-  cursor: pointer;
-  border: 2px solid #000000;
-  box-sizing: border-box;
-  overflow: hidden;
-  display: block;
-}
-
-.dark .switch-label {
-  background-color: #000000;
-  border-color: #FFFFFF;
-}
-
-.checkbox {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  background-color: #000000;
-  transition: background-color 0.3s ease;
-}
-
-.slider::before {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  box-shadow: inset 7px -2px 0px 0px #FFFFFF;
-  background-color: #000000;
-  transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.checkbox:checked ~ .slider::before {
-  transform: translateX(30px);
-  background-color: #FFFFFF;
-  box-shadow: none;
-}
 
 /* ==========================================
    LOADER — Speeder Animation (Uiverse.io)

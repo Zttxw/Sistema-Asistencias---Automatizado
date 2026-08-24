@@ -205,10 +205,8 @@ export default function Layout() {
       <main className={`flex-1 ${hideSidebar ? '' : 'ml-64'} overflow-y-auto min-h-screen flex flex-col`}>
         {/* Barra Superior Centrada con el Interruptor de Tema (Dark Mode) */}
         {!hideSidebar && (
-          <header className="h-12 border-b border-gray-200 dark:border-zinc-800/80 bg-white/80 dark:bg-black/80 backdrop-blur-md sticky top-0 z-20 px-8 flex items-center justify-center">
-            <div className="flex items-center gap-2 bg-gray-100/80 dark:bg-zinc-900/80 px-3 py-1 rounded-full border border-gray-200/80 dark:border-zinc-800 shadow-2xs">
-              <ThemeToggle />
-            </div>
+          <header className="h-12 border-b border-gray-200 dark:border-zinc-800/80 bg-white/80 dark:bg-black/80 backdrop-blur-md sticky top-0 z-20 px-8 flex items-center justify-end">
+            <ThemeToggle />
           </header>
         )}
 

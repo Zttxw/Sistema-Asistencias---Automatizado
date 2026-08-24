@@ -32,16 +32,16 @@ export default function ModalViewerPdf({
       <div className="space-y-3 font-sans">
         {/* Banner Integrado de Firma Perú si está disponible la acción de firmar */}
         {onFirmaPeru && (
-          <div className="p-3.5 bg-gradient-to-r from-sky-900/90 via-indigo-900/90 to-slate-900 text-white rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-sky-500/30 shadow-lg">
+          <div className="p-3.5 bg-primary/10 dark:bg-primary/20 text-gray-900 dark:text-white rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-primary/20 dark:border-primary/30">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-sky-500/20 rounded-lg border border-sky-400/30">
-                <ShieldCheck className="w-6 h-6 text-sky-300 animate-pulse" />
+              <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg text-primary dark:text-sky-400 shrink-0">
+                <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-sky-200 block">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary dark:text-sky-400 block">
                   Firma Digital Oficial con Firma Perú
                 </span>
-                <span className="text-[11px] text-sky-100/80 block">
+                <span className="text-[11px] text-gray-600 dark:text-zinc-400 block">
                   {firmaEstadoText || 'Examine el informe PDF en la vista previa y proceda con su firma digital.'}
                 </span>
               </div>
@@ -51,16 +51,16 @@ export default function ModalViewerPdf({
               type="button"
               onClick={onFirmaPeru}
               disabled={firmaLoading}
-              className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-2 shadow-md cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-xs font-semibold rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
             >
               {firmaLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Abriendo Firma Perú...</span>
                 </>
               ) : (
                 <>
-                  <ShieldCheck className="w-4 h-4 text-sky-100" />
+                  <ShieldCheck className="w-4 h-4" />
                   <span>Firmar Ahora con Firma Perú</span>
                 </>
               )}

@@ -334,9 +334,9 @@ export default function InformesSemanales() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsPerfilModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 text-white dark:bg-zinc-100 dark:text-black text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-black hover:dark:bg-zinc-100 text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer shrink-0"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+            <ShieldCheck className="w-3.5 h-3.5" />
             <span>Perfil de Firma Jefatura</span>
           </button>
           {empSeleccionado && (
@@ -344,7 +344,7 @@ export default function InformesSemanales() {
               onClick={() => cargarSemanas(empSeleccionado)}
               className="flex items-center space-x-1.5 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-semibold rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-[#3484A5] ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-primary ${loading ? 'animate-spin' : ''}`} />
               <span>Actualizar Datos</span>
             </button>
           )}
@@ -355,7 +355,7 @@ export default function InformesSemanales() {
       {exito && (
         <div className="p-3.5 bg-slate-900 text-slate-100 dark:bg-zinc-900 dark:text-zinc-100 rounded-lg text-xs font-medium border border-slate-800 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#2CA792] shrink-0" />
             <span>{exito}</span>
           </div>
           <button onClick={() => setExito(null)} className="font-bold text-slate-400 hover:text-white">✕</button>
@@ -405,7 +405,7 @@ export default function InformesSemanales() {
                 <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest font-mono">
                   Avance Meta de Horas
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-100 dark:bg-zinc-800 text-[#3484A5] border border-slate-200 dark:border-zinc-700">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-primary/10 text-primary border border-primary/20 dark:bg-primary/20 dark:text-sky-300">
                   {porcentajeHoras}% Completado
                 </span>
               </div>
@@ -443,11 +443,11 @@ export default function InformesSemanales() {
               <div className="grid grid-cols-2 gap-3 my-1">
                 <div className="p-2 bg-slate-50 dark:bg-zinc-800/50 rounded-lg border border-slate-200 dark:border-zinc-700/60 text-center">
                   <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Firmados</span>
-                  <span className="text-lg font-bold text-[#1A5C50] dark:text-emerald-400 font-mono">{firmadasCount}</span>
+                  <span className="text-lg font-bold text-[#2CA792] font-mono">{firmadasCount}</span>
                 </div>
                 <div className="p-2 bg-slate-50 dark:bg-zinc-800/50 rounded-lg border border-slate-200 dark:border-zinc-700/60 text-center">
                   <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-zinc-400 block font-mono">Pendientes</span>
-                  <span className="text-lg font-bold text-amber-600 dark:text-amber-400 font-mono">{pendientesCount}</span>
+                  <span className="text-lg font-bold text-[#F0C84F] dark:text-amber-400 font-mono">{pendientesCount}</span>
                 </div>
               </div>
 
@@ -478,8 +478,8 @@ export default function InformesSemanales() {
                   onClick={() => setFiltroEstado('pendientes')}
                   className={`px-3 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 ${
                     filtroEstado === 'pendientes'
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-2xs'
-                      : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
+                      ? 'bg-[#F0C84F] text-black font-bold shadow-2xs'
+                      : 'text-amber-600 dark:text-amber-400 hover:bg-[#F0C84F]/10'
                   }`}
                 >
                   <Clock className="w-3 h-3" />
@@ -490,8 +490,8 @@ export default function InformesSemanales() {
                   onClick={() => setFiltroEstado('firmadas')}
                   className={`px-3 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 ${
                     filtroEstado === 'firmadas'
-                      ? 'bg-[#1A5C50] text-white font-bold shadow-2xs'
-                      : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+                      ? 'bg-[#2CA792] text-white font-bold shadow-2xs'
+                      : 'text-[#2CA792] hover:bg-[#2CA792]/10'
                   }`}
                 >
                   <CheckCircle2 className="w-3 h-3" />
@@ -561,7 +561,7 @@ export default function InformesSemanales() {
                       {semana.firmado ? (
                         <div className="flex items-center gap-1.5">
                           {/* Estado Firmado */}
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/60">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#2CA792]/10 text-[#2CA792] border border-[#2CA792]/30 dark:bg-[#2CA792]/20 dark:text-[#2CA792]">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Firmado</span>
                           </span>
@@ -569,8 +569,8 @@ export default function InformesSemanales() {
                           {/* El Ojito para previsualizar el PDF firmado */}
                           <button
                             onClick={() => handleVerFirmado(semana.informe_firmado_id, semana.rango_str)}
-                            className="p-1.5 text-[#3484A5] bg-[#3484A5]/10 hover:bg-[#3484A5]/20 dark:bg-sky-950/50 dark:text-sky-300 dark:hover:bg-sky-900/60 rounded-lg transition-colors cursor-pointer border border-[#3484A5]/30"
-                            title="Ver / Previsualizar PDF firmado (Ojito)"
+                            className="p-1.5 text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors cursor-pointer border border-primary/20"
+                            title="Ver / Previsualizar PDF firmado"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -591,28 +591,28 @@ export default function InformesSemanales() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 flex-wrap">
-                          {/* Botón de Firma Perú (Previsualiza y activa Firma Perú) */}
+                          {/* Botón de Firma Perú */}
                           <button
                             onClick={() => handleDescargarLimpio(semana, true)}
                             disabled={firmaLoading}
-                            className="px-3 py-1.5 bg-gradient-to-r from-sky-600 to-indigo-700 hover:from-sky-500 hover:to-indigo-600 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
+                            className="px-3.5 py-1.5 bg-primary text-white hover:bg-primary/90 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
                           >
-                            <ShieldCheck className="w-3.5 h-3.5 text-sky-200" />
+                            <ShieldCheck className="w-3.5 h-3.5" />
                             <span>{firmaLoading ? 'Abriendo Firma Perú...' : 'Firmar con Firma Perú'}</span>
                           </button>
 
                           {/* Botón Descargar / Previsualizar PDF */}
                           <button
                             onClick={() => handleDescargarLimpio(semana, false)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#3484A5]/40 hover:bg-[#3484A5]/10 text-[#3484A5] dark:text-sky-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                            title="Previsualizar PDF en pantalla completa para revisar o guardar"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                            title="Previsualizar PDF"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5 text-primary" />
                             <span>Ver / Previsualizar PDF</span>
                           </button>
 
                           {/* Botón Principal: Subir Firmado / Manual */}
-                          <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#3484A5] hover:bg-[#2b6f8b] text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer">
+                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2CA792] hover:bg-[#258d7c] text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer">
                             <Upload className="w-3.5 h-3.5" />
                             <span>{subiendoId === (semana.numero_mes || semana.numero_semana) ? 'Guardando...' : 'Subir Firmado'}</span>
                             <input

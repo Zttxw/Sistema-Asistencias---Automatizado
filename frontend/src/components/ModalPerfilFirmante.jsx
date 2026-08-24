@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import AlertMessage from './AlertMessage';
 import client from '../api/client';
-import { UserCheck, Save, ShieldCheck } from 'lucide-react';
+import { Save, ShieldCheck } from 'lucide-react';
 
 export default function ModalPerfilFirmante({ isOpen, onClose, currentUser, onProfileUpdated }) {
   const [nombreFirmante, setNombreFirmante] = useState('');
@@ -37,7 +37,7 @@ export default function ModalPerfilFirmante({ isOpen, onClose, currentUser, onPr
         institucion_firmante: institucionFirmante,
       });
 
-      setExito('¡Datos de Firma y Credenciales de Jefatura actualizados correctamente!');
+      setExito('Datos de firma actualizados correctamente.');
       if (onProfileUpdated) {
         onProfileUpdated(res.data);
       }
@@ -56,12 +56,16 @@ export default function ModalPerfilFirmante({ isOpen, onClose, currentUser, onPr
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Perfil de Firma Digital del Jefe de Oficina">
       <form onSubmit={handleSubmit} className="space-y-4 text-gray-900 dark:text-zinc-100 font-sans">
-        <div className="p-3.5 bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-xl flex items-center gap-3 shadow-2xs">
-          <ShieldCheck className="w-8 h-8 text-sky-400 shrink-0" />
+
+        {/* Banner Institucional Minimalista */}
+        <div className="p-3.5 bg-primary/10 dark:bg-primary/20 border border-primary/20 dark:border-primary/30 rounded-xl flex items-center gap-3">
+          <ShieldCheck className="w-6 h-6 text-primary dark:text-sky-400 shrink-0" />
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-white">Datos Oficiales de Firma y Sello</p>
-            <p className="text-[11px] text-slate-300">
-              Estos datos figurarán automáticamente al pie de página de los informes PDF emitidos y firmados para los practicantes.
+            <p className="text-xs font-bold uppercase tracking-wide text-primary dark:text-sky-400">
+              Datos Oficiales de Firma y Sello
+            </p>
+            <p className="text-[11px] text-gray-600 dark:text-zinc-400">
+              Estos datos figurarán automáticamente al pie de página de los informes PDF emitidos y firmados.
             </p>
           </div>
         </div>
@@ -74,21 +78,21 @@ export default function ModalPerfilFirmante({ isOpen, onClose, currentUser, onPr
         )}
 
         <div>
-          <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
-            Nombre Completo del Firmante (Con Título Profesional):
+          <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
+            Nombre Completo del Firmante (con título profesional):
           </label>
           <input
             type="text"
             required
-            placeholder="Ej. Ing. Jeanpier Xilander Merma Chura"
+            placeholder="Ej. Ing. Adrián Adel Valer Bellota"
             value={nombreFirmante}
             onChange={(e) => setNombreFirmante(e.target.value)}
-            className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary font-medium"
+            className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs bg-gray-50/50 dark:bg-zinc-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium transition-all"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+          <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
             Cargo u Oficina Responsable:
           </label>
           <input
@@ -97,13 +101,13 @@ export default function ModalPerfilFirmante({ isOpen, onClose, currentUser, onPr
             placeholder="Ej. Jefe de la Oficina de Tecnologías de la Información"
             value={cargoFirmante}
             onChange={(e) => setCargoFirmante(e.target.value)}
-            className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary font-medium"
+            className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs bg-gray-50/50 dark:bg-zinc-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium transition-all"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+            <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
               Colegiatura CIP / DNI:
             </label>
             <input
@@ -111,57 +115,59 @@ export default function ModalPerfilFirmante({ isOpen, onClose, currentUser, onPr
               placeholder="Ej. CIP N° 245890 • DNI 73124137"
               value={colegiaturaFirmante}
               onChange={(e) => setColegiaturaFirmante(e.target.value)}
-              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary font-medium"
+              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs bg-gray-50/50 dark:bg-zinc-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+            <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
               Institución / Sede:
             </label>
             <input
               type="text"
-              placeholder="Ej. Corte Superior de Justicia"
+              placeholder="Ej. Oficina de Tecnologías de la Información"
               value={institucionFirmante}
               onChange={(e) => setInstitucionFirmante(e.target.value)}
-              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:border-primary font-medium"
+              className="w-full border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs bg-gray-50/50 dark:bg-zinc-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium transition-all"
             />
           </div>
         </div>
 
         {/* Vista previa del recuadro de firma */}
-        <div className="p-3 bg-slate-50 dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 text-center space-y-1">
-          <p className="text-[10px] font-bold text-slate-400 font-mono uppercase tracking-wider">Vista Previa de la Firma Impresa en PDF</p>
-          <div className="w-48 mx-auto border-b border-slate-400 dark:border-zinc-600 my-2"></div>
-          <p className="text-xs font-bold text-slate-900 dark:text-white uppercase font-mono">
+        <div className="p-4 bg-gray-50/80 dark:bg-zinc-900/60 rounded-xl border border-gray-200 dark:border-zinc-800 text-center space-y-1.5">
+          <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 font-mono uppercase tracking-wider">
+            Vista previa de la firma impresa en PDF
+          </p>
+          <div className="w-48 mx-auto border-b border-gray-300 dark:border-zinc-700 my-2"></div>
+          <p className="text-xs font-bold text-gray-900 dark:text-white uppercase font-mono">
             {nombreFirmante || 'NOMBRE DEL FIRMANTE'}
           </p>
-          <p className="text-[11px] text-slate-600 dark:text-zinc-300 font-mono">
+          <p className="text-[11px] text-gray-600 dark:text-zinc-300 font-mono">
             {cargoFirmante || 'CARGO INSTITUCIONAL'}
           </p>
           {colegiaturaFirmante && (
-            <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono">{colegiaturaFirmante}</p>
+            <p className="text-[10px] text-gray-500 dark:text-zinc-400 font-mono">{colegiaturaFirmante}</p>
           )}
           {institucionFirmante && (
-            <p className="text-[10px] font-bold text-slate-700 dark:text-zinc-300 font-mono">{institucionFirmante}</p>
+            <p className="text-[10px] font-bold text-gray-700 dark:text-zinc-300 font-mono">{institucionFirmante}</p>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+        <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+            className="px-4 py-2 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-900 transition-all cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            className="px-4 py-2 bg-primary text-white dark:bg-white dark:text-black rounded-lg text-xs font-semibold hover:bg-primary/90 dark:hover:bg-zinc-200 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
           >
             <Save className="w-3.5 h-3.5" />
-            {saving ? 'Guardando...' : 'Guardar Perfil de Firma'}
+            <span>{saving ? 'Guardando...' : 'Guardar Perfil de Firma'}</span>
           </button>
         </div>
       </form>
