@@ -141,6 +141,23 @@ namespace FirmaBridge
             try
             {
                 string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+                // 1. Buscar en %USERPROFILE%\PCM\OpenJDK8
+                string openJdk8Dir = Path.Combine(userProfile, @"PCM\OpenJDK8");
+                if (Directory.Exists(openJdk8Dir))
+                {
+                    string[] subdirs = Directory.GetDirectories(openJdk8Dir);
+                    foreach (string d in subdirs)
+                    {
+                        string binPath = Path.Combine(d, "bin");
+                        if (File.Exists(Path.Combine(binPath, "java.exe")))
+                        {
+                            return binPath;
+                        }
+                    }
+                }
+
+                // 2. Buscar en %USERPROFILE%\PCM\OpenJDK
                 string openJdkDir = Path.Combine(userProfile, @"PCM\OpenJDK");
                 if (Directory.Exists(openJdkDir))
                 {
@@ -155,7 +172,7 @@ namespace FirmaBridge
                     }
                 }
 
-                // Fallback: verificar JAVA_HOME del sistema si ya existe
+                // 3. Fallback: verificar JAVA_HOME del sistema
                 string envJavaHome = Environment.GetEnvironmentVariable("JAVA_HOME");
                 if (!string.IsNullOrEmpty(envJavaHome) && Directory.Exists(envJavaHome))
                 {
