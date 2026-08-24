@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>FirmaBridge</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #e0e0e0;
+      padding: 0;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #e94560 0%, #c23152 100%);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .header .version {
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+      margin-left: auto;
+      font-weight: 400;
+    }
+
+    .content {
+      padding: 16px 20px;
+    }
+
+    .status-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .status-card .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a8a9a;
+      margin-bottom: 8px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #555;
+      flex-shrink: 0;
+    }
+
+    .status-dot.ok { background: #4caf50; box-shadow: 0 0 8px rgba(76,175,80,0.5); }
+    .status-dot.error { background: #f44336; box-shadow: 0 0 8px rgba(244,67,54,0.5); }
+    .status-dot.idle { background: #607d8b; }
+
+    .status-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .event-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .event-card .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a8a9a;
+      margin-bottom: 10px;
+    }
+
+    .event-detail {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .event-detail .key {
+      font-size: 12px;
+      color: #8a8a9a;
+    }
+
+    .event-detail .value {
+      font-size: 12px;
+      color: #ccc;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    .event-detail .value.success { color: #4caf50; }
+    .event-detail .value.error { color: #f44336; }
+
+    .no-events {
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .footer {
+      padding: 12px 20px;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .footer a {
+      font-size: 11px;
+      color: #e94560;
+      text-decoration: none;
+      opacity: 0.8;
+    }
+
+    .footer a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-icon">🔏</div>
+    <h1>FirmaBridge</h1>
+    <span class="version" id="version">v1.0.0</span>
+  </div>
+
+  <div class="content">
+    <div class="status-card">
+      <div class="label">Estado del Host Nativo</div>
+      <div class="status-row">
+        <div class="status-dot" id="hostDot"></div>
+        <span class="status-text" id="hostStatus">Verificando…</span>
+      </div>
+    </div>
+
+    <div class="event-card">
+      <div class="label">Último Evento</div>
+      <div id="eventContent">
+        <div class="no-events">Sin eventos registrados</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="https://www.gob.pe/firmaperu" target="_blank">Plataforma Firma Perú</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
