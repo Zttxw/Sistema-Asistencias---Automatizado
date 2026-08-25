@@ -92,7 +92,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
     }
   }, [isOpen, empId]);
 
-  const handleDescargarPdfLimpio = async (semana, autoTriggerFirma = false) => {
+  const handleDescargarPdfLimpio = async (semana) => {
     try {
       const empSel = empleados.find((e) => e.id === parseInt(empId, 10));
       const nomLimpio = empSel ? empSel.nombre.replace(/\s+/g, '_') : 'Practicante';
@@ -121,10 +121,6 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
         onFirmaPeru: !semana.firmado ? () => handleFirmarDigitalmente(semana) : null,
         firmaEstadoText: `Documento de ${empSel?.nombre || 'Practicante'} listo para firma digital oficial.`,
       });
-
-      if (autoTriggerFirma && !semana.firmado) {
-        handleFirmarDigitalmente(semana);
-      }
     } catch (err) {
       console.error(err);
       setError('No se pudo abrir el informe PDF preliminar.');
@@ -209,12 +205,7 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
       semanaFin: semana.semana_fin,
       onSuccess: async () => {
         setExito(`¡Informe del Mes ${semana.numero_mes || semana.numero_semana} firmado digitalmente con Firma Perú de manera oficial!`);
-        const listaActualizada = await cargarSemanasCompletadas(empId);
-        // Buscar el registro firmado para abrir la previsualización del PDF firmado inmediatamente
-        const semFirmada = listaActualizada.find((s) => s.semana_inicio === semana.semana_inicio);
-        if (semFirmada && semFirmada.informe_firmado_id) {
-          handleDescargarPdfFirmado(semFirmada.informe_firmado_id, semFirmada.rango_str || semFirmada.semana_inicio);
-        }
+        await cargarSemanasCompletadas(empId);
       },
       onError: (errMsj) => {
         setError(errMsj || 'No se pudo completar la firma digital con Firma Perú.');

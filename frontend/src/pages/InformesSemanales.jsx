@@ -137,7 +137,7 @@ export default function InformesSemanales() {
   }, [empSeleccionado]);
 
   // Previsualizar PDF en el visor interno y permitir Firma Perú directo desde la vista previa
-  const handleDescargarLimpio = async (semana, autoTriggerFirma = false) => {
+  const handleDescargarLimpio = async (semana) => {
     try {
       const empObj = empleados.find((e) => e.id === parseInt(empSeleccionado, 10));
       const nomLimpio = empObj ? empObj.nombre.replace(/\s+/g, '_') : 'Practicante';
@@ -166,10 +166,6 @@ export default function InformesSemanales() {
         onFirmaPeru: !semana.firmado ? () => handleFirmarDigitalmente(semana) : null,
         firmaEstadoText: `Documento de ${empObj?.nombre || 'Practicante'} listo para firma digital oficial.`,
       });
-
-      if (autoTriggerFirma && !semana.firmado) {
-        handleFirmarDigitalmente(semana);
-      }
     } catch (err) {
       console.error(err);
       setError('Error al generar el documento PDF preliminar.');
@@ -593,7 +589,7 @@ export default function InformesSemanales() {
                         <div className="flex items-center gap-2 flex-wrap">
                           {/* Botón de Firma Perú */}
                           <button
-                            onClick={() => handleDescargarLimpio(semana, true)}
+                            onClick={() => handleFirmarDigitalmente(semana)}
                             disabled={firmaLoading}
                             className="px-3.5 py-1.5 bg-primary text-white hover:bg-primary/90 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
                           >
@@ -603,7 +599,7 @@ export default function InformesSemanales() {
 
                           {/* Botón Descargar / Previsualizar PDF */}
                           <button
-                            onClick={() => handleDescargarLimpio(semana, false)}
+                            onClick={() => handleDescargarLimpio(semana)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                             title="Previsualizar PDF"
                           >

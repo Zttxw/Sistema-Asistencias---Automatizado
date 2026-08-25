@@ -49,7 +49,10 @@ export default function ModalViewerPdf({
 
             <button
               type="button"
-              onClick={onFirmaPeru}
+              onClick={() => {
+                onClose();
+                if (onFirmaPeru) onFirmaPeru();
+              }}
               disabled={firmaLoading}
               className="w-full sm:w-auto px-4 py-2 bg-primary text-white dark:bg-white dark:text-black text-xs font-semibold rounded-lg hover:bg-primary/90 dark:hover:bg-zinc-200 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
             >
