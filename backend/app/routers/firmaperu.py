@@ -155,20 +155,34 @@ async def obtener_parametros_firma(
             detail=f"Error al obtener token de autorización con Firma Perú: {e}"
         )
 
-    # Estructura oficial de parámetros de Firma Perú (PAdES)
+    # Estructura oficial de parámetros de Firma Perú (PAdES) según Guía SGTD PCM
+    stamp_url = f"{base_url}/api/firmaperu/sello"
+
     params_dict = {
         "signatureFormat": "PAdES",
         "signatureLevel": "B",
         "signaturePackaging": "enveloped",
         "documentToSign": f"{base_url}/api/firmaperu/documento/{ftoken.token}",
         "certificateFilter": ".*",
+        "webTsa": "",
+        "userTsa": "",
+        "passwordTsa": "",
         "theme": "claro",
-        "visiblePosition": "true",
-        "posx": 340,
-        "posy": 580,
-        "pageNumber": 2,
+        "visiblePosition": True,
+        "contactInfo": "",
         "signatureReason": "Conformidad de informe mensual de prácticas pre-profesionales",
+        "bachtOperation": False,
+        "oneByOne": True,
+        "signatureStyle": 1,
+        "imageToStamp": stamp_url,
+        "stampTextSize": 14,
+        "stampWordWrap": 37,
+        "role": "Jefe de la Oficina de Tecnologías de la Información",
+        "stampPage": 2,
+        "positionx": 340,
+        "positiony": 580,
         "uploadDocumentSigned": f"{base_url}/api/firmaperu/subir-firmado/{ftoken.token}",
+        "certificationSignature": False,
         "token": jwt_token
     }
 
@@ -176,6 +190,22 @@ async def obtener_parametros_firma(
     param_b64 = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     return Response(content=param_b64, media_type="text/plain")
+
+
+@router.get("/sello")
+def obtener_sello_firma():
+    """
+    Endpoint para servir la imagen oficial del sello (PNG) a Firma Perú.
+    """
+    posibles_rutas = [
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "sello_firma.png"),
+        "static/sello_firma.png",
+        "/app/static/sello_firma.png"
+    ]
+    for ruta in posibles_rutas:
+        if os.path.exists(ruta):
+            return FileResponse(path=ruta, media_type="image/png", filename="sello_firma.png")
+    raise HTTPException(status_code=404, detail="Imagen de sello no encontrada.")
 
 
 @router.get("/documento/{token}")
