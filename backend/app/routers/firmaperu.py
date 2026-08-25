@@ -156,6 +156,8 @@ async def obtener_parametros_firma(
         )
 
     # Estructura oficial de parámetros de Firma Perú (PAdES)
+    stamp_url = f"{base_url}/static/sello_firma.png"
+
     params_dict = {
         "signatureFormat": "PAdES",
         "signatureLevel": "B",
@@ -164,6 +166,8 @@ async def obtener_parametros_firma(
         "certificateFilter": ".*",
         "theme": "claro",
         "visiblePosition": False,
+        "signatureStyle": 1,
+        "stampUrl": stamp_url,
         "signatureReason": "Conformidad de informe mensual de prácticas pre-profesionales",
         "uploadDocumentSigned": f"{base_url}/api/firmaperu/subir-firmado/{ftoken.token}",
         "token": jwt_token

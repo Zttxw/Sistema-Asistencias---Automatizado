@@ -2,6 +2,7 @@ import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.database import engine, Base, SessionLocal
 import app.models.empleado
 import app.models.asistencia
@@ -65,6 +66,9 @@ app.include_router(dispositivos.router)
 app.include_router(informes_firmados.router)
 app.include_router(firmaperu.router)
 app.include_router(agente.router)
+
+# Servir archivos estáticos (imagen de sello para Firma Perú)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/", tags=["health"])
