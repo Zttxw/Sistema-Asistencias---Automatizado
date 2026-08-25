@@ -163,7 +163,8 @@ async def obtener_parametros_firma(
         "documentToSign": f"{base_url}/api/firmaperu/documento/{ftoken.token}",
         "certificateFilter": ".*",
         "theme": "claro",
-        "visiblePosition": "true",
+        "visiblePosition": True,
+        "signatureStyle": 1,
         "signatureReason": "Conformidad de informe mensual de prácticas pre-profesionales",
         "uploadDocumentSigned": f"{base_url}/api/firmaperu/subir-firmado/{ftoken.token}",
         "token": jwt_token
