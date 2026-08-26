@@ -168,7 +168,7 @@ async def obtener_parametros_firma(
         "userTsa": "",
         "passwordTsa": "",
         "theme": "claro",
-        "visiblePosition": False,
+        "visiblePosition": True,
         "contactInfo": "",
         "signatureReason": "Conformidad de informe mensual de prácticas pre-profesionales",
         "bachtOperation": False,
@@ -185,6 +185,11 @@ async def obtener_parametros_firma(
         "certificationSignature": False,
         "token": jwt_token
     }
+
+    # LOG DE DEBUG: verificar que el applet Java recibe las coordenadas correctas
+    print(f"[FirmaPeru /param DEBUG] stampPage={params_dict['stampPage']}, "
+          f"positionx={params_dict['positionx']}, positiony={params_dict['positiony']}, "
+          f"visiblePosition={params_dict['visiblePosition']}")
 
     json_str = json.dumps(params_dict)
     param_b64 = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
