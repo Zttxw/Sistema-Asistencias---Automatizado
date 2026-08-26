@@ -168,7 +168,7 @@ async def obtener_parametros_firma(
         "userTsa": "",
         "passwordTsa": "",
         "theme": "claro",
-        "visiblePosition": True,
+        "visiblePosition": False,
         "contactInfo": "",
         "signatureReason": "Conformidad de informe mensual de prácticas pre-profesionales",
         "bachtOperation": False,
@@ -180,7 +180,7 @@ async def obtener_parametros_firma(
         "role": "Jefe de la Oficina de Tecnologías de la Información",
         "stampPage": 2,
         "positionx": 180,
-        "positiony": 540,
+        "positiony": 200,
         "uploadDocumentSigned": f"{base_url}/api/firmaperu/subir-firmado/{ftoken.token}",
         "certificationSignature": False,
         "token": jwt_token
