@@ -179,8 +179,8 @@ async def obtener_parametros_firma(
         "stampWordWrap": 37,
         "role": "Jefe de la Oficina de Tecnologías de la Información",
         "stampPage": 2,
-        "positionx": 180,
-        "positiony": 200,
+        "positionx": 0,
+        "positiony": 0,
         "uploadDocumentSigned": f"{base_url}/api/firmaperu/subir-firmado/{ftoken.token}",
         "certificationSignature": False,
         "token": jwt_token
