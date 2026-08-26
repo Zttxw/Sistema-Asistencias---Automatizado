@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Upload, CheckCircle2, Clock, FileText, AlertCircle, RefreshCw, Layers, Sparkles, ShieldCheck, Eye } from 'lucide-react';
+import { Download, Upload, CheckCircle2, Clock, FileText, AlertCircle, RefreshCw, Layers, Sparkles, ShieldCheck, Eye, Trash2 } from 'lucide-react';
 import Modal from './Modal';
 import client from '../api/client';
 import AlertMessage from './AlertMessage';
@@ -192,6 +192,25 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
     }
   };
 
+  const handleEliminarPdfFirmado = async (semana) => {
+    if (!semana.informe_firmado_id) return;
+    const confirmacion = window.confirm(
+      `¿Está seguro de eliminar el informe firmado de ${semana.nombre_mes || 'Mes ' + (semana.numero_mes || semana.numero_semana)}? Esto devolverá el período a estado Pendiente para poder volver a firmarlo con Firma Perú.`
+    );
+    if (!confirmacion) return;
+
+    setError(null);
+    setExito(null);
+    try {
+      await client.delete(`/api/informes-firmados/${semana.informe_firmado_id}`);
+      setExito(`Informe firmado eliminado correctamente. Ahora puede volver a firmar con Firma Perú.`);
+      await cargarSemanasCompletadas(empId);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.detail || 'Error al eliminar el informe firmado.');
+    }
+  };
+
   const { iniciarFirmaDigital, loading: firmaLoading } = useFirmaPeru();
 
   const handleFirmarDigitalmente = (semana) => {
@@ -327,6 +346,15 @@ export default function ModalFirmaDigitalPdf({ isOpen, onClose, empleados = [] }
                               onChange={(e) => handleSubirPdfFirmado(semana, e.target.files[0])}
                             />
                           </label>
+
+                          {/* Eliminar informe firmado y habilitar nueva firma */}
+                          <button
+                            onClick={() => handleEliminarPdfFirmado(semana)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 rounded-lg transition-colors cursor-pointer border border-rose-200 dark:border-rose-900/50"
+                            title="Eliminar informe firmado (Habilita volver a firmar con Firma Perú)"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     ) : (

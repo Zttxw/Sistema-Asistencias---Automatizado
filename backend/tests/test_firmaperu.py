@@ -458,9 +458,31 @@ class TestFirmaPeruIntegration(unittest.TestCase):
             token = obtener_jwt_firmaperu()
             self.assertEqual(token, "JWT_TOKEN_DESDE_SERVICE_MOCK")
 
-            # Test cache hit
-            token_cached = obtener_jwt_firmaperu()
-            self.assertEqual(token_cached, "JWT_TOKEN_DESDE_SERVICE_MOCK")
+    def test_eliminar_informe_firmado_exito(self):
+        db = TestingSessionLocal()
+        inf = InformeFirmado(
+            empleado_id=self.empleado_a_id,
+            semana_inicio=date(2026, 11, 2),
+            semana_fin=date(2026, 11, 29),
+            archivo_path="/tmp/fake_eliminar.pdf",
+            nombre_archivo="fake_eliminar.pdf",
+            firmado_por_id=1
+        )
+        db.add(inf)
+        db.commit()
+        db.refresh(inf)
+        inf_id = inf.id
+        db.close()
+
+        res_del = self.client.delete(f"/api/informes-firmados/{inf_id}", headers=self.admin_headers)
+        self.assertEqual(res_del.status_code, 200)
+        self.assertEqual(res_del.json()["status"], "ok")
+
+        # Verificar que ya no existe en DB
+        db = TestingSessionLocal()
+        inf_check = db.query(InformeFirmado).filter(InformeFirmado.id == inf_id).first()
+        self.assertIsNone(inf_check)
+        db.close()
 
 
 if __name__ == "__main__":

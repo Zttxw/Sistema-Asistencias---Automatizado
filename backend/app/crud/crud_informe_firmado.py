@@ -166,3 +166,23 @@ def guardar_pdf_firmado(
 
 def get_informe_firmado_by_id(db: Session, informe_id: int) -> Optional[InformeFirmado]:
     return db.query(InformeFirmado).filter(InformeFirmado.id == informe_id).first()
+
+
+def eliminar_informe_firmado(db: Session, informe_id: int) -> bool:
+    """
+    Elimina el registro de informe firmado de la base de datos y borra el archivo físico asociado en disco.
+    """
+    informe = db.query(InformeFirmado).filter(InformeFirmado.id == informe_id).first()
+    if not informe:
+        return False
+
+    if informe.archivo_path and os.path.exists(informe.archivo_path):
+        try:
+            os.remove(informe.archivo_path)
+        except Exception as e:
+            print(f"[WARN] Error al eliminar archivo físico de informe firmado ({informe.archivo_path}): {e}")
+
+    db.delete(informe)
+    db.commit()
+    return True
+

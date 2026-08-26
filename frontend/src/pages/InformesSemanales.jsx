@@ -10,7 +10,8 @@ import {
   Search,
   ShieldCheck,
   UserCheck,
-  Eye
+  Eye,
+  Trash2
 } from 'lucide-react';
 import client from '../api/client';
 import AlertMessage from '../components/AlertMessage';
@@ -257,6 +258,25 @@ export default function InformesSemanales() {
     } catch (err) {
       console.error(err);
       setError('No se pudo descargar el archivo PDF firmado.');
+    }
+  };
+
+  const handleEliminarPdfFirmado = async (semana) => {
+    if (!semana.informe_firmado_id) return;
+    const confirmacion = window.confirm(
+      `¿Está seguro de eliminar el informe firmado de ${semana.nombre_mes || 'Mes ' + (semana.numero_mes || semana.numero_semana)}? Esto devolverá el período a estado Pendiente para poder volver a firmarlo con Firma Perú o subir un nuevo archivo.`
+    );
+    if (!confirmacion) return;
+
+    setError(null);
+    setExito(null);
+    try {
+      await client.delete(`/api/informes-firmados/${semana.informe_firmado_id}`);
+      setExito(`Informe firmado eliminado correctamente. El período ha quedado habilitado para una nueva firma con Firma Perú.`);
+      cargarSemanas(empSeleccionado);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.detail || 'Error al eliminar el informe firmado.');
     }
   };
 
@@ -584,6 +604,15 @@ export default function InformesSemanales() {
                               onChange={(e) => handleSubirPdfFirmado(semana, e.target.files[0])}
                             />
                           </label>
+
+                          {/* Eliminar informe firmado y habilitar nueva firma */}
+                          <button
+                            onClick={() => handleEliminarPdfFirmado(semana)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 rounded-lg transition-colors cursor-pointer border border-rose-200 dark:border-rose-900/50"
+                            title="Eliminar informe firmado (Habilita volver a firmar con Firma Perú)"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 flex-wrap">

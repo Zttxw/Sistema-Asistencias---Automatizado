@@ -213,3 +213,28 @@ def descargar_pdf_firmado(
             "Expires": "0"
         }
     )
+
+
+@router.delete("/{informe_id}", dependencies=[Depends(require_permission("asistencias.exportar"))])
+def eliminar_pdf_firmado(
+    informe_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Elimina el informe PDF firmado de la base de datos y del almacenamiento del servidor.
+    Permite reiniciar el estado del mes a 'Pendiente' para poder volver a firmarlo con Firma Perú o subirlo.
+    """
+    informe = crud.crud_informe_firmado.get_informe_firmado_by_id(db, informe_id)
+    if not informe:
+        raise HTTPException(status_code=404, detail="Informe firmado no encontrado.")
+
+    exito = crud.crud_informe_firmado.eliminar_informe_firmado(db, informe_id)
+    if not exito:
+        raise HTTPException(status_code=500, detail="No se pudo eliminar el informe firmado.")
+
+    return {
+        "status": "ok",
+        "message": "Informe firmado eliminado correctamente. El período ha quedado habilitado para una nueva firma con Firma Perú."
+    }
+
