@@ -151,3 +151,6 @@ Para instrucciones detalladas, ver **[deploy_windows.md](deploy_windows.md)**.
 - Swagger Docs interactivo: `http://<SERVER_HOST>:8010/docs`
 
 > `<SERVER_HOST>` es la IP LAN configurada en `.env`. Obtenerla con `ipconfig` en la PC servidor.
+
+
+<img width="1920" height="963" alt="image" src="https://github.com/user-attachments/assets/171f0ca8-fcb4-4358-bd84-e6be5c9811fe" />
